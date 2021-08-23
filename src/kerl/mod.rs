@@ -77,7 +77,6 @@ impl<'d> KERL {
             .into_iter()
             .map(|event| processor.process(event.clone()).and_then(|_| Ok(event)))
             .partition(Result::is_ok);
-        println!("process failed : {}", processed_failed.len());
         Ok(())
     }
 
