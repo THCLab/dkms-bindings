@@ -56,6 +56,10 @@ impl Controller {
         Ok(base64::encode_config(self.km.sign(message)?, URL_SAFE))
     }
 
+    pub fn current_sn(&self) -> Result<u64, Error> {
+        Ok(self.kerl.get_state()?.unwrap().sn)
+    }
+
     /// Process incoming events stream
     ///
     /// # Arguments
@@ -192,6 +196,14 @@ declare_types! {
                 this.borrow(&cx.lock()).get_prefix()
             };
             Ok(cx.string(prefix).upcast())
+        }
+
+         method get_current_sn(mut cx) {
+            let this = cx.this();
+            let sn = {
+                this.borrow(&cx.lock()).current_sn().expect("No current sn")
+            };
+            Ok(cx.number(sn as f64).upcast())
         }
 
         }

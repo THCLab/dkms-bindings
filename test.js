@@ -17,20 +17,23 @@
 	let verify = verifier.verify(message, signature, prefix)
 	assert(verify)
 
+	// Save sn to choose proper public key for verification after rotation.
+	let current_sn_while_signing = controller.get_current_sn();
+
 	// Rotate controller's keys
 	let rotation = controller.rotate()
 	// Verifier needs to process controller's rotation event, to have his most
 	// recent keys.
 	verifier.process_kerl(rotation)
 	
-	// try to verify message again. It won't verify because current keys has
+	// try to verify message again. It won't verify because current keys have
 	// changed.
 	verify = verifier.verify(message, signature, prefix)
 	assert(!verify)
 
 	// But if we specify sn of event which established keys used for signing
 	// message, verification will work.
-	verify = verifier.verify_at_sn(message, signature, prefix, 0)
+	verify = verifier.verify_at_sn(message, signature, prefix, current_sn_while_signing)
 	assert(verify);
 
 }());

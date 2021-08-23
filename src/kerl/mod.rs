@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use keri::{database::sled::SledEventDatabase, derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{EventMessage, sections::{KeyConfig, seal::{DigestSeal, Seal}}}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{IdentifierPrefix, SelfAddressingPrefix}, processor::EventProcessor, signer::KeyManager, state::IdentifierState};
+use keri::{database::sled::SledEventDatabase, derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{EventMessage, sections::{KeyConfig, seal::{DigestSeal, Seal}}}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{IdentifierPrefix}, processor::EventProcessor, signer::KeyManager, state::IdentifierState};
 
 pub mod error;
 use error::Error;
