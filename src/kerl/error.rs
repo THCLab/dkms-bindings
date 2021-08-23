@@ -1,4 +1,6 @@
+use base64::DecodeError;
 use keri::error::Error as KeriError;
+use std::string::FromUtf8Error;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,6 +14,9 @@ pub enum Error {
     #[error("{0}")]
     Generic(String),
 
-    #[error("Queue error")]
-    QueueError,
+    #[error(transparent)]
+    Utf8Error(#[from] FromUtf8Error),
+
+    #[error(transparent)]
+    Base64Error(#[from] DecodeError),
 }

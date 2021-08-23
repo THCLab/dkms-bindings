@@ -1,6 +1,6 @@
 use keri::{
     derivation::self_signing::SelfSigning,
-    prefix::{AttachedSignaturePrefix, IdentifierPrefix, Prefix},
+    prefix::{AttachedSignaturePrefix, Prefix},
     signer::{CryptoBox, KeyManager},
 };
 use neon::prelude::*;
@@ -19,28 +19,35 @@ impl Controller {
         self.kerl.get_prefix().to_str()
     }
 
-    pub fn rotate(&mut self) -> String {
-        self.km.rotate();
+    pub fn get_kerl(&self) -> Result<String, Error> {
+        Ok(String::from_utf8(
+            self.kerl
+                .get_kerl()?
+                .ok_or(Error::Generic("There is no kerl".into()))?,
+        )?)
+    }
+
+    pub fn rotate(&mut self) -> Result<String, Error> {
+        self.km.rotate()?;
         let rot = self.kerl.rotate(&self.km);
-        String::from_utf8(rot.unwrap().serialize().unwrap()).unwrap()
+        Ok(String::from_utf8(rot?.serialize()?)?)
     }
 
-    pub fn sign(&self, msg: &Vec<u8>) -> String {
-        base64::encode_config(self.km.sign(msg).unwrap(), URL_SAFE)
+    pub fn sign(&self, msg: &Vec<u8>) -> Result<String, Error> {
+        Ok(base64::encode_config(self.km.sign(msg)?, URL_SAFE))
     }
 
-    pub fn process(&self, kerl: &[u8]) -> () {
-        self.kerl.process_stream(kerl).unwrap();
+    pub fn process(&self, kerl: &[u8]) -> Result<(), Error> {
+        self.kerl.process_stream(kerl)
     }
 
     pub fn verify(&self, message: &[u8], signature: &str, prefix: &str) -> Result<bool, Error> {
         let prefix = prefix.parse()?;
-        let signature = base64::decode_config(signature, URL_SAFE).unwrap();
+        let signature = base64::decode_config(signature, URL_SAFE)?;
         let key_conf = self
             .kerl
-            .get_state_for_prefix(&prefix)
-            .unwrap()
-            .unwrap()
+            .get_state_for_prefix(&prefix)?
+            .ok_or(Error::Generic("There is no state".into()))?
             .current;
         let sigs = vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
@@ -55,34 +62,33 @@ impl Controller {
 
 declare_types! {
     pub class JsController for Controller {
-        init(mut cx) {
-            let root = Builder::new().prefix("test-db").tempdir().unwrap();
-            let mut kerl = KERL::new(root.path()).unwrap();
-            let km = CryptoBox::new().unwrap();
-            kerl.incept(&km).unwrap();
+        init(mut _cx) {
+            let root = Builder::new().prefix("test-db").tempdir().expect("Temporary dir ectory error");
+            let mut kerl = KERL::new(root.path()).expect("Error while creating kerl");
+            let km = CryptoBox::new().expect("Error while generating keys");
+            kerl.incept(&km).expect("Error while creating inception event");
             Ok(Controller {km, kerl})
         }
 
         method get_kerl(mut cx) {
             let this = cx.this();
             let kerl = {
-                String::from_utf8(this.borrow(&cx.lock()).kerl.get_kerl().unwrap().unwrap()).unwrap()
+                this.borrow(&cx.lock()).get_kerl().expect("Can't get kerl")
             };
             Ok(cx.string(kerl).upcast())
         }
 
         method rotate(mut cx) {
             let mut this = cx.this();
-            let m = this.borrow_mut(&cx.lock()).rotate();
-            Ok(cx.string(m.to_string()).upcast())
+            let rot_event = this.borrow_mut(&cx.lock()).rotate().expect("No rotation event");
+            Ok(cx.string(rot_event).upcast())
         }
 
         method sign(mut cx) {
             let message: String = cx.argument::<JsString>(0)?.value();
             let this = cx.this();
             let signature = {
-                // let guard = cx.lock();
-                this.borrow(&cx.lock()).sign(&message.as_bytes().to_vec())
+                this.borrow(&cx.lock()).sign(&message.as_bytes().to_vec()).expect("Error while signing")
             };
             Ok(cx.string(signature).upcast())
         }
@@ -91,7 +97,7 @@ declare_types! {
             let kerl: String = cx.argument::<JsString>(0)?.value();
             let this = cx.this();
 
-            this.borrow(&cx.lock()).process(&kerl.as_bytes());
+            this.borrow(&cx.lock()).process(&kerl.as_bytes()).expect("Error while processing events");
 
             Ok(cx.string("ok").upcast())
         }
@@ -103,7 +109,7 @@ declare_types! {
             let this = cx.this();
 
             let ver_result = {
-                this.borrow(&cx.lock()).verify(&message.as_bytes(), &signature, &identifier).unwrap()
+                this.borrow(&cx.lock()).verify(&message.as_bytes(), &signature, &identifier).expect("Error while verifing")
             };
 
             Ok(cx.boolean(ver_result).upcast())
@@ -125,13 +131,3 @@ register_module!(mut m, {
     m.export_class::<JsController>("Controller")?;
     Ok(())
 });
-
-#[test]
-pub fn test() {
-    let root = Builder::new().prefix("test-db").tempdir().unwrap();
-    let mut kerl = KERL::new(root.path()).unwrap();
-    let km = CryptoBox::new().unwrap();
-    kerl.incept(&km).unwrap();
-    let cont = Controller { km, kerl };
-    cont.process(br#"{"v":"KERI10JSON0000ed_","i":"DdqNMJ9KfcCjLR1wl97xsHMRm6S2UBZ11WBgdDuukFZw","s":"0","t":"icp","kt":"1","k":["DdqNMJ9KfcCjLR1wl97xsHMRm6S2UBZ11WBgdDuukFZw"],"n":"El6VP_btGBUNsa9xrslyv8u3c8VBwVoedaIjqtx7A85g","bt":"0","b":[],"c":[],"a":[]}-AABAA_NxZk2X7m_t-UsK2mcfykAl301n6vIykL7g0_3MDlo_DA-c_c7Q4usY7lZEShsbcFEpIL9m8W64gNIaGLw85Aw"#);
-}

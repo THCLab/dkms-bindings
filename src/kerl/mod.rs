@@ -73,7 +73,7 @@ impl<'d> KERL {
         let processor = EventProcessor::new(&self.database);
         let (_rest, events) =
             signed_event_stream(stream).map_err(|e| Error::Generic(e.to_string()))?;
-        let (_processed_ok, processed_failed): (Vec<_>, Vec<_>) = events
+        let (_processed_ok, _processed_failed): (Vec<_>, Vec<_>) = events
             .into_iter()
             .map(|event| processor.process(event.clone()).and_then(|_| Ok(event)))
             .partition(Result::is_ok);
