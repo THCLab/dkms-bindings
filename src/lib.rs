@@ -19,10 +19,23 @@ impl Controller {
         self.kerl.get_prefix().to_str()
     }
 
+    /// Returns own key event log of controller.
     pub fn get_kerl(&self) -> Result<String, Error> {
         Ok(String::from_utf8(
             self.kerl
                 .get_kerl()?
+                .ok_or(Error::Generic("There is no kerl".into()))?,
+        )?)
+    }
+
+    /// Returns key event log of controller of given prefix.
+    /// (Only if controller "knows" the identity of given prefix. It can be out of
+    /// date kel if controller didn't get most recent events yet.)
+    pub fn get_kerl_for_prefix(&self, prefix: &str) -> Result<String, Error> {
+        let prefix = prefix.parse()?;
+        Ok(String::from_utf8(
+            self.kerl
+                .get_kerl_for_prefix(&prefix)?
                 .ok_or(Error::Generic("There is no kerl".into()))?,
         )?)
     }
@@ -33,14 +46,32 @@ impl Controller {
         Ok(String::from_utf8(rot?.serialize()?)?)
     }
 
-    pub fn sign(&self, msg: &Vec<u8>) -> Result<String, Error> {
-        Ok(base64::encode_config(self.km.sign(msg)?, URL_SAFE))
+    /// Sign given message
+    ///
+    /// Returns signature encoded in base64
+    /// # Arguments
+    ///
+    /// * `message` - Bytes of message that will be signed
+    pub fn sign(&self, message: &Vec<u8>) -> Result<String, Error> {
+        Ok(base64::encode_config(self.km.sign(message)?, URL_SAFE))
     }
 
-    pub fn process(&self, kerl: &[u8]) -> Result<(), Error> {
-        self.kerl.process_stream(kerl)
+    /// Process incoming events stream
+    ///
+    /// # Arguments
+    ///
+    /// * `stream` - Bytes of serialized events stream
+    pub fn process(&self, stream: &[u8]) -> Result<(), Error> {
+        self.kerl.process_stream(stream)
     }
 
+    /// Verify signature of given message
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - Bytes of message
+    /// * `signature` - A string slice that holds the signature in base64
+    /// * `prefix` - A string slice that holds the prefix of signer
     pub fn verify(&self, message: &[u8], signature: &str, prefix: &str) -> Result<bool, Error> {
         let prefix = prefix.parse()?;
         let signature = base64::decode_config(signature, URL_SAFE)?;
@@ -58,6 +89,32 @@ impl Controller {
             .verify(message, &sigs)
             .map_err(|e| Error::Generic(e.to_string()))
     }
+
+    /// Verify signature of given message using keys at `sn`
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - Bytes of message
+    /// * `signature` - A string slice that holds the signature in base64
+    /// * `prefix` - A string slice that holds the prefix of signer
+    /// * `sn` - A sequence number of event which established keys used to sign message.
+    pub fn verify_at_sn(&self, message: &[u8], signature: &str, prefix: &str, sn: u64) -> Result<bool, Error> {
+        let pref = prefix.parse()?;
+        let signature = base64::decode_config(signature, URL_SAFE)?;
+        let key_conf = self
+            .kerl
+            .get_keys_at_sn(&pref, sn)?.ok_or(Error::Generic(format!("There are no key config fo identifier {} at {}", prefix, sn)))?;
+        let sigs = vec![AttachedSignaturePrefix::new(
+            SelfSigning::Ed25519Sha512,
+            signature.to_vec(),
+            0,
+        )];
+        key_conf
+            .verify(message, &sigs)
+            .map_err(|e| Error::Generic(e.to_string()))
+    }
+
+    
 }
 
 declare_types! {
@@ -110,6 +167,20 @@ declare_types! {
 
             let ver_result = {
                 this.borrow(&cx.lock()).verify(&message.as_bytes(), &signature, &identifier).expect("Error while verifing")
+            };
+
+            Ok(cx.boolean(ver_result).upcast())
+        }
+
+        method verify_at_sn(mut cx) {
+            let message: String = cx.argument::<JsString>(0)?.value();
+            let signature: String = cx.argument::<JsString>(1)?.value();
+            let identifier: String = cx.argument::<JsString>(2)?.value();
+            let sn : u64 = cx.argument::<JsNumber>(3)?.value() as u64;
+            let this = cx.this();
+
+            let ver_result = {
+                this.borrow(&cx.lock()).verify_at_sn(&message.as_bytes(), &signature, &identifier, sn).expect("Error while verifing")
             };
 
             Ok(cx.boolean(ver_result).upcast())

@@ -3,22 +3,7 @@ use std::{
     path::Path,
 };
 
-use keri::{
-    database::sled::SledEventDatabase,
-    derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning},
-    event::{
-        sections::seal::{DigestSeal, Seal},
-        EventMessage,
-    },
-    event_message::parse::signed_message,
-    event_message::parse::{message, signed_event_stream},
-    event_message::SignedEventMessage,
-    prefix::AttachedSignaturePrefix,
-    prefix::{IdentifierPrefix, SelfAddressingPrefix},
-    processor::EventProcessor,
-    signer::KeyManager,
-    state::IdentifierState,
-};
+use keri::{database::sled::SledEventDatabase, derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{EventMessage, sections::{KeyConfig, seal::{DigestSeal, Seal}}}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{IdentifierPrefix, SelfAddressingPrefix}, processor::EventProcessor, signer::KeyManager, state::IdentifierState};
 
 pub mod error;
 use error::Error;
@@ -196,6 +181,12 @@ impl<'d> KERL {
             .map_err(|e| Error::KeriError(e))
     }
 
+    pub fn get_kerl_for_prefix(&self, prefix: &IdentifierPrefix) -> Result<Option<Vec<u8>>, Error> {
+        EventProcessor::new(&self.database)
+            .get_kerl(prefix)
+            .map_err(|e| Error::KeriError(e))
+    }
+
     pub fn get_state_for_prefix(
         &self,
         prefix: &IdentifierPrefix,
@@ -205,24 +196,15 @@ impl<'d> KERL {
             .map_err(|e| Error::KeriError(e))
     }
 
-    pub fn get_state_for_seal(
+    pub fn get_keys_at_sn(
         &self,
         prefix: &IdentifierPrefix,
         sn: u64,
-        digest: &SelfAddressingPrefix,
-    ) -> Result<Option<IdentifierState>, Error> {
-        match EventProcessor::new(&self.database)
+    ) -> Result<Option<KeyConfig>, Error> {
+        Ok(EventProcessor::new(&self.database)
             .compute_state_at_sn(&prefix, sn)
             .map_err(|e| Error::KeriError(e))?
-        {
-            Some(s) => {
-                if !digest.verify_binding(&s.last) {
-                    Err(Error::Generic("Last event digests doesn't match".into()))
-                } else {
-                    Ok(Some(s))
-                }
-            }
-            None => Ok(None),
-        }
+            .map(|st| st.current))
+        
     }
 }
