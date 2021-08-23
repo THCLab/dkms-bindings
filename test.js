@@ -7,8 +7,8 @@
 	let verifier = new keri.Controller()
 
 	// Send controlle's key event log to verifier
-	let kerl = controller.get_kerl()
-	verifier.process_kerl(kerl)
+	let kel = controller.get_kel()
+	verifier.process_kel(kel)
 
 	let message = "hi"
 	let signature = controller.sign(message)
@@ -24,7 +24,7 @@
 	let rotation = controller.rotate()
 	// Verifier needs to process controller's rotation event, to have his most
 	// recent keys.
-	verifier.process_kerl(rotation)
+	verifier.process_kel(rotation)
 	
 	// try to verify message again. It won't verify because current keys have
 	// changed.

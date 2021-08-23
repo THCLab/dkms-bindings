@@ -5,44 +5,44 @@ use keri::{
 };
 use neon::prelude::*;
 use tempfile::Builder;
-pub mod kerl;
+pub mod kel;
 use base64::{self, URL_SAFE};
-use kerl::{error::Error, KERL};
+use kel::{error::Error, KEL};
 
 pub struct Controller {
     km: CryptoBox,
-    kerl: KERL,
+    kel: KEL,
 }
 
 impl Controller {
     pub fn get_prefix(&self) -> String {
-        self.kerl.get_prefix().to_str()
+        self.kel.get_prefix().to_str()
     }
 
     /// Returns own key event log of controller.
-    pub fn get_kerl(&self) -> Result<String, Error> {
+    pub fn get_kel(&self) -> Result<String, Error> {
         Ok(String::from_utf8(
-            self.kerl
-                .get_kerl()?
-                .ok_or(Error::Generic("There is no kerl".into()))?,
+            self.kel
+                .get_kel()?
+                .ok_or(Error::Generic("There is no kel".into()))?,
         )?)
     }
 
     /// Returns key event log of controller of given prefix.
     /// (Only if controller "knows" the identity of given prefix. It can be out of
     /// date kel if controller didn't get most recent events yet.)
-    pub fn get_kerl_for_prefix(&self, prefix: &str) -> Result<String, Error> {
+    pub fn get_kel_for_prefix(&self, prefix: &str) -> Result<String, Error> {
         let prefix = prefix.parse()?;
         Ok(String::from_utf8(
-            self.kerl
-                .get_kerl_for_prefix(&prefix)?
-                .ok_or(Error::Generic("There is no kerl".into()))?,
+            self.kel
+                .get_kel_for_prefix(&prefix)?
+                .ok_or(Error::Generic("There is no kel".into()))?,
         )?)
     }
 
     pub fn rotate(&mut self) -> Result<String, Error> {
         self.km.rotate()?;
-        let rot = self.kerl.rotate(&self.km);
+        let rot = self.kel.rotate(&self.km);
         Ok(String::from_utf8(rot?.serialize()?)?)
     }
 
@@ -57,7 +57,7 @@ impl Controller {
     }
 
     pub fn current_sn(&self) -> Result<u64, Error> {
-        Ok(self.kerl.get_state()?.unwrap().sn)
+        Ok(self.kel.get_state()?.unwrap().sn)
     }
 
     /// Process incoming events stream
@@ -66,7 +66,7 @@ impl Controller {
     ///
     /// * `stream` - Bytes of serialized events stream
     pub fn process(&self, stream: &[u8]) -> Result<(), Error> {
-        self.kerl.process_stream(stream)
+        self.kel.process_stream(stream)
     }
 
     /// Verify signature of given message
@@ -80,7 +80,7 @@ impl Controller {
         let prefix = prefix.parse()?;
         let signature = base64::decode_config(signature, URL_SAFE)?;
         let key_conf = self
-            .kerl
+            .kel
             .get_state_for_prefix(&prefix)?
             .ok_or(Error::Generic("There is no state".into()))?
             .current;
@@ -106,7 +106,7 @@ impl Controller {
         let pref = prefix.parse()?;
         let signature = base64::decode_config(signature, URL_SAFE)?;
         let key_conf = self
-            .kerl
+            .kel
             .get_keys_at_sn(&pref, sn)?.ok_or(Error::Generic(format!("There are no key config fo identifier {} at {}", prefix, sn)))?;
         let sigs = vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
@@ -125,18 +125,18 @@ declare_types! {
     pub class JsController for Controller {
         init(mut _cx) {
             let root = Builder::new().prefix("test-db").tempdir().expect("Temporary dir ectory error");
-            let mut kerl = KERL::new(root.path()).expect("Error while creating kerl");
+            let mut kel = KEL::new(root.path()).expect("Error while creating kel");
             let km = CryptoBox::new().expect("Error while generating keys");
-            kerl.incept(&km).expect("Error while creating inception event");
-            Ok(Controller {km, kerl})
+            kel.incept(&km).expect("Error while creating inception event");
+            Ok(Controller {km, kel})
         }
 
-        method get_kerl(mut cx) {
+        method get_kel(mut cx) {
             let this = cx.this();
-            let kerl = {
-                this.borrow(&cx.lock()).get_kerl().expect("Can't get kerl")
+            let kel = {
+                this.borrow(&cx.lock()).get_kel().expect("Can't get kel")
             };
-            Ok(cx.string(kerl).upcast())
+            Ok(cx.string(kel).upcast())
         }
 
         method rotate(mut cx) {
@@ -154,11 +154,11 @@ declare_types! {
             Ok(cx.string(signature).upcast())
         }
 
-        method process_kerl(mut cx) {
-            let kerl: String = cx.argument::<JsString>(0)?.value();
+        method process_kel(mut cx) {
+            let kel: String = cx.argument::<JsString>(0)?.value();
             let this = cx.this();
 
-            this.borrow(&cx.lock()).process(&kerl.as_bytes()).expect("Error while processing events");
+            this.borrow(&cx.lock()).process(&kel.as_bytes()).expect("Error while processing events");
 
             Ok(cx.string("ok").upcast())
         }

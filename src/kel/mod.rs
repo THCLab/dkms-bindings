@@ -9,17 +9,17 @@ pub mod error;
 use error::Error;
 pub mod event_generator;
 
-pub struct KERL {
+pub struct KEL {
     prefix: IdentifierPrefix,
     database: SledEventDatabase,
 }
 
-impl Debug for KERL {
+impl Debug for KEL {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{:?}",
-            self.get_kerl()
+            self.get_kel()
                 .map_err(|_e| fmt::Error)?
                 .map(|k| String::from_utf8(k))
                 .unwrap()
@@ -27,11 +27,11 @@ impl Debug for KERL {
     }
 }
 
-impl<'d> KERL {
+impl<'d> KEL {
     // incept a state and keys
-    pub fn new(path: &Path) -> Result<KERL, Error> {
-        let db = KERL::create_kel_db(path)?;
-        Ok(KERL {
+    pub fn new(path: &Path) -> Result<KEL, Error> {
+        let db = KEL::create_kel_db(path)?;
+        Ok(KEL {
             prefix: IdentifierPrefix::default(),
             database: db,
         })
@@ -175,13 +175,13 @@ impl<'d> KERL {
             .map(|e| e.event.event_message))
     }
 
-    pub fn get_kerl(&self) -> Result<Option<Vec<u8>>, Error> {
+    pub fn get_kel(&self) -> Result<Option<Vec<u8>>, Error> {
         EventProcessor::new(&self.database)
             .get_kerl(&self.prefix)
             .map_err(|e| Error::KeriError(e))
     }
 
-    pub fn get_kerl_for_prefix(&self, prefix: &IdentifierPrefix) -> Result<Option<Vec<u8>>, Error> {
+    pub fn get_kel_for_prefix(&self, prefix: &IdentifierPrefix) -> Result<Option<Vec<u8>>, Error> {
         EventProcessor::new(&self.database)
             .get_kerl(prefix)
             .map_err(|e| Error::KeriError(e))
