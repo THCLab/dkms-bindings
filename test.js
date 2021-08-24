@@ -1,14 +1,14 @@
 'use strict';
 (async function() {
 	var assert = require('assert')
-	const keri = require('.')
+	const keri = require('./keri-js-binding')
 	let controller = new keri.Controller()
 
 	let verifier = new keri.Controller()
 
 	// Send controlle's key event log to verifier
 	let kel = controller.get_kel()
-	verifier.process_kel(kel)
+	verifier.process(kel)
 
 	let message = "hi"
 	let signature = controller.sign(message)
@@ -24,7 +24,7 @@
 	let rotation = controller.rotate()
 	// Verifier needs to process controller's rotation event, to have his most
 	// recent keys.
-	verifier.process_kel(rotation)
+	verifier.process(rotation)
 	
 	// try to verify message again. It won't verify because current keys have
 	// changed.

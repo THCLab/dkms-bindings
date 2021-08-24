@@ -1,16 +1,13 @@
 {
-  "name": "keri-neon",
-  "version": "0.1.0",
-  "description": "",
-  "main": "index.node",
-  "scripts": {
-    "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
-    "install": "npm run build",
-    "test": "cargo test"
-  },
-  "author": "",
-  "license": "ISC",
+  "package": "keri-bindings",
   "devDependencies": {
-    "cargo-cp-artifact": "^0.1"
+    "@napi-rs/cli": "^1.0.0"
+  },
+  "napi": {
+    "name": "keri-js-binding"
+  },
+  "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build"
   }
 }

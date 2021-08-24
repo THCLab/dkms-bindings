@@ -1,9 +1,12 @@
+use std::convert::TryInto;
+
 use keri::{
     derivation::self_signing::SelfSigning,
     prefix::{AttachedSignaturePrefix, Prefix},
     signer::{CryptoBox, KeyManager},
 };
-use neon::prelude::*;
+use napi::{CallContext, JsBoolean, JsNumber, JsObject, JsString, JsUndefined, Property, Result as JsResult};
+use napi_derive::{js_function, module_exports};
 use tempfile::Builder;
 pub mod kel;
 use base64::{self, URL_SAFE};
@@ -121,96 +124,112 @@ impl Controller {
     
 }
 
-declare_types! {
-    pub class JsController for Controller {
-        init(mut _cx) {
-            let root = Builder::new().prefix("test-db").tempdir().expect("Temporary dir ectory error");
-            let mut kel = KEL::new(root.path()).expect("Error while creating kel");
-            let km = CryptoBox::new().expect("Error while generating keys");
-            kel.incept(&km).expect("Error while creating inception event");
-            Ok(Controller {km, kel})
-        }
-
-        method get_kel(mut cx) {
-            let this = cx.this();
-            let kel = {
-                this.borrow(&cx.lock()).get_kel().expect("Can't get kel")
-            };
-            Ok(cx.string(kel).upcast())
-        }
-
-        method rotate(mut cx) {
-            let mut this = cx.this();
-            let rot_event = this.borrow_mut(&cx.lock()).rotate().expect("No rotation event");
-            Ok(cx.string(rot_event).upcast())
-        }
-
-        method sign(mut cx) {
-            let message: String = cx.argument::<JsString>(0)?.value();
-            let this = cx.this();
-            let signature = {
-                this.borrow(&cx.lock()).sign(&message.as_bytes().to_vec()).expect("Error while signing")
-            };
-            Ok(cx.string(signature).upcast())
-        }
-
-        method process_kel(mut cx) {
-            let kel: String = cx.argument::<JsString>(0)?.value();
-            let this = cx.this();
-
-            this.borrow(&cx.lock()).process(&kel.as_bytes()).expect("Error while processing events");
-
-            Ok(cx.string("ok").upcast())
-        }
-
-        method verify(mut cx) {
-            let message: String = cx.argument::<JsString>(0)?.value();
-            let signature: String = cx.argument::<JsString>(1)?.value();
-            let identifier: String = cx.argument::<JsString>(2)?.value();
-            let this = cx.this();
-
-            let ver_result = {
-                this.borrow(&cx.lock()).verify(&message.as_bytes(), &signature, &identifier).expect("Error while verifing")
-            };
-
-            Ok(cx.boolean(ver_result).upcast())
-        }
-
-        method verify_at_sn(mut cx) {
-            let message: String = cx.argument::<JsString>(0)?.value();
-            let signature: String = cx.argument::<JsString>(1)?.value();
-            let identifier: String = cx.argument::<JsString>(2)?.value();
-            let sn : u64 = cx.argument::<JsNumber>(3)?.value() as u64;
-            let this = cx.this();
-
-            let ver_result = {
-                this.borrow(&cx.lock()).verify_at_sn(&message.as_bytes(), &signature, &identifier, sn).expect("Error while verifing")
-            };
-
-            Ok(cx.boolean(ver_result).upcast())
-        }
-
-        method get_prefix(mut cx) {
-            let this = cx.this();
-            let prefix = {
-                this.borrow(&cx.lock()).get_prefix()
-            };
-            Ok(cx.string(prefix).upcast())
-        }
-
-         method get_current_sn(mut cx) {
-            let this = cx.this();
-            let sn = {
-                this.borrow(&cx.lock()).current_sn().expect("No current sn")
-            };
-            Ok(cx.number(sn as f64).upcast())
-        }
-
-        }
-
+#[js_function(1)]
+fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
+    let root = Builder::new().prefix("test-db").tempdir().expect("Temporary dir ectory error");
+    let mut kel = KEL::new(root.path()).expect("Error while creating kel");
+    let km = CryptoBox::new().expect("Error while generating keys");
+    kel.incept(&km).expect("Error while creating inception event");
+    let mut this: JsObject = ctx.this_unchecked();
+    ctx
+      .env
+      .wrap(&mut this, Controller {km, kel})?;
+    ctx.env.get_undefined()
 }
 
-register_module!(mut m, {
-    m.export_class::<JsController>("Controller")?;
-    Ok(())
-});
+#[js_function(0)]
+fn get_prefix(ctx: CallContext) -> JsResult<JsString> {
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    let preifx = native_class.get_prefix();
+    ctx.env.create_string(&preifx)
+}
+
+#[js_function(0)]
+fn get_kel(ctx: CallContext) -> JsResult<JsString> {
+  let this: JsObject = ctx.this_unchecked();
+  let native_class: &Controller = ctx.env.unwrap(&this)?;
+  ctx.env.create_string(&native_class.get_kel().unwrap())
+}
+
+#[js_function(0)]
+fn rotate(ctx: CallContext) -> JsResult<JsString> {
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    let rot_event = native_class.rotate().expect("No rotation event");
+    ctx.env.create_string(&rot_event)
+}
+
+#[js_function(1)]
+fn sign(ctx: CallContext) -> JsResult<JsString> {
+    let message: String = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    let signature = native_class.sign(&message.as_bytes().to_vec()).expect("Error while signing");
+    ctx.env.create_string(&signature)
+}
+
+#[js_function(1)]
+fn process(ctx: CallContext) -> JsResult<JsUndefined> {
+    let stream: String = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    native_class.process(&stream.as_bytes()).expect("Error while processing");
+    ctx.env.get_undefined()
+}
+
+#[js_function(3)]
+fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
+    let message: String = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
+    let signature: String = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
+    let identifier: String = ctx.get::<JsString>(2)?.into_utf8()?.as_str()?.to_owned();
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    ctx.env.get_boolean(native_class.verify(&message.as_bytes(), &signature, &identifier).expect("Error while verifing"))
+}
+
+#[js_function(4)]
+fn verify_at_sn(ctx: CallContext) -> JsResult<JsBoolean> {
+    let message: String = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
+    let signature: String = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
+    let identifier: String = ctx.get::<JsString>(2)?.into_utf8()?.as_str()?.to_owned();
+    let sn :i64 = ctx.get::<JsNumber>(3)?.try_into()?;
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    ctx.env.get_boolean(native_class.verify_at_sn(&message.as_bytes(), &signature, &identifier, sn as u64).expect("Error while verifing"))
+}
+
+#[js_function(0)]
+fn get_current_sn(ctx: CallContext) -> JsResult<JsNumber> {
+    let this: JsObject = ctx.this_unchecked();
+    let native_class: &mut Controller = ctx.env.unwrap(&this)?;
+    let sn = native_class.current_sn().expect("Can't get sn");
+    ctx.env.create_int64(sn as i64)
+}
+
+#[js_function(0)]
+fn new_controller(ctx: CallContext) -> JsResult<JsObject> {
+  let get_prefix_method = Property::new(ctx.env, "get_prefix")?.with_method(get_prefix);
+  let get_kel_method = Property::new(ctx.env, "get_kel")?.with_method(get_kel);
+  let rotate_method = Property::new(ctx.env, "rotate")?.with_method(rotate);
+  let sign_method = Property::new(ctx.env, "sign")?.with_method(sign);
+  let process_method = Property::new(ctx.env, "process")?.with_method(process);
+  let verify_method = Property::new(ctx.env, "verify")?.with_method(verify);
+  let verify_at_sn_method = Property::new(ctx.env, "verify_at_sn")?.with_method(verify_at_sn);
+  let current_sn_method = Property::new(ctx.env, "get_current_sn")?.with_method(get_current_sn);
+
+  let properties = vec![get_prefix_method, get_kel_method, rotate_method, sign_method, process_method, verify_method, verify_at_sn_method, current_sn_method];
+  let test_class =
+    ctx
+      .env
+      .define_class("Controller", controller_constructor, properties.as_slice())?;
+
+  test_class.new(&[ctx.env.create_int32(42)?])
+}
+
+#[module_exports]
+fn init(mut exports: JsObject) -> JsResult<()> {
+  exports.create_named_method("Controller", new_controller)?;
+  Ok(())
+}
+
