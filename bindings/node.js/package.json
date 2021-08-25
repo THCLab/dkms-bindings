@@ -1,10 +1,10 @@
 {
-  "package": "keri-bindings",
+  "package": "keri-bindings-node.js",
   "devDependencies": {
     "@napi-rs/cli": "^1.0.0"
   },
   "napi": {
-    "name": "keri-js-binding"
+    "name": "index"
   },
   "scripts": {
     "build": "napi build --release",

@@ -1,15 +1,6 @@
 # keri-bindings
 
-## Running
-```sh
-$ npm install
-```
+It aims to provide KERIOX bindings for various other languages either through FFI or other available approaches (ie. WASM -- this is currently blocked by [issue](https://github.com/decentralized-identity/keriox/issues/77)).
 
-If you have already installed the project and only want to run the build, run:
+See available bindings under `bindings` directory.
 
-```sh
-$ npm run build
-```
-```
-node test.js
-```
