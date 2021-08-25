@@ -10,6 +10,7 @@ use napi_derive::{js_function, module_exports};
 pub mod kel;
 use base64::{self, URL_SAFE};
 use kel::{error::Error, KEL};
+use simple_config_parser::config::Config;
 
 pub struct Controller {
     km: CryptoBox,
@@ -128,16 +129,14 @@ impl Controller {
     
 }
 
-#[js_function(1)]
+#[js_function(0)]
 fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
-    let mut settings = config::Config::default();
-    settings
-        // Get settings from `./Settings.toml`
-        .merge(config::File::with_name("Settings")).unwrap();
+    let mut cfg = Config::new(Some("settings.cfg"));
+    // Read / parse config file
+    cfg.read().ok().expect("Error reading the config file");
 
-    let settings = settings.try_into::<HashMap<String, String>>().unwrap();
-    let path_str = settings.get("db_path").expect("Missing database path in settings");
-    let mut kel = KEL::new(path_str).expect("Error while creating kel");
+    let path_str = cfg.get("db_path").expect("Missing database path in settings");
+    let mut kel = KEL::new(&path_str).expect("Error while creating kel");
     let km = CryptoBox::new().expect("Error while generating keys");
     kel.incept(&km).expect("Error while creating inception event");
     let mut this: JsObject = ctx.this_unchecked();

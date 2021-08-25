@@ -15,7 +15,7 @@ thiserror = "1.0"
 base64 = "0.13.0"
 napi = "1"
 napi-derive = "1"
-config = { version = "0.11.0" }
+simple_config_parser = "0.1.5"
 
 [target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
 mimalloc = {version = "0.1"}
