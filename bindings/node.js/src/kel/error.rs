@@ -19,4 +19,7 @@ pub enum Error {
 
     #[error(transparent)]
     Base64Error(#[from] DecodeError),
+
+    #[error("Database not initialized")]
+    NoDatabase,
 }

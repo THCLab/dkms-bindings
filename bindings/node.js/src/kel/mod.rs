@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use keri::{database::sled::SledEventDatabase, derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{EventMessage, sections::{KeyConfig, seal::{DigestSeal, Seal}}}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{IdentifierPrefix}, processor::EventProcessor, signer::KeyManager, state::IdentifierState};
+use keri::{database::sled::SledEventDatabase, derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{EventMessage, sections::{KeyConfig, seal::{DigestSeal, Seal}}}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{IdentifierPrefix, Prefix}, processor::EventProcessor, signer::KeyManager, state::IdentifierState};
 
 pub mod error;
 use error::Error;
@@ -11,7 +11,8 @@ pub mod event_generator;
 
 pub struct KEL {
     prefix: IdentifierPrefix,
-    database: SledEventDatabase,
+    database: Option<SledEventDatabase>,
+    database_root: String,
 }
 
 impl Debug for KEL {
@@ -29,11 +30,11 @@ impl Debug for KEL {
 
 impl<'d> KEL {
     // incept a state and keys
-    pub fn new(path: &Path) -> Result<KEL, Error> {
-        let db = KEL::create_kel_db(path)?;
+    pub fn new(path: &str) -> Result<KEL, Error> {
         Ok(KEL {
             prefix: IdentifierPrefix::default(),
-            database: db,
+            database: None,
+            database_root: path.to_owned(),
         })
     }
 
@@ -42,7 +43,10 @@ impl<'d> KEL {
     }
 
     pub fn process_event(&self, msg: &[u8], signature: &[u8]) -> Result<SignedEventMessage, Error> {
-        let processor = EventProcessor::new(&self.database);
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
         let message = message(&msg).unwrap().1.event;
         let sigged = message.sign(vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
@@ -55,7 +59,10 @@ impl<'d> KEL {
     }
 
     pub fn process_stream(&self, stream: &[u8]) -> Result<(), Error> {
-        let processor = EventProcessor::new(&self.database);
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
         let (_rest, events) =
             signed_event_stream(stream).map_err(|e| Error::Generic(e.to_string()))?;
         let (_processed_ok, _processed_failed): (Vec<_>, Vec<_>) = events
@@ -67,6 +74,8 @@ impl<'d> KEL {
 
     pub fn incept<K: KeyManager>(&mut self, key_manager: &K) -> Result<SignedEventMessage, Error> {
         let icp = event_generator::make_icp(key_manager, Some(self.prefix.clone())).unwrap();
+        let prefix = icp.event.prefix.clone();
+        self.database = Some(KEL::create_kel_db(Path::new(&[self.database_root.clone(), prefix.to_str()].join("/")))?);
 
         let sigged = icp.sign(vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
@@ -74,10 +83,13 @@ impl<'d> KEL {
             0,
         )]);
 
-        let processor = EventProcessor::new(&self.database);
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
         processor.process(signed_message(&sigged.serialize()?).unwrap().1)?;
 
-        self.prefix = icp.event.prefix;
+        self.prefix = prefix;
 
         Ok(sigged)
     }
@@ -91,7 +103,10 @@ impl<'d> KEL {
             0,
         )]);
 
-        let processor = EventProcessor::new(&self.database);
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
         processor.process(signed_message(&rot.serialize()?).unwrap().1)?;
 
         Ok(rot)
@@ -120,7 +135,11 @@ impl<'d> KEL {
             0,
         )]);
 
-        let processor = EventProcessor::new(&self.database);
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+
         processor.process(signed_message(&ixn.serialize()?).unwrap().1)?;
 
         Ok(ixn)
@@ -141,7 +160,10 @@ impl<'d> KEL {
             0,
         )]);
 
-        let processor = EventProcessor::new(&self.database);
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
         processor.process(signed_message(&ixn.serialize()?).unwrap().1)?;
 
         Ok(ixn)
@@ -160,7 +182,11 @@ impl<'d> KEL {
     }
 
     pub fn get_state(&self) -> Result<Option<IdentifierState>, Error> {
-        EventProcessor::new(&self.database)
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        processor
             .compute_state(&self.prefix)
             .map_err(|e| Error::KeriError(e))
     }
@@ -170,19 +196,31 @@ impl<'d> KEL {
         id: &IdentifierPrefix,
         sn: u64,
     ) -> Result<Option<EventMessage>, Error> {
-        Ok(EventProcessor::new(&self.database)
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        Ok(processor
             .get_event_at_sn(id, sn)?
             .map(|e| e.event.event_message))
     }
 
     pub fn get_kel(&self) -> Result<Option<Vec<u8>>, Error> {
-        EventProcessor::new(&self.database)
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        processor
             .get_kerl(&self.prefix)
             .map_err(|e| Error::KeriError(e))
     }
 
     pub fn get_kel_for_prefix(&self, prefix: &IdentifierPrefix) -> Result<Option<Vec<u8>>, Error> {
-        EventProcessor::new(&self.database)
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        processor
             .get_kerl(prefix)
             .map_err(|e| Error::KeriError(e))
     }
@@ -191,7 +229,11 @@ impl<'d> KEL {
         &self,
         prefix: &IdentifierPrefix,
     ) -> Result<Option<IdentifierState>, Error> {
-        EventProcessor::new(&self.database)
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        processor
             .compute_state(prefix)
             .map_err(|e| Error::KeriError(e))
     }
@@ -201,7 +243,11 @@ impl<'d> KEL {
         prefix: &IdentifierPrefix,
         sn: u64,
     ) -> Result<Option<KeyConfig>, Error> {
-        Ok(EventProcessor::new(&self.database)
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        Ok(processor
             .compute_state_at_sn(&prefix, sn)
             .map_err(|e| Error::KeriError(e))?
             .map(|st| st.current))

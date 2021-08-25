@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::{collections::HashMap, convert::TryInto, path::Path};
 
 use keri::{
     derivation::self_signing::SelfSigning,
@@ -7,7 +7,6 @@ use keri::{
 };
 use napi::{CallContext, JsBoolean, JsNumber, JsObject, JsString, JsUndefined, Property, Result as JsResult};
 use napi_derive::{js_function, module_exports};
-use tempfile::Builder;
 pub mod kel;
 use base64::{self, URL_SAFE};
 use kel::{error::Error, KEL};
@@ -65,6 +64,7 @@ impl Controller {
 
     /// Process incoming events stream
     ///
+    /// Parses stream of events, checks them and adds to database
     /// # Arguments
     ///
     /// * `stream` - Bytes of serialized events stream
@@ -74,6 +74,7 @@ impl Controller {
 
     /// Verify signature of given message
     ///
+    /// Checks if message matches signature made by controller of given prefix.
     /// # Arguments
     ///
     /// * `message` - Bytes of message
@@ -99,6 +100,9 @@ impl Controller {
 
     /// Verify signature of given message using keys at `sn`
     ///
+    /// Checks if message matches signature made by controller of given prefix
+    /// using key from event od given seqence number.
+    /// 
     /// # Arguments
     ///
     /// * `message` - Bytes of message
@@ -126,8 +130,14 @@ impl Controller {
 
 #[js_function(1)]
 fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
-    let root = Builder::new().prefix("test-db").tempdir().expect("Temporary dir ectory error");
-    let mut kel = KEL::new(root.path()).expect("Error while creating kel");
+    let mut settings = config::Config::default();
+    settings
+        // Get settings from `./Settings.toml`
+        .merge(config::File::with_name("Settings")).unwrap();
+
+    let settings = settings.try_into::<HashMap<String, String>>().unwrap();
+    let path_str = settings.get("db_path").expect("Missing database path in settings");
+    let mut kel = KEL::new(path_str).expect("Error while creating kel");
     let km = CryptoBox::new().expect("Error while generating keys");
     kel.incept(&km).expect("Error while creating inception event");
     let mut this: JsObject = ctx.this_unchecked();
