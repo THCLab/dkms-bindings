@@ -9,5 +9,9 @@
   "scripts": {
     "build": "napi build --release",
     "build:debug": "napi build"
+  },
+  "dependencies": {
+    "tweetnacl-util": "^0.15.1",
+    "window": "^4.2.7"
   }
 }

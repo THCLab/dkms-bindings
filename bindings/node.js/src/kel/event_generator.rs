@@ -7,35 +7,71 @@ use keri::{
         Event, EventMessage, SerializationFormats,
     },
     event_message::event_msg_builder::{EventMsgBuilder, EventType},
-    prefix::IdentifierPrefix,
-    signer::KeyManager,
+    prefix::{BasicPrefix, IdentifierPrefix},
     state::IdentifierState,
 };
 
+pub struct Key {
+    pub key_type: Basic,
+    pub key: Vec<u8>,
+}
+
+pub struct PublicKeysConfig {
+    pub current: Vec<BasicPrefix>,
+    pub next: Vec<BasicPrefix>,
+}
+
+impl PublicKeysConfig {
+    pub fn new(current: Vec<(Basic, Vec<u8>)>, next: Vec<(Basic, Vec<u8>)>) -> PublicKeysConfig {
+        let current = current
+            .into_iter()
+            .map(|(der, key)| Key { key_type: der, key }.derive())
+            .collect();
+        let next = next
+            .into_iter()
+            .map(|(der, key)| Key { key_type: der, key }.derive())
+            .collect();
+        PublicKeysConfig { current, next }
+    }
+
+    pub fn rotate(&self, new_next_keys: Vec<(Basic, Vec<u8>)>) -> PublicKeysConfig {
+        let new_next = new_next_keys
+            .into_iter()
+            .map(|(der, key)| Key { key_type: der, key }.derive())
+            .collect();
+        PublicKeysConfig {
+            current: self.next.clone(),
+            next: new_next,
+        }
+    }
+}
+
+impl Key {
+    pub fn derive(&self) -> BasicPrefix {
+        self.key_type.derive(keri::keys::Key::new(self.key.clone()))
+    }
+}
+
 pub fn make_icp(
-    km: &dyn KeyManager,
+    keys: &PublicKeysConfig,
     prefix: Option<IdentifierPrefix>,
 ) -> Result<EventMessage, Error> {
-    let key_prefix = vec![Basic::Ed25519.derive(km.public_key())];
-    let pref = prefix.unwrap_or(IdentifierPrefix::Basic(key_prefix[0].clone()));
-    let nxt_key_prefix = vec![Basic::Ed25519.derive(km.next_public_key())];
+    let pref = prefix.unwrap_or(IdentifierPrefix::Basic(keys.current[0].clone()));
     let icp = EventMsgBuilder::new(EventType::Inception)?
         .with_prefix(pref)
-        .with_keys(key_prefix)
-        .with_next_keys(nxt_key_prefix)
+        .with_keys(keys.current.clone())
+        .with_next_keys(keys.next.clone())
         .build()?;
     Ok(icp)
 }
 
-pub fn make_rot(km: &dyn KeyManager, state: IdentifierState) -> Result<EventMessage, Error> {
-    let key_prefix = vec![Basic::Ed25519.derive(km.public_key())];
-    let nxt_key_prefix = vec![Basic::Ed25519.derive(km.next_public_key())];
+pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<EventMessage, Error> {
     let ixn = EventMsgBuilder::new(EventType::Rotation)?
         .with_prefix(state.prefix.clone())
         .with_sn(state.sn + 1)
         .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
-        .with_keys(key_prefix)
-        .with_next_keys(nxt_key_prefix)
+        .with_keys(keys.current.clone())
+        .with_next_keys(keys.next.clone())
         .build()?;
     Ok(ixn)
 }

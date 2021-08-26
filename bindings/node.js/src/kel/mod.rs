@@ -3,16 +3,33 @@ use std::{
     path::Path,
 };
 
-use keri::{database::sled::SledEventDatabase, derivation::{self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{EventMessage, sections::{KeyConfig, seal::{DigestSeal, Seal}}}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{IdentifierPrefix, Prefix}, processor::EventProcessor, signer::KeyManager, state::IdentifierState};
+use keri::{
+    database::sled::SledEventDatabase,
+    derivation::self_signing::SelfSigning,
+    event::{
+        sections::{
+            KeyConfig,
+        },
+        EventMessage,
+    },
+    event_message::parse::signed_message,
+    event_message::parse::{message, signed_event_stream},
+    event_message::SignedEventMessage,
+    prefix::AttachedSignaturePrefix,
+    prefix::{IdentifierPrefix, Prefix},
+    processor::EventProcessor,
+    state::IdentifierState,
+};
 
 pub mod error;
 use error::Error;
+
+use self::event_generator::PublicKeysConfig;
 pub mod event_generator;
 
 pub struct KEL {
     prefix: IdentifierPrefix,
     database: Option<SledEventDatabase>,
-    database_root: String,
 }
 
 impl Debug for KEL {
@@ -34,7 +51,6 @@ impl<'d> KEL {
         Ok(KEL {
             prefix: IdentifierPrefix::default(),
             database: None,
-            database_root: path.to_owned(),
         })
     }
 
@@ -72,34 +88,51 @@ impl<'d> KEL {
         Ok(())
     }
 
-    pub fn incept<K: KeyManager>(&mut self, key_manager: &K) -> Result<SignedEventMessage, Error> {
-        let icp = event_generator::make_icp(key_manager, Some(self.prefix.clone())).unwrap();
+    pub fn incept(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
+        event_generator::make_icp(keys, None)
+    }
+
+    pub fn finalize_incept(
+        database_root: &str,
+        icp: EventMessage,
+        signature: Vec<u8>,
+    ) -> Result<KEL, Error> {
         let prefix = icp.event.prefix.clone();
-        self.database = Some(KEL::create_kel_db(Path::new(&[self.database_root.clone(), prefix.to_str()].join("/")))?);
+        let database = Some(KEL::create_kel_db(Path::new(
+            &[database_root, &prefix.to_str()].join("/"),
+        ))?);
 
         let sigged = icp.sign(vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
-            key_manager.sign(&icp.serialize()?)?,
+            signature,
             0,
         )]);
 
-        let processor = match self.database {
+        let processor = match database {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
         processor.process(signed_message(&sigged.serialize()?).unwrap().1)?;
 
-        self.prefix = prefix;
-
-        Ok(sigged)
+        Ok(KEL {
+            prefix,
+            database,
+        })
     }
 
-    pub fn rotate<K: KeyManager>(&self, key_manager: &K) -> Result<SignedEventMessage, Error> {
-        let rot = event_generator::make_rot(key_manager, self.get_state()?.unwrap()).unwrap();
+    pub fn rotate(&self, keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
+        event_generator::make_rot(keys, self.get_state()?.unwrap())
+    }
 
-        let rot = rot.sign(vec![AttachedSignaturePrefix::new(
+    pub fn finalize_rotate(
+        &self,
+        rotation: Vec<u8>,
+        signature: Vec<u8>,
+    ) -> Result<SignedEventMessage, Error> {
+        let rot_event = message(&rotation).unwrap().1.event;
+        let rot = rot_event.sign(vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
-            key_manager.sign(&rot.serialize()?)?,
+            signature,
             0,
         )]);
 
@@ -110,71 +143,6 @@ impl<'d> KEL {
         processor.process(signed_message(&rot.serialize()?).unwrap().1)?;
 
         Ok(rot)
-    }
-
-    pub fn make_ixn<K: KeyManager>(
-        &mut self,
-        payload: Option<&str>,
-        key_manager: &K,
-    ) -> Result<SignedEventMessage, Error> {
-        let state = self.get_state()?.unwrap();
-        let seal_list = match payload {
-            Some(payload) => {
-                vec![Seal::Digest(DigestSeal {
-                    dig: SelfAddressing::Blake3_256.derive(payload.as_bytes()),
-                })]
-            }
-            None => vec![],
-        };
-
-        let ev = event_generator::make_ixn_with_seal(&seal_list, state).unwrap();
-
-        let ixn = ev.sign(vec![AttachedSignaturePrefix::new(
-            SelfSigning::Ed25519Sha512,
-            key_manager.sign(&ev.serialize()?)?,
-            0,
-        )]);
-
-        let processor = match self.database {
-            Some(ref db) => Ok(EventProcessor::new(db)),
-            None => Err(Error::NoDatabase),
-        }?;
-
-        processor.process(signed_message(&ixn.serialize()?).unwrap().1)?;
-
-        Ok(ixn)
-    }
-
-    pub fn make_ixn_with_seal<K: KeyManager>(
-        &self,
-        seal_list: &[Seal],
-        key_manager: &K,
-    ) -> Result<SignedEventMessage, Error> {
-        let state = self.get_state()?.unwrap();
-
-        let ev = event_generator::make_ixn_with_seal(seal_list, state).unwrap();
-
-        let ixn = ev.sign(vec![AttachedSignaturePrefix::new(
-            SelfSigning::Ed25519Sha512,
-            key_manager.sign(&ev.serialize()?)?,
-            0,
-        )]);
-
-        let processor = match self.database {
-            Some(ref db) => Ok(EventProcessor::new(db)),
-            None => Err(Error::NoDatabase),
-        }?;
-        processor.process(signed_message(&ixn.serialize()?).unwrap().1)?;
-
-        Ok(ixn)
-    }
-
-    pub fn make_ixn_seal(&self, seal_list: &[Seal]) -> Result<EventMessage, Error> {
-        let state = self.get_state()?.unwrap();
-
-        let ev = event_generator::make_ixn_with_seal(seal_list, state).unwrap();
-
-        Ok(ev)
     }
 
     pub fn get_prefix(&self) -> IdentifierPrefix {
@@ -220,9 +188,7 @@ impl<'d> KEL {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        processor
-            .get_kerl(prefix)
-            .map_err(|e| Error::KeriError(e))
+        processor.get_kerl(prefix).map_err(|e| Error::KeriError(e))
     }
 
     pub fn get_state_for_prefix(
