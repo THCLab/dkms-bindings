@@ -72,6 +72,7 @@ impl<'d> KEL {
         }?;
         let message = message(&event).unwrap().1.event;
         let sigged = message.sign(vec![AttachedSignaturePrefix::new(
+            // TODO this shouldn't be fixed
             SelfSigning::Ed25519Sha512,
             signature.to_vec(),
             0,
@@ -127,6 +128,7 @@ impl<'d> KEL {
         ))?);
 
         let sigged = icp.sign(vec![AttachedSignaturePrefix::new(
+            // TODO this shouldn't be fixed
             SelfSigning::Ed25519Sha512,
             signature,
             0,
@@ -165,6 +167,7 @@ impl<'d> KEL {
     ) -> Result<SignedEventMessage, Error> {
         let rot_event = message(&rotation).unwrap().1.event;
         let rot = rot_event.sign(vec![AttachedSignaturePrefix::new(
+            // TODO this shouldn't be fixed
             SelfSigning::Ed25519Sha512,
             signature,
             0,
@@ -329,6 +332,7 @@ impl<'d> KEL {
                 prefix, sn
             )))?;
         let sigs = vec![AttachedSignaturePrefix::new(
+            // TODO this shouldn't be fixed
             SelfSigning::Ed25519Sha512,
             signature.to_vec(),
             0,

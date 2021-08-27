@@ -5,10 +5,7 @@ use keri::{
     event_message::parse::message,
     prefix::{IdentifierPrefix, Prefix},
 };
-use napi::{
-    CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, Property,
-    Result as JsResult,
-};
+use napi::{CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, JsUnknown, Property, Result as JsResult};
 use napi_derive::{js_function, module_exports};
 pub mod kel;
 use kel::{
@@ -56,14 +53,18 @@ fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
     ctx.env.get_undefined()
 }
 
-#[js_function(2)]
+#[js_function(4)]
 fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
-    let current = ctx.get::<JsBuffer>(0)?.into_value()?;
-    let next = ctx.get::<JsBuffer>(1)?.into_value()?;
+    let current_key_type = ctx.get::<JsUnknown>(0)?;
+    let current = ctx.get::<JsBuffer>(1)?.into_value()?;
+    let next_key_type = ctx.get::<JsUnknown>(2)?;
+    let next = ctx.get::<JsBuffer>(3)?.into_value()?;
 
+    let curr_type: Basic = ctx.env.from_js_value(current_key_type)?;
+    let next_type: Basic = ctx.env.from_js_value(next_key_type)?;
     let pub_keys = PublicKeysConfig::new(
-        vec![(Basic::Ed25519, current.to_vec())],
-        vec![(Basic::Ed25519, next.to_vec())],
+        vec![(curr_type, current.to_vec())],
+        vec![(next_type, next.to_vec())],
     );
     let icp = KEL::incept(&pub_keys).unwrap().serialize().unwrap();
 
@@ -89,14 +90,18 @@ fn get_kel(ctx: CallContext) -> JsResult<JsString> {
     ctx.env.create_string(&kel_str)
 }
 
-#[js_function(2)]
+#[js_function(4)]
 fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
-    let new_current = ctx.get::<JsBuffer>(0)?.into_value()?;
-    let new_next = ctx.get::<JsBuffer>(1)?.into_value()?;
+    let current_key_type = ctx.get::<JsUnknown>(0)?;
+    let new_current = ctx.get::<JsBuffer>(1)?.into_value()?;
+    let next_key_type = ctx.get::<JsUnknown>(2)?;
+    let new_next = ctx.get::<JsBuffer>(3)?.into_value()?;
 
+    let curr_type: Basic = ctx.env.from_js_value(current_key_type)?;
+    let next_type: Basic = ctx.env.from_js_value(next_key_type)?;
     let pub_keys = PublicKeysConfig::new(
-        vec![(Basic::Ed25519, new_current.to_vec())],
-        vec![(Basic::Ed25519, new_next.to_vec())],
+        vec![(curr_type, new_current.to_vec())],
+        vec![(next_type, new_next.to_vec())],
     );
 
     let this: JsObject = ctx.this_unchecked();

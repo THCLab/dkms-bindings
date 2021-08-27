@@ -13,7 +13,7 @@ keri = { git = "https://github.com/decentralized-identity/keriox", branch = "sig
 tempfile = "3.1"
 thiserror = "1.0"
 base64 = "0.13.0"
-napi = "1"
+napi = { version = "1", features = ["serde-json"]}
 napi-derive = "1"
 simple_config_parser = "0.1.5"
 

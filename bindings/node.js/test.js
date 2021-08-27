@@ -8,8 +8,9 @@ const currentKeyPair = nacl.sign.keyPair();
 const nextKeyPair = nacl.sign.keyPair();
 const newNextKeyPair = nacl.sign.keyPair();
 
+let default_key_type = 'Ed25519'
 
-let inception_event = keri.incept(currentKeyPair.publicKey, nextKeyPair.publicKey)
+let inception_event = keri.incept( default_key_type, currentKeyPair.publicKey, default_key_type, nextKeyPair.publicKey)
 let signature = nacl.sign.detached(inception_event, currentKeyPair.secretKey);
 
 const signedd = util.encodeBase64(signature);
@@ -17,7 +18,7 @@ const signedd = util.encodeBase64(signature);
 var controller = new keri.Controller(inception_event, signature)
 console.log("Controller's key event log:\n " + controller.get_kel() + "\n")
 
-let rotation_event = controller.rotate(nextKeyPair.publicKey, newNextKeyPair.publicKey)
+let rotation_event = controller.rotate(default_key_type, nextKeyPair.publicKey, default_key_type, newNextKeyPair.publicKey)
 signature = nacl.sign.detached(rotation_event, nextKeyPair.secretKey);
 if (controller.finalize_rotation(rotation_event, signature)) {
 	console.log("Keys rotated succesfully\n")
