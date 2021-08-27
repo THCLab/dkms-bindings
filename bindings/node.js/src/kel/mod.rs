@@ -24,7 +24,7 @@ use keri::{
 pub mod error;
 use error::Error;
 
-use self::event_generator::PublicKeysConfig;
+use self::event_generator::{Key, PublicKeysConfig};
 pub mod event_generator;
 
 pub struct KEL {
@@ -47,7 +47,7 @@ impl Debug for KEL {
 
 impl<'d> KEL {
     // incept a state and keys
-    pub fn new(path: &str) -> Result<KEL, Error> {
+    pub fn new() -> Result<KEL, Error> {
         Ok(KEL {
             prefix: IdentifierPrefix::default(),
             database: None,
@@ -58,12 +58,19 @@ impl<'d> KEL {
         SledEventDatabase::new(path).map_err(|e| e.into())
     }
 
-    pub fn process_event(&self, msg: &[u8], signature: &[u8]) -> Result<SignedEventMessage, Error> {
+    /// Process event and signature
+    ///
+    /// Checks if event message matches signature and adds it to database.
+    /// # Arguments
+    ///
+    /// * `msg` - Bytes of serialized evednt message 
+    /// * `signature` - Bytes of serialized signature 
+    pub fn process_event(&self, event: &[u8], signature: &[u8]) -> Result<SignedEventMessage, Error> {
         let processor = match self.database {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        let message = message(&msg).unwrap().1.event;
+        let message = message(&event).unwrap().1.event;
         let sigged = message.sign(vec![AttachedSignaturePrefix::new(
             SelfSigning::Ed25519Sha512,
             signature.to_vec(),
@@ -74,6 +81,12 @@ impl<'d> KEL {
         Ok(sigged)
     }
 
+    /// Process incoming events stream
+    ///
+    /// Parses stream of events, checks them and adds to database
+    /// # Arguments
+    ///
+    /// * `stream` - Bytes of serialized events stream
     pub fn process_stream(&self, stream: &[u8]) -> Result<(), Error> {
         let processor = match self.database {
             Some(ref db) => Ok(EventProcessor::new(db)),
@@ -88,10 +101,21 @@ impl<'d> KEL {
         Ok(())
     }
 
+    /// Generate inception event for given public key config.
+    /// # Arguments
+    ///
+    /// * `keys` - `PublicKeysConfig` which store current and next public keys.
     pub fn incept(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
         event_generator::make_icp(keys, None)
     }
 
+    /// Finalize inception.
+    ///
+    /// Initiate key event log for prefix from inception event.
+    /// # Arguments
+    /// * `database_root` - srtring representing path where database files will be stored.
+    /// * `icp` - inception event message.
+    /// *` signature` - signature of inception event.
     pub fn finalize_incept(
         database_root: &str,
         icp: EventMessage,
@@ -120,11 +144,21 @@ impl<'d> KEL {
         })
     }
 
+     /// Generate rotation event for given public key config.
+    /// # Arguments
+    ///
+    /// * `keys` - public keys config for new rotation event.
     pub fn rotate(&self, keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
         event_generator::make_rot(keys, self.get_state()?.unwrap())
     }
 
-    pub fn finalize_rotate(
+    /// Finalize rotation.
+    ///
+    /// Update current keys of identifier if signature matches rotation event.
+    /// # Arguments
+    /// * `rotation` - bytes of serialized rotation event message.
+    /// *` signature` - signature of rotation event.
+    pub fn finalize_rotation(
         &self,
         rotation: Vec<u8>,
         signature: Vec<u8>,
@@ -173,6 +207,8 @@ impl<'d> KEL {
             .map(|e| e.event.event_message))
     }
 
+
+    /// Returns own key event log.
     pub fn get_kel(&self) -> Result<Option<Vec<u8>>, Error> {
         let processor = match self.database {
             Some(ref db) => Ok(EventProcessor::new(db)),
@@ -183,6 +219,10 @@ impl<'d> KEL {
             .map_err(|e| Error::KeriError(e))
     }
 
+
+    /// Returns key event log of given prefix.
+    /// (Only if database contains kel of given prefix. It can be out of
+    /// date if most recent events weren't processed yet)
     pub fn get_kel_for_prefix(&self, prefix: &IdentifierPrefix) -> Result<Option<Vec<u8>>, Error> {
         let processor = match self.database {
             Some(ref db) => Ok(EventProcessor::new(db)),
@@ -218,5 +258,87 @@ impl<'d> KEL {
             .map_err(|e| Error::KeriError(e))?
             .map(|st| st.current))
         
+    }
+
+     pub fn get_current_public_keys(
+        &self,
+        prefix: &IdentifierPrefix,
+    ) -> Result<Option<Vec<Key>>, Error> {
+        let keys = self.get_state_for_prefix(prefix)?.map(|state| {
+            state
+                .current
+                .public_keys
+                .iter()
+                .map(|bp| Key {
+                    key: bp.public_key.key(),
+                    key_type: bp.derivation,
+                })
+                .collect()
+        });
+        Ok(keys)
+    }
+
+    /// Verify signature of given message
+    ///
+    /// Checks if message matches signature made by identity of given prefix.
+    /// # Arguments
+    ///
+    /// * `message` - Bytes of message
+    /// * `signature` - A string slice that holds the signature in base64
+    /// * `prefix` - A string slice that holds the prefix of signer
+    pub fn verify(&self, message: &[u8], signature: &[u8], prefix: &str) -> Result<bool, Error> {
+        let prefix = prefix.parse()?;
+        let key_conf = self
+            .get_state_for_prefix(&prefix)?
+            .ok_or(Error::Generic("There is no state".into()))?
+            .current;
+        let sigs = vec![AttachedSignaturePrefix::new(
+            // TODO shouldn't be fixed
+            SelfSigning::Ed25519Sha512,
+            signature.to_vec(),
+            0,
+        )];
+        key_conf
+            .verify(message, &sigs)
+            .map_err(|e| Error::Generic(e.to_string()))
+    }
+
+    /// Verify signature of given message using keys at `sn`
+    ///
+    /// Checks if message matches signature made identity of given prefix
+    /// using key from event od given seqence number.
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - Bytes of message
+    /// * `signature` - A string slice that holds the signature in base64
+    /// * `prefix` - A string slice that holds the prefix of signer
+    /// * `sn` - A sequence number of event which established keys used to sign message.
+    pub fn verify_at_sn(
+        &self,
+        message: &[u8],
+        signature: &[u8],
+        prefix: &str,
+        sn: u64,
+    ) -> Result<bool, Error> {
+        let pref = prefix.parse()?;
+        let key_conf = self
+            .get_keys_at_sn(&pref, sn)?
+            .ok_or(Error::Generic(format!(
+                "There are no key config fo identifier {} at {}",
+                prefix, sn
+            )))?;
+        let sigs = vec![AttachedSignaturePrefix::new(
+            SelfSigning::Ed25519Sha512,
+            signature.to_vec(),
+            0,
+        )];
+        key_conf
+            .verify(message, &sigs)
+            .map_err(|e| Error::Generic(e.to_string()))
+    }
+
+        pub fn current_sn(&self) -> Result<u64, Error> {
+        Ok(self.get_state()?.unwrap().sn)
     }
 }
