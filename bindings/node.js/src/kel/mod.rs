@@ -5,18 +5,12 @@ use std::{
 
 use keri::{
     database::sled::SledEventDatabase,
-    derivation::self_signing::SelfSigning,
-    event::{
-        sections::{
-            KeyConfig,
-        },
-        EventMessage,
-    },
+    event::{sections::KeyConfig, EventMessage},
     event_message::parse::signed_message,
     event_message::parse::{message, signed_event_stream},
     event_message::SignedEventMessage,
     prefix::AttachedSignaturePrefix,
-    prefix::{IdentifierPrefix, Prefix},
+    prefix::{parse::self_signing_prefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
     processor::EventProcessor,
     state::IdentifierState,
 };
@@ -63,18 +57,21 @@ impl<'d> KEL {
     /// Checks if event message matches signature and adds it to database.
     /// # Arguments
     ///
-    /// * `msg` - Bytes of serialized evednt message 
-    /// * `signature` - Bytes of serialized signature 
-    pub fn process_event(&self, event: &[u8], signature: &[u8]) -> Result<SignedEventMessage, Error> {
+    /// * `event` - Bytes of serialized evednt message
+    /// * `signature` 
+    pub fn process_event(
+        &self,
+        event: &[u8],
+        signature: &SelfSigningPrefix,
+    ) -> Result<SignedEventMessage, Error> {
         let processor = match self.database {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
         let message = message(&event).unwrap().1.event;
         let sigged = message.sign(vec![AttachedSignaturePrefix::new(
-            // TODO this shouldn't be fixed
-            SelfSigning::Ed25519Sha512,
-            signature.to_vec(),
+            signature.derivation,
+            signature.derivative(),
             0,
         )]);
         processor.process(signed_message(&sigged.serialize()?).unwrap().1)?;
@@ -116,11 +113,11 @@ impl<'d> KEL {
     /// # Arguments
     /// * `database_root` - srtring representing path where database files will be stored.
     /// * `icp` - inception event message.
-    /// *` signature` - signature of inception event.
+    /// *` signature` 
     pub fn finalize_incept(
         database_root: &str,
         icp: EventMessage,
-        signature: Vec<u8>,
+        signature: SelfSigningPrefix,
     ) -> Result<KEL, Error> {
         let prefix = icp.event.prefix.clone();
         let database = Some(KEL::create_kel_db(Path::new(
@@ -128,9 +125,8 @@ impl<'d> KEL {
         ))?);
 
         let sigged = icp.sign(vec![AttachedSignaturePrefix::new(
-            // TODO this shouldn't be fixed
-            SelfSigning::Ed25519Sha512,
-            signature,
+            signature.derivation,
+            signature.derivative(),
             0,
         )]);
 
@@ -140,13 +136,10 @@ impl<'d> KEL {
         }?;
         processor.process(signed_message(&sigged.serialize()?).unwrap().1)?;
 
-        Ok(KEL {
-            prefix,
-            database,
-        })
+        Ok(KEL { prefix, database })
     }
 
-     /// Generate rotation event for given public key config.
+    /// Generate rotation event for given public key config.
     /// # Arguments
     ///
     /// * `keys` - public keys config for new rotation event.
@@ -163,13 +156,12 @@ impl<'d> KEL {
     pub fn finalize_rotation(
         &self,
         rotation: Vec<u8>,
-        signature: Vec<u8>,
+        signature: SelfSigningPrefix,
     ) -> Result<SignedEventMessage, Error> {
         let rot_event = message(&rotation).unwrap().1.event;
         let rot = rot_event.sign(vec![AttachedSignaturePrefix::new(
-            // TODO this shouldn't be fixed
-            SelfSigning::Ed25519Sha512,
-            signature,
+            signature.derivation,
+            signature.derivative(),
             0,
         )]);
 
@@ -210,7 +202,6 @@ impl<'d> KEL {
             .map(|e| e.event.event_message))
     }
 
-
     /// Returns own key event log.
     pub fn get_kel(&self) -> Result<Option<Vec<u8>>, Error> {
         let processor = match self.database {
@@ -221,7 +212,6 @@ impl<'d> KEL {
             .get_kerl(&self.prefix)
             .map_err(|e| Error::KeriError(e))
     }
-
 
     /// Returns key event log of given prefix.
     /// (Only if database contains kel of given prefix. It can be out of
@@ -260,10 +250,9 @@ impl<'d> KEL {
             .compute_state_at_sn(&prefix, sn)
             .map_err(|e| Error::KeriError(e))?
             .map(|st| st.current))
-        
     }
 
-     pub fn get_current_public_keys(
+    pub fn get_current_public_keys(
         &self,
         prefix: &IdentifierPrefix,
     ) -> Result<Option<Vec<Key>>, Error> {
@@ -289,16 +278,19 @@ impl<'d> KEL {
     /// * `message` - Bytes of message
     /// * `signature` - A string slice that holds the signature in base64
     /// * `prefix` - A string slice that holds the prefix of signer
-    pub fn verify(&self, message: &[u8], signature: &[u8], prefix: &str) -> Result<bool, Error> {
-        let prefix = prefix.parse()?;
+    pub fn verify(
+        &self,
+        message: &[u8],
+        signature: &SelfSigningPrefix,
+        prefix: &IdentifierPrefix,
+    ) -> Result<bool, Error> {
         let key_conf = self
             .get_state_for_prefix(&prefix)?
             .ok_or(Error::Generic("There is no state".into()))?
             .current;
         let sigs = vec![AttachedSignaturePrefix::new(
-            // TODO shouldn't be fixed
-            SelfSigning::Ed25519Sha512,
-            signature.to_vec(),
+            signature.derivation,
+            signature.derivative(),
             0,
         )];
         key_conf
@@ -320,21 +312,20 @@ impl<'d> KEL {
     pub fn verify_at_sn(
         &self,
         message: &[u8],
-        signature: &[u8],
-        prefix: &str,
+        signature: &SelfSigningPrefix,
+        prefix: &IdentifierPrefix,
         sn: u64,
     ) -> Result<bool, Error> {
-        let pref = prefix.parse()?;
         let key_conf = self
-            .get_keys_at_sn(&pref, sn)?
+            .get_keys_at_sn(prefix, sn)?
             .ok_or(Error::Generic(format!(
                 "There are no key config fo identifier {} at {}",
-                prefix, sn
+                prefix.to_str(),
+                sn
             )))?;
         let sigs = vec![AttachedSignaturePrefix::new(
-            // TODO this shouldn't be fixed
-            SelfSigning::Ed25519Sha512,
-            signature.to_vec(),
+            signature.derivation,
+            signature.derivative(),
             0,
         )];
         key_conf
@@ -342,7 +333,7 @@ impl<'d> KEL {
             .map_err(|e| Error::Generic(e.to_string()))
     }
 
-        pub fn current_sn(&self) -> Result<u64, Error> {
+    pub fn current_sn(&self) -> Result<u64, Error> {
         Ok(self.get_state()?.unwrap().sn)
     }
 }
