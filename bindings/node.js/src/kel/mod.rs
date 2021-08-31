@@ -10,7 +10,7 @@ use keri::{
     event_message::parse::{message, signed_event_stream},
     event_message::SignedEventMessage,
     prefix::AttachedSignaturePrefix,
-    prefix::{parse::self_signing_prefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
+    prefix::{IdentifierPrefix, Prefix, SelfSigningPrefix},
     processor::EventProcessor,
     state::IdentifierState,
 };
@@ -58,7 +58,7 @@ impl<'d> KEL {
     /// # Arguments
     ///
     /// * `event` - Bytes of serialized evednt message
-    /// * `signature` 
+    /// * `signature`
     pub fn process_event(
         &self,
         event: &[u8],
@@ -68,7 +68,7 @@ impl<'d> KEL {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        let message = message(&event).unwrap().1.event;
+        let message = message(&event).unwrap().1.event_message;
         let sigged = message.sign(vec![AttachedSignaturePrefix::new(
             signature.derivation,
             signature.derivative(),
@@ -113,10 +113,10 @@ impl<'d> KEL {
     /// # Arguments
     /// * `database_root` - srtring representing path where database files will be stored.
     /// * `icp` - inception event message.
-    /// *` signature` 
+    /// *` signature`
     pub fn finalize_incept(
         database_root: &str,
-        icp: EventMessage,
+        icp: &EventMessage,
         signature: SelfSigningPrefix,
     ) -> Result<KEL, Error> {
         let prefix = icp.event.prefix.clone();
@@ -158,7 +158,7 @@ impl<'d> KEL {
         rotation: Vec<u8>,
         signature: SelfSigningPrefix,
     ) -> Result<SignedEventMessage, Error> {
-        let rot_event = message(&rotation).unwrap().1.event;
+        let rot_event = message(&rotation).unwrap().1.event_message;
         let rot = rot_event.sign(vec![AttachedSignaturePrefix::new(
             signature.derivation,
             signature.derivative(),
@@ -199,7 +199,7 @@ impl<'d> KEL {
         }?;
         Ok(processor
             .get_event_at_sn(id, sn)?
-            .map(|e| e.event.event_message))
+            .map(|e| e.signed_event_message.event_message))
     }
 
     /// Returns own key event log.
@@ -336,4 +336,38 @@ impl<'d> KEL {
     pub fn current_sn(&self) -> Result<u64, Error> {
         Ok(self.get_state()?.unwrap().sn)
     }
+}
+
+#[test]
+pub fn test_inception() -> Result<(), Error> {
+    use tempfile::Builder;
+    use ed25519_compact::{KeyPair, Seed};
+    use keri::derivation::{basic::Basic, self_signing::SelfSigning};
+
+    // Create test db and event processor.
+    let db_root = Builder::new().prefix("test-db").tempdir().unwrap();
+    // Create two keypairs
+    let current_keypair = KeyPair::from_seed(Seed::default());
+    let next_keypair = KeyPair::from_seed(Seed::default());
+
+    // Set key configs.
+    let key_conig = PublicKeysConfig::new(
+        vec![(Basic::Ed25519, current_keypair.pk.to_vec())],
+        vec![(Basic::Ed25519, next_keypair.pk.to_vec())],
+    );
+    // Create inception event.
+    let inception = KEL::incept(&key_conig)?;
+    // Create wrong signature and try to process event.
+    let wrong_signature = next_keypair.sk.sign(&inception.serialize()?, None).to_vec();
+    let wrong_signature_prefix = SelfSigning::Ed25519Sha512.derive(wrong_signature);
+    let controller = KEL::finalize_incept(db_root.path().to_str().unwrap(), &inception, wrong_signature_prefix);
+    assert!(matches!(controller, Err(Error::KeriError(keri::error::Error::FaultySignatureVerification))));
+
+    // Create signature and to process event.
+    let signature = current_keypair.sk.sign(&inception.serialize()?, None).to_vec();
+    let signature_prefix = SelfSigning::Ed25519Sha512.derive(signature);
+    let controller = KEL::finalize_incept(db_root.path().to_str().unwrap(), &inception, signature_prefix);
+    assert!(controller.is_ok());
+
+    Ok(())
 }

@@ -48,11 +48,11 @@ fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
     let path_str = cfg
         .get("db_path")
         .expect("Missing database path in settings");
-    let icp = message(&icp).unwrap().1.event;
+    let icp = message(&icp).unwrap().1.event_message;
     let signature = parse::self_signing_prefix(&signature)
         .expect("Can't parse signature")
         .1;
-    let kel = KEL::finalize_incept(&path_str, icp, signature).expect("Error while creating kel");
+    let kel = KEL::finalize_incept(&path_str, &icp, signature).expect("Error while creating kel");
     let mut this: JsObject = ctx.this_unchecked();
     ctx.env.wrap(&mut this, kel)?;
     ctx.env.get_undefined()
