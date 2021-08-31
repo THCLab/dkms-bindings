@@ -1,12 +1,6 @@
 use std::convert::TryInto;
 
-use keri::{
-    event_message::parse::message,
-    prefix::{
-        parse::{self, self_signing_prefix},
-        IdentifierPrefix, Prefix,
-    },
-};
+use keri::{event_message::parse::message, prefix::{IdentifierPrefix, Prefix, SelfSigningPrefix, parse::{self, self_signing_prefix}}};
 use napi::{
     CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, Property,
     Result as JsResult,
@@ -40,7 +34,7 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
 #[js_function(2)]
 fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
     let icp = ctx.get::<JsBuffer>(0)?.into_value()?.to_vec();
-    let signature = ctx.get::<JsBuffer>(1)?.into_value()?.to_vec();
+    let signature = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
     let mut cfg = Config::new(Some("settings.cfg"));
     // Read / parse config file
     cfg.read().ok().expect("Error reading the config file");
@@ -49,9 +43,8 @@ fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
         .get("db_path")
         .expect("Missing database path in settings");
     let icp = message(&icp).unwrap().1.event_message;
-    let signature = parse::self_signing_prefix(&signature)
-        .expect("Can't parse signature")
-        .1;
+    let signature: SelfSigningPrefix = signature.parse()
+        .expect("Can't parse signature");
     let kel = KEL::finalize_incept(&path_str, &icp, signature).expect("Error while creating kel");
     let mut this: JsObject = ctx.this_unchecked();
     ctx.env.wrap(&mut this, kel)?;
@@ -60,19 +53,17 @@ fn controller_constructor(ctx: CallContext) -> JsResult<JsUndefined> {
 
 #[js_function(2)]
 fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
-    let current = ctx.get::<JsBuffer>(0)?.into_value()?;
-    let next = ctx.get::<JsBuffer>(1)?.into_value()?;
+    let current = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
+    let next = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
 
     let pub_keys = PublicKeysConfig {
         current: vec![
-            parse::basic_prefix(&current.to_vec())
+            current.parse()
                 .expect("Can't parse key")
-                .1,
         ],
         next: vec![
-            parse::basic_prefix(&next.to_vec())
+            next.parse()
                 .expect("Can't parse key")
-                .1,
         ],
     };
     let icp = KEL::incept(&pub_keys).unwrap().serialize().unwrap();
@@ -101,19 +92,17 @@ fn get_kel(ctx: CallContext) -> JsResult<JsString> {
 
 #[js_function(2)]
 fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
-    let new_current = ctx.get::<JsBuffer>(0)?.into_value()?;
-    let new_next = ctx.get::<JsBuffer>(1)?.into_value()?;
+    let new_current = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
+    let new_next = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
 
     let pub_keys = PublicKeysConfig {
         current: vec![
-            parse::basic_prefix(&new_current.to_vec())
+            new_current.parse()
                 .expect("Cn't parse key")
-                .1,
         ],
         next: vec![
-            parse::basic_prefix(&new_next.to_vec())
+            new_next.parse()
                 .expect("Can't parse key")
-                .1,
         ],
     };
 
@@ -130,12 +119,11 @@ fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
 #[js_function(2)]
 fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
     let rot = ctx.get::<JsBuffer>(0)?.into_value()?.to_vec();
-    let signature = ctx.get::<JsBuffer>(1)?.into_value()?.to_vec();
+    let signature = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
-    let signature = parse::self_signing_prefix(&signature)
-        .expect("Can't parse signature")
-        .1;
+    let signature: SelfSigningPrefix = signature.parse()
+        .expect("Can't parse signature");
     let rot_result = kel.finalize_rotation(rot, signature);
     ctx.env.get_boolean(rot_result.is_ok())
 }
@@ -168,14 +156,13 @@ fn get_current_public_key(ctx: CallContext) -> JsResult<JsBuffer> {
 #[js_function(3)]
 fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
     let message = ctx.get::<JsBuffer>(0)?.into_value()?.to_vec();
-    let signature = ctx.get::<JsBuffer>(1)?.into_value()?.to_vec();
+    let signature = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
     let identifier: String = ctx.get::<JsString>(2)?.into_utf8()?.as_str()?.to_owned();
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let prefix = identifier.parse().expect("Can't parse prefix");
-    let signature = self_signing_prefix(&signature)
-        .expect("Can't parse signature")
-        .1;
+    let signature: SelfSigningPrefix = signature.parse()
+        .expect("Can't parse signature");
     ctx.env.get_boolean(
         kel.verify(&message, &signature, &prefix)
             .expect("Error while verifing"),
@@ -185,15 +172,14 @@ fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
 #[js_function(4)]
 fn verify_at_sn(ctx: CallContext) -> JsResult<JsBoolean> {
     let message = ctx.get::<JsBuffer>(0)?.into_value()?.to_vec();
-    let signature = ctx.get::<JsBuffer>(0)?.into_value()?.to_vec();
+    let signature = ctx.get::<JsString>(0)?.into_utf8()?.as_str()?.to_owned();
     let identifier: String = ctx.get::<JsString>(2)?.into_utf8()?.as_str()?.to_owned();
     let sn: i64 = ctx.get::<JsNumber>(3)?.try_into()?;
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let prefix = identifier.parse().expect("Can't parse prefix");
-    let signature = self_signing_prefix(&signature)
-        .expect("Can't parse signature")
-        .1;
+    let signature: SelfSigningPrefix = signature.parse()
+        .expect("Can't parse signature");
     ctx.env.get_boolean(
         kel.verify_at_sn(&message, &signature, &prefix, sn as u64)
             .expect("Error while verifing"),
