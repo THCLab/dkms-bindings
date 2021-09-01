@@ -2,58 +2,58 @@
 
 const nacl = require("tweetnacl");
 const util = require("tweetnacl-util");
-const keri = require('./index')
+const keri = require('./index.js')
 const {Base64} = require('js-base64');
 
 const currentKeyPair = nacl.sign.keyPair();
 const nextKeyPair = nacl.sign.keyPair();
 const newNextKeyPair = nacl.sign.keyPair();
 
-let key_b64 = Base64.encode(currentKeyPair.publicKey, true) // true to remove padding =
-let next_key_b64 = Base64.encode(nextKeyPair.publicKey, true)
-let new_next_key_b64 = Base64.encode(newNextKeyPair.publicKey, true)
-let cur_prefix = "D".concat(key_b64) // attach derivation code.
-let next_prefix = "D".concat(next_key_b64)
-let new_next_prefix = "D".concat(new_next_key_b64)
+let keyB64 = Base64.encode(currentKeyPair.publicKey, true) // true to remove padding =
+let nextKeyB64 = Base64.encode(nextKeyPair.publicKey, true)
+let nextNextKeyB64 = Base64.encode(newNextKeyPair.publicKey, true)
+let curPrefix = "D".concat(keyB64) // attach derivation code.
+let nextPrefix = "D".concat(nextKeyB64)
+let nextNextPrefix = "D".concat(nextNextKeyB64)
 
-let inception_event = keri.incept(cur_prefix, next_prefix)
+let inceptionEvent = keri.incept(curPrefix, nextPrefix)
 
-let signature = nacl.sign.detached(inception_event, currentKeyPair.secretKey);
+let signature = nacl.sign.detached(inceptionEvent, currentKeyPair.secretKey);
 
-let signature_b64 = Base64.encode(signature, true);
-let sign_prefix = "0B".concat(signature_b64) // attach derivation code.
+let signatureB64 = Base64.encode(signature, true);
+let signPrefix = "0B".concat(signatureB64) // attach derivation code.
 
-let prefix = keri.finalize_incept(inception_event, sign_prefix)
+let controller = keri.finalizeIncept(inceptionEvent, signPrefix)
+let prefix = controller.prefix;
 
-var controller = new keri.Controller(prefix)
-console.log("Controller's key event log:\n " + controller.get_kel() + "\n")
+console.log("Controller's key event log:\n " + controller.getKel() + "\n")
 
-let rotation_event = controller.rotate(next_prefix, new_next_prefix)
-signature = nacl.sign.detached(rotation_event, nextKeyPair.secretKey);
+let rotationEvent = controller.rotate(nextPrefix, nextNextPrefix)
+signature = nacl.sign.detached(rotationEvent, nextKeyPair.secretKey);
 
-signature_b64 = Base64.encode(signature, true);
-sign_prefix = "0B".concat(signature_b64) // attach derivation code.
+signatureB64 = Base64.encode(signature, true);
+signPrefix = "0B".concat(signatureB64) // attach derivation code.
 
-if (controller.finalize_rotation(rotation_event, sign_prefix)) {
-	console.log("Keys rotated succesfully\n")
+if (controller.finalizeRotation(rotationEvent, signPrefix)) {
+  console.log("Keys rotated succesfully\n")
 }
-console.log("Controller's key event log after rotation:\n " + controller.get_kel() + "\n")
+console.log("Controller's key event log after rotation:\n " + controller.getKel() + "\n")
 
 let message = util.decodeUTF8("message")
 signature = nacl.sign.detached(message, nextKeyPair.secretKey);
 
-signature_b64 = Base64.encode(signature, true);
-sign_prefix = "0B".concat(signature_b64)
+signatureB64 = Base64.encode(signature, true);
+signPrefix = "0B".concat(signatureB64)
 
 
 // Verify in js
 console.log(nacl.sign.detached.verify(message, signature, nextKeyPair.publicKey))
 
 // Verify using controller
-console.log(controller.verify(message, sign_prefix, prefix))
+console.log(controller.verify(message, signPrefix, prefix))
 
 try {
-	let no_existing_identifier = new keri.Controller("DeXBCH8bD42XDW8T7-ryDXrS0MSMw13EBZkAsYFnLdno")
+  new keri.Controller("DeXBCH8bD42XDW8T7-ryDXrS0MSMw13EBZkAsYFnLdno")
 } catch (error) {
-  	console.error(error);
+  console.error(error);
 }
