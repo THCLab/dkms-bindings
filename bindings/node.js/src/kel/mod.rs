@@ -34,7 +34,6 @@ impl Debug for KEL {
             self.get_kel()
                 .map_err(|_e| fmt::Error)?
                 .map(|k| String::from_utf8(k))
-                .unwrap()
         )
     }
 }
@@ -50,6 +49,16 @@ impl<'d> KEL {
 
     fn create_kel_db(path: &Path) -> Result<SledEventDatabase, Error> {
         SledEventDatabase::new(path).map_err(|e| e.into())
+    }
+
+    pub fn load_kel(database_root: &str, prefix: IdentifierPrefix) -> Result<KEL, Error> {
+        let path = &[database_root, &prefix.to_str()].join("/");
+        if std::path::Path::new(path).exists() {
+            let database = Some(KEL::create_kel_db(Path::new(path))?);
+            Ok(KEL { prefix, database })
+        } else {
+            Err(Error::Generic("No identifer in db".into()))
+        }
     }
 
     /// Process event and signature
@@ -340,9 +349,9 @@ impl<'d> KEL {
 
 #[test]
 pub fn test_inception() -> Result<(), Error> {
-    use tempfile::Builder;
     use ed25519_compact::{KeyPair, Seed};
     use keri::derivation::{basic::Basic, self_signing::SelfSigning};
+    use tempfile::Builder;
 
     // Create test db and event processor.
     let db_root = Builder::new().prefix("test-db").tempdir().unwrap();
@@ -360,13 +369,29 @@ pub fn test_inception() -> Result<(), Error> {
     // Create wrong signature and try to process event.
     let wrong_signature = next_keypair.sk.sign(&inception.serialize()?, None).to_vec();
     let wrong_signature_prefix = SelfSigning::Ed25519Sha512.derive(wrong_signature);
-    let controller = KEL::finalize_incept(db_root.path().to_str().unwrap(), &inception, wrong_signature_prefix);
-    assert!(matches!(controller, Err(Error::KeriError(keri::error::Error::FaultySignatureVerification))));
+    let controller = KEL::finalize_incept(
+        db_root.path().to_str().unwrap(),
+        &inception,
+        wrong_signature_prefix,
+    );
+    assert!(matches!(
+        controller,
+        Err(Error::KeriError(
+            keri::error::Error::FaultySignatureVerification
+        ))
+    ));
 
     // Create signature and to process event.
-    let signature = current_keypair.sk.sign(&inception.serialize()?, None).to_vec();
+    let signature = current_keypair
+        .sk
+        .sign(&inception.serialize()?, None)
+        .to_vec();
     let signature_prefix = SelfSigning::Ed25519Sha512.derive(signature);
-    let controller = KEL::finalize_incept(db_root.path().to_str().unwrap(), &inception, signature_prefix);
+    let controller = KEL::finalize_incept(
+        db_root.path().to_str().unwrap(),
+        &inception,
+        signature_prefix,
+    );
     assert!(controller.is_ok());
 
     Ok(())

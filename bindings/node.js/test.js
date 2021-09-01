@@ -23,7 +23,9 @@ let signature = nacl.sign.detached(inception_event, currentKeyPair.secretKey);
 let signature_b64 = Base64.encode(signature, true);
 let sign_prefix = "0B".concat(signature_b64) // attach derivation code.
 
-var controller = new keri.Controller(inception_event, sign_prefix)
+let prefix = keri.finalize_incept(inception_event, sign_prefix)
+
+var controller = new keri.Controller(prefix)
 console.log("Controller's key event log:\n " + controller.get_kel() + "\n")
 
 let rotation_event = controller.rotate(next_prefix, new_next_prefix)
@@ -43,10 +45,15 @@ signature = nacl.sign.detached(message, nextKeyPair.secretKey);
 signature_b64 = Base64.encode(signature, true);
 sign_prefix = "0B".concat(signature_b64)
 
-let prefix = controller.get_prefix()
 
 // Verify in js
 console.log(nacl.sign.detached.verify(message, signature, nextKeyPair.publicKey))
 
 // Verify using controller
 console.log(controller.verify(message, sign_prefix, prefix))
+
+try {
+	let no_existing_identifier = new keri.Controller("DeXBCH8bD42XDW8T7-ryDXrS0MSMw13EBZkAsYFnLdno")
+} catch (error) {
+  	console.error(error);
+}

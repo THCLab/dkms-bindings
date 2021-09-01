@@ -48,7 +48,8 @@ impl PublicKeysConfig {
 
 impl Key {
     pub fn derive(&self) -> BasicPrefix {
-        self.key_type.derive(keri::keys::PublicKey::new(self.key.clone()))
+        self.key_type
+            .derive(keri::keys::PublicKey::new(self.key.clone()))
     }
 }
 
