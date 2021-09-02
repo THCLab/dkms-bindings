@@ -53,7 +53,14 @@ console.log(nacl.sign.detached.verify(message, signature, nextKeyPair.publicKey)
 console.log(controller.verify(message, signPrefix, prefix))
 
 try {
+  // Try to load non-existing identifier.
   new keri.Controller("DeXBCH8bD42XDW8T7-ryDXrS0MSMw13EBZkAsYFnLdno")
 } catch (error) {
-  console.error(error);
+  console.log(error.message);
+}
+try {
+  // Try to incept using with arbitrary text instead of identifier prefix as a public key. 
+  keri.incept("DeXBCH8bD42XDW8T7-ryDXrS0MSMw13EBZkAsYFnLdno", "no_next_key_prefix")
+} catch (e) {
+  console.log(e.message)
 }
