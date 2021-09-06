@@ -6,35 +6,41 @@ const keri = require('./index.js')
 const {Base64} = require('js-base64');
 
 const currentKeyPair = nacl.sign.keyPair();
+const secondCurrentKeyPair = nacl.sign.keyPair();
 const nextKeyPair = nacl.sign.keyPair();
 const newNextKeyPair = nacl.sign.keyPair();
 
 let keyB64 = Base64.encode(currentKeyPair.publicKey, true) // true to remove padding =
+let skeyB64 = Base64.encode(secondCurrentKeyPair.publicKey, true) // true to remove padding =
 let nextKeyB64 = Base64.encode(nextKeyPair.publicKey, true)
 let nextNextKeyB64 = Base64.encode(newNextKeyPair.publicKey, true)
 let curPrefix = "D".concat(keyB64) // attach derivation code.
+let scurPrefix = "D".concat(skeyB64) // attach derivation code.
 let nextPrefix = "D".concat(nextKeyB64)
 let nextNextPrefix = "D".concat(nextNextKeyB64)
 
-let inceptionEvent = keri.incept(curPrefix, nextPrefix)
+let inceptionEvent = keri.incept([curPrefix, scurPrefix], [nextPrefix])
+console.log("icp: \n" + inceptionEvent.toString("utf8") + "\n")
 
 let signature = nacl.sign.detached(inceptionEvent, currentKeyPair.secretKey);
 
 let signatureB64 = Base64.encode(signature, true);
 let signPrefix = "0B".concat(signatureB64) // attach derivation code.
 
-let controller = keri.finalizeIncept(inceptionEvent, signPrefix)
+let controller = keri.finalizeIncept(inceptionEvent, [signPrefix])
+console.log(controller)
 let prefix = controller.prefix;
 
 console.log("Controller's key event log:\n " + controller.getKel() + "\n")
 
-let rotationEvent = controller.rotate(nextPrefix, nextNextPrefix)
+let rotationEvent = controller.rotate([nextPrefix], [nextNextPrefix])
+console.log("rot: \n" + rotationEvent.toString("utf8") + "\n")
 signature = nacl.sign.detached(rotationEvent, nextKeyPair.secretKey);
 
 signatureB64 = Base64.encode(signature, true);
 signPrefix = "0B".concat(signatureB64) // attach derivation code.
 
-if (controller.finalizeRotation(rotationEvent, signPrefix)) {
+if (controller.finalizeRotation(rotationEvent, [signPrefix])) {
   console.log("Keys rotated succesfully\n")
 }
 console.log("Controller's key event log after rotation:\n " + controller.getKel() + "\n")

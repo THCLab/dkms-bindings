@@ -38,7 +38,7 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
 #[js_function(2)]
 fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
     let icp = ctx.get::<JsBuffer>(0)?.into_value()?.to_vec();
-    let signature = ctx.get::<JsString>(1)?.into_utf8()?.as_str()?.to_owned();
+    let signatures = get_signature_array_argument(&ctx, 1)?;
     let mut cfg = Config::new(Some("settings.cfg"));
     // Read / parse config file
     cfg.read().ok().expect("There is no `settings.cfg` file");
@@ -50,10 +50,7 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
         .map_err(|e| napi::Error::from_reason(e.to_string()))?
         .1
         .event_message;
-    let signature: SelfSigningPrefix = signature
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong signature prefix".into()))?;
-    let kel = KEL::finalize_incept(&path_str, &icp, signature)
+    let kel = KEL::finalize_incept(&path_str, &icp, signatures)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
     let identifier = kel.get_prefix().to_str();
     ctx.env.create_string(&identifier)
@@ -61,11 +58,13 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
 
 #[js_function(1)]
 fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
-    let prefix = ctx.get::<JsString>(0)?.into_utf8()
+    let prefix = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
         .as_str()?
         .to_owned();
-    
+
     let mut cfg = Config::new(Some("settings.cfg"));
     // Read / parse config file
     cfg.read()
@@ -83,30 +82,62 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
     ctx.env.get_undefined()
 }
 
+fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Vec<BasicPrefix>> {
+    let cur = ctx
+        .get::<JsObject>(arg_index)
+        .map_err(|_e| napi::Error::from_reason("Missing keys parameter".into()))?;
+    let len = if cur.is_array()? {
+        cur.get_array_length()?
+    } else {
+        0
+    };
+    let mut current_keys: Vec<BasicPrefix> = vec![];
+    for i in 0..len {
+        let val: JsString = cur.get_element(i)?;
+        let bp = val
+            .into_utf8()?
+            .as_str()?
+            .parse()
+            .map_err(|_e| napi::Error::from_reason("Can't pase public key prefix".into()))?;
+        current_keys.push(bp);
+    }
+    Ok(current_keys)
+}
+
+fn get_signature_array_argument(
+    ctx: &CallContext,
+    arg_index: usize,
+) -> JsResult<Vec<SelfSigningPrefix>> {
+    let signatures = ctx
+        .get::<JsObject>(arg_index)
+        .map_err(|_e| napi::Error::from_reason("Missing signatures parameter".into()))?;
+    let len = if signatures.is_array()? {
+        signatures.get_array_length()?
+    } else {
+        0
+    };
+    let mut parsed_signatures: Vec<SelfSigningPrefix> = vec![];
+    for i in 0..len {
+        let val: JsString = signatures.get_element(i)?;
+        let bp = val
+            .into_utf8()?
+            .as_str()?
+            .parse()
+            .map_err(|_e| napi::Error::from_reason("Can't parse signature prefix".into()))?;
+        parsed_signatures.push(bp);
+    }
+    Ok(parsed_signatures)
+}
+
 #[js_function(2)]
 fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
-    let current = ctx
-        .get::<JsString>(0)?
-        .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing current key parameter".into()))?
-        .as_str()?
-        .to_owned();
-    let next = ctx
-        .get::<JsString>(1)?
-        .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing next key parameter".into()))?
-        .as_str()?
-        .to_owned();
+    let current_keys = get_keys_array_argument(&ctx, 0)?;
 
-    let current_key: BasicPrefix = current
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong current public key prefix".into()))?;
-    let next_key: BasicPrefix = next
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong next public key prefix".into()))?;
+    let next_keys = get_keys_array_argument(&ctx, 1)?;
+
     let pub_keys = PublicKeysConfig {
-        current: vec![current_key],
-        next: vec![next_key],
+        current: current_keys,
+        next: next_keys,
     };
     let icp = KEL::incept(&pub_keys)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?
@@ -140,24 +171,13 @@ fn get_kel(ctx: CallContext) -> JsResult<JsString> {
 
 #[js_function(2)]
 fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
-    let new_current = ctx.get::<JsString>(0)?.into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing current key parameter".into()))?
-        .as_str()?
-        .to_owned();
-    let new_next = ctx.get::<JsString>(1)?.into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing next key parameter".into()))?
-        .as_str()?
-        .to_owned();
-    let current_key: BasicPrefix = new_current
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong current public key prefix".into()))?;
-    let next_key: BasicPrefix = new_next
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong next public key prefix".into()))?;
+    let current_keys = get_keys_array_argument(&ctx, 0)?;
+
+    let next_keys = get_keys_array_argument(&ctx, 1)?;
 
     let pub_keys = PublicKeysConfig {
-        current: vec![current_key],
-        next: vec![next_key],
+        current: current_keys,
+        next: next_keys,
     };
 
     let this: JsObject = ctx.this_unchecked();
@@ -172,26 +192,25 @@ fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
 
 #[js_function(2)]
 fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
-    let rot = ctx.get::<JsBuffer>(0)?.into_value()//?.to_vec()
+    let rot = ctx
+        .get::<JsBuffer>(0)?
+        .into_value() //?.to_vec()
         .map_err(|_e| napi::Error::from_reason("Missing rotation event parameter".into()))?
         .to_vec();
-    let signature = ctx.get::<JsString>(1)?.into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
-        .as_str()?
-        .to_owned();
+    let signatures = get_signature_array_argument(&ctx, 1)?;
 
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
-    let signature: SelfSigningPrefix = signature
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong signature prefix".into()))?;
-    let rot_result = kel.finalize_rotation(rot, signature);
+
+    let rot_result = kel.finalize_rotation(rot, signatures);
     ctx.env.get_boolean(rot_result.is_ok())
 }
 
 #[js_function(1)]
 fn process(ctx: CallContext) -> JsResult<JsUndefined> {
-    let stream = ctx.get::<JsBuffer>(0)?.into_value()
+    let stream = ctx
+        .get::<JsBuffer>(0)?
+        .into_value()
         .map_err(|_e| napi::Error::from_reason("Missing event stream parameter".into()))?
         .to_vec();
     let this: JsObject = ctx.this_unchecked();
@@ -203,7 +222,9 @@ fn process(ctx: CallContext) -> JsResult<JsUndefined> {
 
 #[js_function(1)]
 fn get_current_public_key(ctx: CallContext) -> JsResult<JsBuffer> {
-    let identifier: String = ctx.get::<JsString>(0)?.into_utf8()
+    let identifier: String = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
         .as_str()?
         .to_owned();
@@ -225,15 +246,23 @@ fn get_current_public_key(ctx: CallContext) -> JsResult<JsBuffer> {
 
 #[js_function(3)]
 fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
-    let message = ctx.get::<JsBuffer>(0)?.into_value()
+    let message = ctx
+        .get::<JsBuffer>(0)?
+        .into_value()
         .map_err(|_e| napi::Error::from_reason("Missing message parameter".into()))?
         .to_vec();
-    let signature = ctx.get::<JsString>(1)?.into_utf8()
+    let signature = ctx
+        .get::<JsString>(1)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
-        .as_str()?.to_owned();
-    let identifier: String = ctx.get::<JsString>(2)?.into_utf8()
+        .as_str()?
+        .to_owned();
+    let identifier: String = ctx
+        .get::<JsString>(2)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
-        .as_str()?.to_owned();
+        .as_str()?
+        .to_owned();
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let prefix = identifier
@@ -252,15 +281,23 @@ fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
 
 #[js_function(4)]
 fn verify_at_sn(ctx: CallContext) -> JsResult<JsBoolean> {
-    let message = ctx.get::<JsBuffer>(0)?.into_value()
+    let message = ctx
+        .get::<JsBuffer>(0)?
+        .into_value()
         .map_err(|_e| napi::Error::from_reason("Missing message parameter".into()))?
         .to_vec();
-    let signature = ctx.get::<JsString>(0)?.into_utf8()
+    let signature = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
-        .as_str()?.to_owned();
-    let identifier: String = ctx.get::<JsString>(2)?.into_utf8()
+        .as_str()?
+        .to_owned();
+    let identifier: String = ctx
+        .get::<JsString>(2)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
-        .as_str()?.to_owned();
+        .as_str()?
+        .to_owned();
     let sn: i64 = ctx.get::<JsNumber>(3)?.try_into()?;
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;

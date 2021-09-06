@@ -113,7 +113,7 @@ impl<'d> KEL {
     ///
     /// * `keys` - `PublicKeysConfig` which store current and next public keys.
     pub fn incept(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
-        event_generator::make_icp(keys, None)
+        event_generator::make_icp(keys)
     }
 
     /// Finalize inception.
@@ -126,18 +126,21 @@ impl<'d> KEL {
     pub fn finalize_incept(
         database_root: &str,
         icp: &EventMessage,
-        signature: SelfSigningPrefix,
+        signatures: Vec<SelfSigningPrefix>,
     ) -> Result<KEL, Error> {
         let prefix = icp.event.prefix.clone();
         let database = Some(KEL::create_kel_db(Path::new(
             &[database_root, &prefix.to_str()].join("/"),
         ))?);
 
-        let sigged = icp.sign(vec![AttachedSignaturePrefix::new(
-            signature.derivation,
-            signature.derivative(),
-            0,
-        )]);
+        let indexed_signatures = signatures
+            .into_iter()
+            .enumerate()
+            .map(|(i, signature)| {
+                AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
+            })
+            .collect();
+        let sigged = icp.sign(indexed_signatures);
 
         let processor = match database {
             Some(ref db) => Ok(EventProcessor::new(db)),
@@ -165,14 +168,19 @@ impl<'d> KEL {
     pub fn finalize_rotation(
         &self,
         rotation: Vec<u8>,
-        signature: SelfSigningPrefix,
+        signatures: Vec<SelfSigningPrefix>,
     ) -> Result<SignedEventMessage, Error> {
         let rot_event = message(&rotation).unwrap().1.event_message;
-        let rot = rot_event.sign(vec![AttachedSignaturePrefix::new(
-            signature.derivation,
-            signature.derivative(),
-            0,
-        )]);
+
+        let indexed_signatures = signatures
+            .into_iter()
+            .enumerate()
+            .map(|(i, signature)| {
+                AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
+            })
+            .collect();
+
+        let rot = rot_event.sign(indexed_signatures);
 
         let processor = match self.database {
             Some(ref db) => Ok(EventProcessor::new(db)),
@@ -372,7 +380,7 @@ pub fn test_inception() -> Result<(), Error> {
     let controller = KEL::finalize_incept(
         db_root.path().to_str().unwrap(),
         &inception,
-        wrong_signature_prefix,
+        vec![wrong_signature_prefix],
     );
     assert!(matches!(
         controller,
@@ -390,7 +398,7 @@ pub fn test_inception() -> Result<(), Error> {
     let controller = KEL::finalize_incept(
         db_root.path().to_str().unwrap(),
         &inception,
-        signature_prefix,
+        vec![signature_prefix],
     );
     assert!(controller.is_ok());
 

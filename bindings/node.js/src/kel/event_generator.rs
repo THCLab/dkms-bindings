@@ -53,13 +53,8 @@ impl Key {
     }
 }
 
-pub fn make_icp(
-    keys: &PublicKeysConfig,
-    prefix: Option<IdentifierPrefix>,
-) -> Result<EventMessage, Error> {
-    let pref = prefix.unwrap_or(IdentifierPrefix::Basic(keys.current[0].clone()));
+pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
     let icp = EventMsgBuilder::new(EventType::Inception)?
-        .with_prefix(pref)
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
         .build()?;
