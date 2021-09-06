@@ -3,7 +3,10 @@ use keri::{
     derivation::{basic::Basic, self_addressing::SelfAddressing},
     event::{
         event_data::{EventData, Receipt},
-        sections::seal::{EventSeal, Seal},
+        sections::{
+            seal::{EventSeal, Seal},
+            threshold::SignatureThreshold,
+        },
         Event, EventMessage, SerializationFormats,
     },
     event_message::event_msg_builder::{EventMsgBuilder, EventType},
@@ -19,10 +22,15 @@ pub struct Key {
 pub struct PublicKeysConfig {
     pub current: Vec<BasicPrefix>,
     pub next: Vec<BasicPrefix>,
+    pub threshold: SignatureThreshold,
 }
 
 impl PublicKeysConfig {
-    pub fn new(current: Vec<(Basic, Vec<u8>)>, next: Vec<(Basic, Vec<u8>)>) -> PublicKeysConfig {
+    pub fn new(
+        current: Vec<(Basic, Vec<u8>)>,
+        next: Vec<(Basic, Vec<u8>)>,
+        threshold: SignatureThreshold,
+    ) -> PublicKeysConfig {
         let current = current
             .into_iter()
             .map(|(der, key)| Key { key_type: der, key }.derive())
@@ -31,7 +39,11 @@ impl PublicKeysConfig {
             .into_iter()
             .map(|(der, key)| Key { key_type: der, key }.derive())
             .collect();
-        PublicKeysConfig { current, next }
+        PublicKeysConfig {
+            current,
+            next,
+            threshold,
+        }
     }
 
     pub fn rotate(&self, new_next_keys: Vec<(Basic, Vec<u8>)>) -> PublicKeysConfig {
@@ -42,6 +54,7 @@ impl PublicKeysConfig {
         PublicKeysConfig {
             current: self.next.clone(),
             next: new_next,
+            threshold: self.threshold.clone(),
         }
     }
 }
@@ -57,6 +70,7 @@ pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
     let icp = EventMsgBuilder::new(EventType::Inception)?
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
+        .with_threshold(keys.threshold.clone())
         .build()?;
     Ok(icp)
 }
@@ -68,6 +82,7 @@ pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<Event
         .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
+        .with_threshold(keys.threshold.clone())
         .build()?;
     Ok(ixn)
 }

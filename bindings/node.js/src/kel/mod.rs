@@ -359,6 +359,7 @@ impl<'d> KEL {
 pub fn test_inception() -> Result<(), Error> {
     use ed25519_compact::{KeyPair, Seed};
     use keri::derivation::{basic::Basic, self_signing::SelfSigning};
+    use keri::event::sections::threshold::SignatureThreshold;
     use tempfile::Builder;
 
     // Create test db and event processor.
@@ -371,6 +372,7 @@ pub fn test_inception() -> Result<(), Error> {
     let key_conig = PublicKeysConfig::new(
         vec![(Basic::Ed25519, current_keypair.pk.to_vec())],
         vec![(Basic::Ed25519, next_keypair.pk.to_vec())],
+        SignatureThreshold::Simple(1),
     );
     // Create inception event.
     let inception = KEL::incept(&key_conig)?;

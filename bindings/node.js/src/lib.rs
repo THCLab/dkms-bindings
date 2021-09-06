@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 
 use keri::{
+    event::sections::threshold::SignatureThreshold,
     event_message::parse::message,
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
 };
@@ -82,7 +83,30 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
     ctx.env.get_undefined()
 }
 
-fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Vec<BasicPrefix>> {
+fn get_keys_settings_argument(
+    key_object: JsObject,
+) -> JsResult<(BasicPrefix, BasicPrefix, Option<String>)> {
+    let curr_pk: BasicPrefix = key_object
+        .get_element::<JsString>(0)?
+        .into_utf8()?
+        .as_str()?
+        .parse()
+        .map_err(|_e| napi::Error::from_reason("Can't pase public key prefix".into()))?;
+    let next_pk: BasicPrefix = key_object
+        .get_element::<JsString>(1)?
+        .into_utf8()?
+        .as_str()?
+        .parse()
+        .map_err(|_e| napi::Error::from_reason("Can't pase public key prefix".into()))?;
+    let threshold = match key_object.get_element::<JsString>(2) {
+        Ok(t) => Some(t.into_utf8()?.as_str()?.to_string()),
+        Err(_) => None,
+    };
+
+    Ok((curr_pk, next_pk, threshold))
+}
+
+fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<PublicKeysConfig> {
     let cur = ctx
         .get::<JsObject>(arg_index)
         .map_err(|_e| napi::Error::from_reason("Missing keys parameter".into()))?;
@@ -91,17 +115,72 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Vec<
     } else {
         0
     };
-    let mut current_keys: Vec<BasicPrefix> = vec![];
+    let mut current: Vec<BasicPrefix> = vec![];
+    let mut next: Vec<BasicPrefix> = vec![];
+    let mut thresholds: Vec<Option<String>> = vec![];
     for i in 0..len {
-        let val: JsString = cur.get_element(i)?;
-        let bp = val
-            .into_utf8()?
-            .as_str()?
-            .parse()
-            .map_err(|_e| napi::Error::from_reason("Can't pase public key prefix".into()))?;
-        current_keys.push(bp);
+        let val: JsObject = cur.get_element(i)?;
+        let (cur, nxt, threshold) = get_keys_settings_argument(val)?;
+        current.push(cur);
+        next.push(nxt);
+        thresholds.push(threshold);
     }
-    Ok(current_keys)
+
+    let threshold = if thresholds.iter().all(|t| t.is_none()) {
+        let threshold: Result<i32, _> = ctx.get::<JsNumber>(1)?.try_into();
+        match threshold {
+            Ok(threshold) => SignatureThreshold::simple(threshold as u64),
+            Err(_) => {
+                // Set default threshold if not provided
+                SignatureThreshold::simple(1)
+            }
+        }
+    } else {
+        // Check if threshold is set for all keys
+        let thres: JsResult<Vec<(u64, u64)>> = thresholds
+            .into_iter()
+            .map(|t| {
+                t.ok_or(napi::Error::from_reason(
+                    "Missing threshold settings. ".into(),
+                ))
+            })
+            .map(|t| -> JsResult<_> {
+                let unwrapped_t = t?;
+                let mut split = unwrapped_t.split("/");
+                Ok((
+                    split
+                        .next()
+                        .ok_or(napi::Error::from_reason(
+                            "Wrong threshold format. Should be fraction".into(),
+                        ))?
+                        .parse()
+                        .map_err(|_e| {
+                            napi::Error::from_reason(
+                                "Wrong threshold format. Can't parse dividend".into(),
+                            )
+                        })?,
+                    split
+                        .next()
+                        .ok_or(napi::Error::from_reason(
+                            "Wrong threshold format. Should be fraction".into(),
+                        ))?
+                        .parse()
+                        .map_err(|_e| {
+                            napi::Error::from_reason(
+                                "Wrong threshold format. Can't parse divisor".into(),
+                            )
+                        })?,
+                ))
+            })
+            .collect();
+        SignatureThreshold::single_weighted(thres?)
+    };
+
+    Ok(PublicKeysConfig {
+        current,
+        next,
+        threshold,
+    })
 }
 
 fn get_signature_array_argument(
@@ -131,14 +210,8 @@ fn get_signature_array_argument(
 
 #[js_function(2)]
 fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
-    let current_keys = get_keys_array_argument(&ctx, 0)?;
+    let pub_keys = get_keys_array_argument(&ctx, 0)?;
 
-    let next_keys = get_keys_array_argument(&ctx, 1)?;
-
-    let pub_keys = PublicKeysConfig {
-        current: current_keys,
-        next: next_keys,
-    };
     let icp = KEL::incept(&pub_keys)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?
         .serialize()
@@ -171,14 +244,7 @@ fn get_kel(ctx: CallContext) -> JsResult<JsString> {
 
 #[js_function(2)]
 fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
-    let current_keys = get_keys_array_argument(&ctx, 0)?;
-
-    let next_keys = get_keys_array_argument(&ctx, 1)?;
-
-    let pub_keys = PublicKeysConfig {
-        current: current_keys,
-        next: next_keys,
-    };
+    let pub_keys = get_keys_array_argument(&ctx, 0)?;
 
     let this: JsObject = ctx.this_unchecked();
     let kel: &mut KEL = ctx.env.unwrap(&this)?;
