@@ -10,7 +10,7 @@ use keri::{
         Event, EventMessage, SerializationFormats,
     },
     event_message::event_msg_builder::{EventMsgBuilder, EventType},
-    prefix::{BasicPrefix, IdentifierPrefix},
+    prefix::BasicPrefix,
     state::IdentifierState,
 };
 

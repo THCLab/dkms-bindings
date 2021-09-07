@@ -180,7 +180,7 @@ impl<'d> KEL {
     /// Update current keys of identifier if signature matches rotation event.
     /// # Arguments
     /// * `rotation` - bytes of serialized rotation event message.
-    /// *` signature` - signature of rotation event.
+    /// *` signatures` - list of signatures of rotation event.
     pub fn finalize_rotation(
         &self,
         rotation: Vec<u8>,
@@ -324,25 +324,45 @@ impl<'d> KEL {
     /// # Arguments
     ///
     /// * `message` - Bytes of message
-    /// * `signature` - A string slice that holds the signature in base64
+    /// * `signatures` - A list of signatures
     /// * `prefix` - A string slice that holds the prefix of signer
     pub fn verify(
         &self,
         message: &[u8],
-        signature: &SelfSigningPrefix,
+        signatures: &[SelfSigningPrefix],
         prefix: &IdentifierPrefix,
     ) -> Result<bool, Error> {
-        let key_conf = self
+        let key_config = self
             .get_state_for_prefix(&prefix)?
             .ok_or(Error::Generic("There is no state".into()))?
             .current;
-        let sigs = vec![AttachedSignaturePrefix::new(
-            signature.derivation,
-            signature.derivative(),
-            0,
-        )];
-        key_conf
-            .verify(message, &sigs)
+
+        let indexed_signatures: Result<Vec<AttachedSignaturePrefix>, _> = signatures
+            .into_iter()
+            .map(|signature| {
+                (
+                    key_config
+                        .public_keys
+                        .iter()
+                        .position(|x| x.verify(message, &signature).unwrap()),
+                    // .ok_or(napi::Error::from_reason(format!("There is no key for signature: {}", signature.to_str())).unwrap(),
+                    signature,
+                )
+            })
+            .map(|(i, signature)| match i {
+                Some(i) => Ok(AttachedSignaturePrefix::new(
+                    signature.derivation,
+                    signature.derivative(),
+                    i as u16,
+                )),
+                None => Err(Error::Generic(
+                    "Signature doesn't match any public key".into(),
+                )),
+            })
+            .collect();
+
+        key_config
+            .verify(message, &indexed_signatures?)
             .map_err(|e| Error::Generic(e.to_string()))
     }
 

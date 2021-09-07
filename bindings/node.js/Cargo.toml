@@ -9,7 +9,7 @@ exclude = ["index.node"]
 crate-type = ["cdylib"]
 
 [dependencies]
-keri =  { git = "https://github.com/decentralized-identity/keriox", branch = "key_refactor" } 
+keri =  { git = "https://github.com/THCLab/keriox.git", branch="update_message_builder"} 
 thiserror = "1.0"
 base64 = "0.13.0"
 napi = { version = "1", features = ["serde-json"]}

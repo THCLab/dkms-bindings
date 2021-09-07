@@ -317,12 +317,8 @@ fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
         .into_value()
         .map_err(|_e| napi::Error::from_reason("Missing message parameter".into()))?
         .to_vec();
-    let signature = ctx
-        .get::<JsString>(1)?
-        .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
-        .as_str()?
-        .to_owned();
+    let signatures = get_signature_array_argument(&ctx, 1)?;
+
     let identifier: String = ctx
         .get::<JsString>(2)?
         .into_utf8()
@@ -335,12 +331,8 @@ fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
         .parse()
         .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?;
 
-    let signature: SelfSigningPrefix = signature
-        .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong signature prefix".into()))?;
-
     ctx.env
-        .get_boolean(kel.verify(&message, &signature, &prefix).map_err(|e| {
+        .get_boolean(kel.verify(&message, &signatures, &prefix).map_err(|e| {
             napi::Error::from_reason(format!("Error while verifing: {}", e.to_string()))
         })?)
 }
