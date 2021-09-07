@@ -122,7 +122,7 @@ impl<'d> KEL {
     /// # Arguments
     /// * `database_root` - srtring representing path where database files will be stored.
     /// * `icp` - inception event message.
-    /// *` signature`
+    /// *` signatures`
     pub fn finalize_incept(
         database_root: &str,
         icp: &EventMessage,
@@ -133,13 +133,29 @@ impl<'d> KEL {
             &[database_root, &prefix.to_str()].join("/"),
         ))?);
 
-        let indexed_signatures = signatures
+        let pub_keys = match icp.event.event_data {
+            keri::event::event_data::EventData::Icp(ref icp) => {
+                Ok(icp.key_config.public_keys.to_owned())
+            }
+            _ => Err(Error::Generic("Improper event type".into())),
+        }?;
+
+        let indexed_signatures: Vec<AttachedSignaturePrefix> = signatures
             .into_iter()
-            .enumerate()
+            .map(|signature| {
+                (
+                    pub_keys
+                        .iter()
+                        .position(|x| x.verify(&icp.serialize().unwrap(), &signature).unwrap())
+                        .unwrap(),
+                    signature,
+                )
+            })
             .map(|(i, signature)| {
                 AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
             })
             .collect();
+
         let sigged = icp.sign(indexed_signatures);
 
         let processor = match database {
@@ -172,9 +188,24 @@ impl<'d> KEL {
     ) -> Result<SignedEventMessage, Error> {
         let rot_event = message(&rotation).unwrap().1.event_message;
 
-        let indexed_signatures = signatures
+        let pub_keys = match rot_event.event.event_data {
+            keri::event::event_data::EventData::Rot(ref rot) => {
+                Ok(rot.key_config.public_keys.to_owned())
+            }
+            _ => Err(Error::Generic("Improper event type".into())),
+        }?;
+
+        let indexed_signatures: Vec<AttachedSignaturePrefix> = signatures
             .into_iter()
-            .enumerate()
+            .map(|signature| {
+                (
+                    pub_keys
+                        .iter()
+                        .position(|x| x.verify(&rotation, &signature).unwrap())
+                        .unwrap(),
+                    signature,
+                )
+            })
             .map(|(i, signature)| {
                 AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
             })
