@@ -287,7 +287,7 @@ fn process(ctx: CallContext) -> JsResult<JsUndefined> {
 }
 
 #[js_function(1)]
-fn get_current_public_key(ctx: CallContext) -> JsResult<JsBuffer> {
+fn get_current_public_key(ctx: CallContext) -> JsResult<JsObject> {
     let identifier: String = ctx
         .get::<JsString>(0)?
         .into_utf8()
@@ -299,15 +299,21 @@ fn get_current_public_key(ctx: CallContext) -> JsResult<JsBuffer> {
         .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?;
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
-    let key = kel
+    let mut key_array = ctx.env.create_array_with_length(2)?;
+    let _key: Vec<_> = kel
         .get_current_public_keys(&prefix)
         .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?
-        .ok_or(napi::Error::from_reason(format!("There is no keys for prefix {}", identifier)))?
-        // TODO For now assume that there is only one key.
-        [0]
-    .key
-    .clone();
-    ctx.env.create_buffer_copy(&key).map(|b| b.into_raw())
+        .ok_or(napi::Error::from_reason(format!(
+            "There is no keys for prefix {}",
+            identifier
+        )))?
+        .iter()
+        .enumerate()
+        .map(|(i, key)| {
+            key_array.set_element(i as u32, ctx.env.create_string_from_std(key.to_str())?)
+        })
+        .collect();
+    Ok(key_array)
 }
 
 #[js_function(3)]

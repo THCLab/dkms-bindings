@@ -10,7 +10,7 @@ use keri::{
     event_message::parse::{message, signed_event_stream},
     event_message::SignedEventMessage,
     prefix::AttachedSignaturePrefix,
-    prefix::{IdentifierPrefix, Prefix, SelfSigningPrefix},
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
     processor::EventProcessor,
     state::IdentifierState,
 };
@@ -303,18 +303,10 @@ impl<'d> KEL {
     pub fn get_current_public_keys(
         &self,
         prefix: &IdentifierPrefix,
-    ) -> Result<Option<Vec<Key>>, Error> {
-        let keys = self.get_state_for_prefix(prefix)?.map(|state| {
-            state
-                .current
-                .public_keys
-                .iter()
-                .map(|bp| Key {
-                    key: bp.public_key.key(),
-                    key_type: bp.derivation,
-                })
-                .collect()
-        });
+    ) -> Result<Option<Vec<BasicPrefix>>, Error> {
+        let keys = self
+            .get_state_for_prefix(prefix)?
+            .map(|state| state.current.public_keys);
         Ok(keys)
     }
 
