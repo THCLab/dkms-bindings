@@ -4,7 +4,6 @@ const keri = require('../index.node');
 
 type Controller = {
   [idx: string]: any;
-
 };
 
 class KeriController {
@@ -43,7 +42,7 @@ class KeriController {
 }
 
 module.exports = {
-  ...keri,
+  incept: keri.incept,
   finalizeIncept: (icpEvent: string, signature: string) => {
     let prefix = keri.finalize_incept(icpEvent, signature);
     return new KeriController(prefix);
