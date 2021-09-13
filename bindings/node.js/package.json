@@ -19,7 +19,8 @@
   "scripts": {
     "build": "napi build --release",
     "build:debug": "napi build",
-    "test": "jest -c jest.ts-config.js"
+    "test": "jest -c jest.ts-config.js",
+    "ts-compile": "ttsc -p tsconfig.json"
   },
   "dependencies": {
     "js-base64": "^3.6.1",

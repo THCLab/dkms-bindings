@@ -23,9 +23,6 @@
       "@test/*": [ "./test/*" ],
       "@src/*": [ "./src/*" ]
     },
-    "plugins": [
-      { "transform": "typescript-transform-paths" }
-    ],
     "typeRoots": [
       "node_modules/@types"
     ],

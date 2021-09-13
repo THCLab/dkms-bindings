@@ -2,7 +2,7 @@
 
 const nacl = require("tweetnacl");
 const util = require("tweetnacl-util");
-const keri = require('./index.js')
+const keri = require('./build/index')
 const {Base64} = require('js-base64');
 
 const currentKeyPair = nacl.sign.keyPair();
@@ -112,7 +112,7 @@ try {
   console.log(error.message);
 }
 try {
-  console.log("Try to incept using with arbitrary text instead of identifier prefix as a public key..."); 
+  console.log("Try to incept using with arbitrary text instead of identifier prefix as a public key...");
   keri.incept([["DeXBCH8bD42XDW8T7-ryDXrS0MSMw13EBZkAsYFnLdno", "no_next_key_prefix"]])
 } catch (e) {
   console.log(e.message)
