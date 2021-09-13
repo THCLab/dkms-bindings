@@ -1,7 +1,4 @@
-use std::{
-    fmt::{self, Debug},
-    path::Path,
-};
+use std::{fmt::{self, Debug}, path::Path};
 
 use keri::{
     database::sled::SledEventDatabase,
@@ -221,6 +218,47 @@ impl<'d> KEL {
 
         Ok(rot)
     }
+
+    pub fn anchor(&self, payload: &str) -> Result<EventMessage, Error> {
+        event_generator::make_ixn(payload, self.get_state()?.unwrap())
+    }
+    
+     pub fn finalize_anchor(
+        &self,
+        ixn: Vec<u8>,
+        signatures: Vec<SelfSigningPrefix>,
+    ) -> Result<SignedEventMessage, Error> {
+        let ixn_event = message(&ixn).unwrap().1.event_message;
+
+        let pub_keys = self.get_state()?.unwrap().current.public_keys;
+
+        let indexed_signatures: Vec<AttachedSignaturePrefix> = signatures
+            .into_iter()
+            .map(|signature| {
+                (
+                    pub_keys
+                        .iter()
+                        .position(|x| x.verify(&ixn, &signature).unwrap())
+                        .unwrap(),
+                    signature,
+                )
+            })
+            .map(|(i, signature)| {
+                AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
+            })
+            .collect();
+
+        let signed_ixn = ixn_event.sign(indexed_signatures);
+
+        let processor = match self.database {
+            Some(ref db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        processor.process(signed_message(&signed_ixn.serialize()?).unwrap().1)?;
+
+        Ok(signed_ixn)
+    }
+
 
     pub fn get_prefix(&self) -> IdentifierPrefix {
         self.prefix.clone()

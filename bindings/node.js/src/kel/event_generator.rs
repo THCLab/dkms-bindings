@@ -1,18 +1,5 @@
 use super::error::Error;
-use keri::{
-    derivation::{basic::Basic, self_addressing::SelfAddressing},
-    event::{
-        event_data::{EventData, Receipt},
-        sections::{
-            seal::{EventSeal, Seal},
-            threshold::SignatureThreshold,
-        },
-        Event, EventMessage, SerializationFormats,
-    },
-    event_message::event_msg_builder::{EventMsgBuilder, EventType},
-    prefix::BasicPrefix,
-    state::IdentifierState,
-};
+use keri::{derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning}, event::{Event, EventMessage, SerializationFormats, event_data::{EventData, Receipt}, sections::{seal::{DigestSeal, EventSeal, Seal}, threshold::SignatureThreshold}}, event_message::event_msg_builder::{EventMsgBuilder, EventType}, keys::PrivateKey, prefix::BasicPrefix, state::IdentifierState};
 
 pub struct Key {
     pub key_type: Basic,
@@ -85,6 +72,20 @@ pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<Event
         .with_threshold(keys.threshold.clone())
         .build()?;
     Ok(ixn)
+}
+
+pub fn make_ixn(
+    payload: &str,
+    state: IdentifierState,
+) -> Result<EventMessage, Error> {
+    let seal = Seal::Digest(DigestSeal { dig: SelfAddressing::Blake3_256.derive(payload.as_bytes())});
+    let ev = EventMsgBuilder::new(EventType::Interaction)?
+        .with_prefix(state.prefix.clone())
+        .with_sn(state.sn + 1)
+        .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
+        .with_seal(vec![seal])
+        .build()?;
+    Ok(ev)
 }
 
 pub fn make_ixn_with_seal(

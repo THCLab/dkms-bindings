@@ -50,6 +50,21 @@ let prefix = controller.prefix;
 
 console.log("Controller's key event log:\n " + controller.getKel() + "\n")
 
+// Make interaction event
+let interactionEvent = controller.anchor("hi")
+// Sign interaction event with enough signatures
+signature1 = nacl.sign.detached(interactionEvent, currentKeyPair.secretKey);
+signatureB64 = Base64.encode(signature1, true);
+signPrefix = "0B".concat(signatureB64) // attach derivation code.
+
+signature2 = nacl.sign.detached(interactionEvent, secondCurrentKeyPair.secretKey);
+signatureB64 = Base64.encode(signature2, true);
+secondSignPrefix = "0B".concat(signatureB64) // attach derivation code
+// Process interaction event with signatures.
+if (controller.finalizeAnchor(interactionEvent, [signPrefix, secondSignPrefix])) {
+  console.log("Interaction event processed succesfully\n")
+}
+
 let rotationEvent = controller.rotate([[nextPrefix, nextNextPrefix, "1/2"], [snextPrefix, snextNextPrefix, "1/2"]])
 console.log("rot: \n" + rotationEvent.toString("utf8") + "\n")
 signature1 = nacl.sign.detached(rotationEvent, nextKeyPair.secretKey);

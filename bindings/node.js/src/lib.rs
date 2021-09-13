@@ -24,6 +24,8 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
             Property::new(&env, "get_kel")?.with_method(get_kel),
             Property::new(&env, "rotate")?.with_method(rotate),
             Property::new(&env, "finalize_rotation")?.with_method(finalize_rotation),
+            Property::new(&env, "anchor")?.with_method(anchor),
+            Property::new(&env, "finalize_anchor")?.with_method(finalize_anchor),
             Property::new(&env, "process")?.with_method(process),
             Property::new(&env, "get_current_public_key")?.with_method(get_current_public_key),
             Property::new(&env, "verify")?.with_method(verify),
@@ -270,6 +272,41 @@ fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
 
     let rot_result = kel.finalize_rotation(rot, signatures);
     ctx.env.get_boolean(rot_result.is_ok())
+}
+
+#[js_function(1)]
+fn anchor(ctx: CallContext) -> JsResult<JsBuffer> {
+    let payload = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
+        .map_err(|_e| napi::Error::from_reason("Missing payload argument".into()))?
+        .as_str()?
+        .to_owned();
+
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &mut KEL = ctx.env.unwrap(&this)?;
+    let ixn_event = kel
+        .anchor(&payload)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?
+        .serialize()
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    ctx.env.create_buffer_copy(&ixn_event).map(|b| b.into_raw())
+}
+
+#[js_function(2)]
+fn finalize_anchor(ctx: CallContext) -> JsResult<JsBoolean> {
+    let ixn = ctx
+        .get::<JsBuffer>(0)?
+        .into_value() //?.to_vec()
+        .map_err(|_e| napi::Error::from_reason("Missing interaction event parameter".into()))?
+        .to_vec();
+    let signatures = get_signature_array_argument(&ctx, 1)?;
+
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &KEL = ctx.env.unwrap(&this)?;
+
+    let ixn_result = kel.finalize_anchor(ixn, signatures);
+    ctx.env.get_boolean(ixn_result.is_ok())
 }
 
 #[js_function(1)]
