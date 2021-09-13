@@ -47,4 +47,12 @@ describe("Anchoring on ledger", () => {
     expect(kel).to.include(thirdDigest);
 
   });
+
+  describe("negative", () => {
+    it("fails for not recognized digest format", () => {
+      let [ controller ] = inceptor();
+
+      expect(() => controller.anchor([ "whatever" ])).to.throw("Can't parse sai prefix");
+    });
+  });
 });

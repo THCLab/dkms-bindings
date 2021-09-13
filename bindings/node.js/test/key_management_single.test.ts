@@ -43,4 +43,48 @@ describe("Key management simple", () => {
 
     expect(countEvents(controller.getKel())).to.eq(2);
   });
+
+  describe("negative", () => {
+    describe("for incepting", () => {
+      it.skip("fails for missing next public key", () => {
+        const currentKeyManager = new Tpm();
+
+        let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
+        expect(() => keri.incept([[curKeySai]])).to.throw("missing next public key for inception");
+
+      });
+
+      it("fails for invalid public key", () => {
+        const currentKeyManager = new Tpm();
+
+        let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
+        expect(() => keri.incept([[curKeySai, "ble bla"]])).to.throw("Can't pase public key prefix");
+        expect(() => keri.incept([["bla ble", "ble bla"]])).to.throw("Can't pase public key prefix");
+        expect(() => keri.incept([["bla ble"]])).to.throw("Can't pase public key prefix");
+
+      });
+
+      it.skip("fails for invalid inception event", () => {
+        const currentKeyManager = new Tpm();
+        const nextKeyManager = new Tpm();
+
+        let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
+        let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
+
+        let inceptionEvent = keri.incept([[curKeySai, nextKeySai]]);
+
+        let signature = currentKeyManager.sign(inceptionEvent);
+
+        keri.finalizeIncept(Buffer.from("whatever"), [prefixedSignature(b64EncodeUrlSafe(signature))])
+        expect(() => keri.finalizeIncept(Buffer.from("whatever"), [(b64EncodeUrlSafe(signature))]))
+        .to.throw("Invalid Inception Event");
+
+        expect(() => keri.finalizeIncept("whatever" as any, [(b64EncodeUrlSafe(signature))]))
+        .to.throw("Invalid Inception Event");
+
+        expect(() => keri.finalizeIncept(inceptionEvent, [(b64EncodeUrlSafe(signature))]))
+        .to.throw("Can't parse signature prefix");
+      });
+    })
+  });
 });

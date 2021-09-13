@@ -43,7 +43,7 @@ export class KeriController {
 
 export default {
   incept: keri.incept,
-  finalizeIncept: (icpEvent: string, signatures: string[]) => {
+  finalizeIncept: (icpEvent: Buffer, signatures: string[]) => {
     let prefix = keri.finalize_incept(icpEvent, signatures);
     return new KeriController(prefix);
   },
