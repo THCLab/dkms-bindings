@@ -1,15 +1,12 @@
-# keri-bindings
+# keri-node.js-bindings
 
 ## Running
 ```sh
-$ npm install
+$ npm i && npm run build
 ```
 
-If you have already installed the project and only want to run the build, run:
+## Tests
 
-```sh
-$ npm run build
 ```
-```
-node test.js
+npm i && npm run test
 ```
