@@ -6,7 +6,7 @@ type Controller = {
   [idx: string]: any;
 };
 
-class KeriController {
+export class KeriController {
   [idx: string]: any;
   private readonly controller: Controller;
 
