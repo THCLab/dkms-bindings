@@ -89,17 +89,19 @@ fn get_keys_settings_argument(
     key_object: JsObject,
 ) -> JsResult<(BasicPrefix, BasicPrefix, Option<String>)> {
     let curr_pk: BasicPrefix = key_object
-        .get_element::<JsString>(0)?
+        .get_element::<JsString>(0)
+        .map_err(|_e| napi::Error::from_reason("Missing current public key argument".into()))?
         .into_utf8()?
         .as_str()?
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Can't pase public key prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix".into()))?;
     let next_pk: BasicPrefix = key_object
-        .get_element::<JsString>(1)?
+        .get_element::<JsString>(1)
+        .map_err(|_e| napi::Error::from_reason("Missing next public key argument".into()))?
         .into_utf8()?
         .as_str()?
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Can't pase public key prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix".into()))?;
     let threshold = match key_object.get_element::<JsString>(2) {
         Ok(t) => Some(t.into_utf8()?.as_str()?.to_string()),
         Err(_) => None,
