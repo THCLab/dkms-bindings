@@ -50,8 +50,8 @@ let prefix = controller.prefix;
 
 console.log("Controller's key event log:\n " + controller.getKel() + "\n")
 
-// Make interaction event
-let interactionEvent = controller.anchor("hi")
+// Make interaction event with examplary sai prefix
+let interactionEvent = controller.anchor(["E6ISnmMK-TfP0uN2lLp5vL6JxxBNjXLZ7bpDBkjxngdE"])
 // Sign interaction event with enough signatures
 signature1 = nacl.sign.detached(interactionEvent, currentKeyPair.secretKey);
 signatureB64 = Base64.encode(signature1, true);

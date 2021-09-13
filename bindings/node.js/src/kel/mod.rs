@@ -1,21 +1,11 @@
 use std::{fmt::{self, Debug}, path::Path};
 
-use keri::{
-    database::sled::SledEventDatabase,
-    event::{sections::KeyConfig, EventMessage},
-    event_message::parse::signed_message,
-    event_message::parse::{message, signed_event_stream},
-    event_message::SignedEventMessage,
-    prefix::AttachedSignaturePrefix,
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
-    processor::EventProcessor,
-    state::IdentifierState,
-};
+use keri::{database::sled::SledEventDatabase, event::{sections::KeyConfig, EventMessage}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix}, processor::EventProcessor, state::IdentifierState};
 
 pub mod error;
 use error::Error;
 
-use self::event_generator::{Key, PublicKeysConfig};
+use self::event_generator::PublicKeysConfig;
 pub mod event_generator;
 
 pub struct KEL {
@@ -219,7 +209,7 @@ impl<'d> KEL {
         Ok(rot)
     }
 
-    pub fn anchor(&self, payload: &str) -> Result<EventMessage, Error> {
+    pub fn anchor(&self, payload: &[SelfAddressingPrefix]) -> Result<EventMessage, Error> {
         event_generator::make_ixn(payload, self.get_state()?.unwrap())
     }
     

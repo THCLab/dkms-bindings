@@ -1,10 +1,6 @@
 use std::convert::TryInto;
 
-use keri::{
-    event::sections::threshold::SignatureThreshold,
-    event_message::parse::message,
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
-};
+use keri::{event::sections::threshold::SignatureThreshold, event_message::parse::message, prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix}};
 use napi::{
     CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, Property,
     Result as JsResult,
@@ -210,6 +206,32 @@ fn get_signature_array_argument(
     Ok(parsed_signatures)
 }
 
+fn get_sai_array_argument(
+    ctx: &CallContext,
+    arg_index: usize,
+) -> JsResult<Vec<SelfAddressingPrefix>> {
+    let sai = ctx
+        .get::<JsObject>(arg_index)
+        .map_err(|_e| napi::Error::from_reason("Missing sai parameter".into()))?;
+    let len = if sai.is_array()? {
+        sai.get_array_length()?
+    } else {
+        0
+    };
+    let mut parsed_sai: Vec<SelfAddressingPrefix> = vec![];
+    for i in 0..len {
+        let val: JsString = sai.get_element(i)?;
+        let bp = val
+            .into_utf8()?
+            .as_str()?
+            .parse()
+            .map_err(|_e| napi::Error::from_reason("Can't parse sai prefix".into()))?;
+        parsed_sai.push(bp);
+    }
+    Ok(parsed_sai)
+}
+
+
 #[js_function(2)]
 fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
     let pub_keys = get_keys_array_argument(&ctx, 0)?;
@@ -276,12 +298,7 @@ fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
 
 #[js_function(1)]
 fn anchor(ctx: CallContext) -> JsResult<JsBuffer> {
-    let payload = ctx
-        .get::<JsString>(0)?
-        .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing payload argument".into()))?
-        .as_str()?
-        .to_owned();
+    let payload = get_sai_array_argument(&ctx, 0)?;
 
     let this: JsObject = ctx.this_unchecked();
     let kel: &mut KEL = ctx.env.unwrap(&this)?;
