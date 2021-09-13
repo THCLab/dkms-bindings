@@ -64,7 +64,7 @@ describe("Key management simple", () => {
 
       });
 
-      it.skip("fails for invalid inception event", () => {
+      it.skip("fails for finalizing invalid inception event", () => {
         const currentKeyManager = new Tpm();
         const nextKeyManager = new Tpm();
 
@@ -75,14 +75,26 @@ describe("Key management simple", () => {
 
         let signature = currentKeyManager.sign(inceptionEvent);
 
-        keri.finalizeIncept(Buffer.from("whatever"), [prefixedSignature(b64EncodeUrlSafe(signature))])
-        expect(() => keri.finalizeIncept(Buffer.from("whatever"), [(b64EncodeUrlSafe(signature))]))
+        expect(() => keri.finalizeIncept(Buffer.from("whatever"), [b64EncodeUrlSafe(signature)]))
         .to.throw("Invalid Inception Event");
 
-        expect(() => keri.finalizeIncept("whatever" as any, [(b64EncodeUrlSafe(signature))]))
+        expect(() => keri.finalizeIncept("whatever" as any, [b64EncodeUrlSafe(signature)]))
         .to.throw("Invalid Inception Event");
 
-        expect(() => keri.finalizeIncept(inceptionEvent, [(b64EncodeUrlSafe(signature))]))
+        expect(() => keri.finalizeIncept(inceptionEvent, [b64EncodeUrlSafe(signature)]))
+        .to.throw("Can't parse signature prefix");
+      });
+
+      it("fails for finalizing invalid inception signature", () => {
+        const currentKeyManager = new Tpm();
+        const nextKeyManager = new Tpm();
+
+        let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
+        let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
+
+        let inceptionEvent = keri.incept([[curKeySai, nextKeySai]]);
+
+        expect(() => keri.finalizeIncept(inceptionEvent, ["whatever"]))
         .to.throw("Can't parse signature prefix");
       });
     })
