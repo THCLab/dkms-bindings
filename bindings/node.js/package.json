@@ -1,4 +1,6 @@
 {
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "package": "keri-bindings-node.js",
   "devDependencies": {
     "@napi-rs/cli": "^1.0.0",
