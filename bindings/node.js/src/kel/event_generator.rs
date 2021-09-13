@@ -1,5 +1,18 @@
 use super::error::Error;
-use keri::{derivation::{basic::Basic, self_addressing::SelfAddressing}, event::{Event, EventMessage, SerializationFormats, event_data::{EventData, Receipt}, sections::{seal::{DigestSeal, EventSeal, Seal}, threshold::SignatureThreshold}}, event_message::event_msg_builder::{EventMsgBuilder, EventType}, prefix::{BasicPrefix, SelfAddressingPrefix}, state::IdentifierState};
+use keri::{
+    derivation::{basic::Basic, self_addressing::SelfAddressing},
+    event::{
+        event_data::{EventData, Receipt},
+        sections::{
+            seal::{DigestSeal, EventSeal, Seal},
+            threshold::SignatureThreshold,
+        },
+        Event, EventMessage, SerializationFormats,
+    },
+    event_message::event_msg_builder::{EventMsgBuilder, EventType},
+    prefix::{BasicPrefix, SelfAddressingPrefix},
+    state::IdentifierState,
+};
 
 pub struct Key {
     pub key_type: Basic,
@@ -78,7 +91,14 @@ pub fn make_ixn(
     payload: &[SelfAddressingPrefix],
     state: IdentifierState,
 ) -> Result<EventMessage, Error> {
-    let seal_list = payload.into_iter().map(|seal| Seal::Digest(DigestSeal {dig: seal.to_owned()})).collect();
+    let seal_list = payload
+        .iter()
+        .map(|seal| {
+            Seal::Digest(DigestSeal {
+                dig: seal.to_owned(),
+            })
+        })
+        .collect();
     let ev = EventMsgBuilder::new(EventType::Interaction)?
         .with_prefix(state.prefix.clone())
         .with_sn(state.sn + 1)

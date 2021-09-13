@@ -1,6 +1,19 @@
-use std::{fmt::{self, Debug}, path::Path};
+use std::{
+    fmt::{self, Debug},
+    path::Path,
+};
 
-use keri::{database::sled::SledEventDatabase, event::{sections::KeyConfig, EventMessage}, event_message::SignedEventMessage, event_message::parse::signed_message, event_message::parse::{message, signed_event_stream}, prefix::AttachedSignaturePrefix, prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix}, processor::EventProcessor, state::IdentifierState};
+use keri::{
+    database::sled::SledEventDatabase,
+    event::{sections::KeyConfig, EventMessage},
+    event_message::parse::signed_message,
+    event_message::parse::{message, signed_event_stream},
+    event_message::SignedEventMessage,
+    prefix::AttachedSignaturePrefix,
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
+    processor::EventProcessor,
+    state::IdentifierState,
+};
 
 pub mod error;
 use error::Error;
@@ -18,9 +31,7 @@ impl Debug for KEL {
         write!(
             f,
             "{:?}",
-            self.get_kel()
-                .map_err(|_e| fmt::Error)?
-                .map(|k| String::from_utf8(k))
+            String::from_utf8(self.get_kel().map_err(|_e| fmt::Error)?.unwrap_or_default())
         )
     }
 }
@@ -64,7 +75,7 @@ impl<'d> KEL {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        let message = message(&event).unwrap().1.event_message;
+        let message = message(event).unwrap().1.event_message;
         let sigged = message.sign(vec![AttachedSignaturePrefix::new(
             signature.derivation,
             signature.derivative(),
@@ -90,7 +101,7 @@ impl<'d> KEL {
             signed_event_stream(stream).map_err(|e| Error::Generic(e.to_string()))?;
         let (_processed_ok, _processed_failed): (Vec<_>, Vec<_>) = events
             .into_iter()
-            .map(|event| processor.process(event.clone()).and_then(|_| Ok(event)))
+            .map(|event| processor.process(event.clone()).map(|_| event))
             .partition(Result::is_ok);
         Ok(())
     }
@@ -212,8 +223,8 @@ impl<'d> KEL {
     pub fn anchor(&self, payload: &[SelfAddressingPrefix]) -> Result<EventMessage, Error> {
         event_generator::make_ixn(payload, self.get_state()?.unwrap())
     }
-    
-     pub fn finalize_anchor(
+
+    pub fn finalize_anchor(
         &self,
         ixn: Vec<u8>,
         signatures: Vec<SelfSigningPrefix>,
@@ -249,7 +260,6 @@ impl<'d> KEL {
         Ok(signed_ixn)
     }
 
-
     pub fn get_prefix(&self) -> IdentifierPrefix {
         self.prefix.clone()
     }
@@ -261,7 +271,7 @@ impl<'d> KEL {
         }?;
         processor
             .compute_state(&self.prefix)
-            .map_err(|e| Error::KeriError(e))
+            .map_err(Error::KeriError)
     }
 
     pub fn get_event_at_sn(
@@ -284,9 +294,7 @@ impl<'d> KEL {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        processor
-            .get_kerl(&self.prefix)
-            .map_err(|e| Error::KeriError(e))
+        Ok(processor.get_kerl(&self.prefix)?)
     }
 
     /// Returns key event log of given prefix.
@@ -297,7 +305,7 @@ impl<'d> KEL {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        processor.get_kerl(prefix).map_err(|e| Error::KeriError(e))
+        processor.get_kerl(prefix).map_err(Error::KeriError)
     }
 
     pub fn get_state_for_prefix(
@@ -308,9 +316,7 @@ impl<'d> KEL {
             Some(ref db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),
         }?;
-        processor
-            .compute_state(prefix)
-            .map_err(|e| Error::KeriError(e))
+        processor.compute_state(prefix).map_err(Error::KeriError)
     }
 
     pub fn get_keys_at_sn(
@@ -323,8 +329,8 @@ impl<'d> KEL {
             None => Err(Error::NoDatabase),
         }?;
         Ok(processor
-            .compute_state_at_sn(&prefix, sn)
-            .map_err(|e| Error::KeriError(e))?
+            .compute_state_at_sn(prefix, sn)
+            .map_err(Error::KeriError)?
             .map(|st| st.current))
     }
 
@@ -353,18 +359,18 @@ impl<'d> KEL {
         prefix: &IdentifierPrefix,
     ) -> Result<bool, Error> {
         let key_config = self
-            .get_state_for_prefix(&prefix)?
-            .ok_or(Error::Generic("There is no state".into()))?
+            .get_state_for_prefix(prefix)?
+            .ok_or_else(|| Error::Generic("There is no state".into()))?
             .current;
 
         let indexed_signatures: Result<Vec<AttachedSignaturePrefix>, _> = signatures
-            .into_iter()
+            .iter()
             .map(|signature| {
                 (
                     key_config
                         .public_keys
                         .iter()
-                        .position(|x| x.verify(message, &signature).unwrap()),
+                        .position(|x| x.verify(message, signature).unwrap()),
                     // .ok_or(napi::Error::from_reason(format!("There is no key for signature: {}", signature.to_str())).unwrap(),
                     signature,
                 )
@@ -404,13 +410,13 @@ impl<'d> KEL {
         prefix: &IdentifierPrefix,
         sn: u64,
     ) -> Result<bool, Error> {
-        let key_conf = self
-            .get_keys_at_sn(prefix, sn)?
-            .ok_or(Error::Generic(format!(
+        let key_conf = self.get_keys_at_sn(prefix, sn)?.ok_or_else(|| {
+            Error::Generic(format!(
                 "There are no key config fo identifier {} at {}",
                 prefix.to_str(),
                 sn
-            )))?;
+            ))
+        })?;
         let sigs = vec![AttachedSignaturePrefix::new(
             signature.derivation,
             signature.derivative(),

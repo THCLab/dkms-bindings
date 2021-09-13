@@ -1,6 +1,10 @@
 use std::convert::TryInto;
 
-use keri::{event::sections::threshold::SignatureThreshold, event_message::parse::message, prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix}};
+use keri::{
+    event::sections::threshold::SignatureThreshold,
+    event_message::parse::message,
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
+};
 use napi::{
     CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, Property,
     Result as JsResult,
@@ -42,9 +46,9 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
     // Read / parse config file
     cfg.read().ok().expect("There is no `settings.cfg` file");
 
-    let path_str = cfg.get("db_path").ok_or(napi::Error::from_reason(
-        "Missing `db_path` setting in settings.cfg".into(),
-    ))?;
+    let path_str = cfg.get("db_path").ok_or_else(|| {
+        napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
+    })?;
     let icp = message(&icp)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?
         .1
@@ -68,11 +72,11 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
     // Read / parse config file
     cfg.read()
         .ok()
-        .ok_or(napi::Error::from_reason("Can't read a config file".into()))?;
+        .ok_or_else(|| napi::Error::from_reason("Can't read a config file".into()))?;
 
-    let path_str = cfg.get("db_path").ok_or(napi::Error::from_reason(
-        "Missing `db_path` setting in settings.cfg".into(),
-    ))?;
+    let path_str = cfg.get("db_path").ok_or_else(|| {
+        napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
+    })?;
     let prefix: IdentifierPrefix = prefix.parse().expect("Can't parse signature");
     let kel =
         KEL::load_kel(&path_str, prefix).map_err(|e| napi::Error::from_reason(e.to_string()))?;
@@ -138,19 +142,19 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
         let thres: JsResult<Vec<(u64, u64)>> = thresholds
             .into_iter()
             .map(|t| {
-                t.ok_or(napi::Error::from_reason(
-                    "Missing threshold settings. ".into(),
-                ))
+                t.ok_or_else(|| napi::Error::from_reason("Missing threshold settings. ".into()))
             })
             .map(|t| -> JsResult<_> {
                 let unwrapped_t = t?;
-                let mut split = unwrapped_t.split("/");
+                let mut split = unwrapped_t.split('/');
                 Ok((
                     split
                         .next()
-                        .ok_or(napi::Error::from_reason(
-                            "Wrong threshold format. Should be fraction".into(),
-                        ))?
+                        .ok_or_else(|| {
+                            napi::Error::from_reason(
+                                "Wrong threshold format. Should be fraction".into(),
+                            )
+                        })?
                         .parse()
                         .map_err(|_e| {
                             napi::Error::from_reason(
@@ -159,9 +163,11 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
                         })?,
                     split
                         .next()
-                        .ok_or(napi::Error::from_reason(
-                            "Wrong threshold format. Should be fraction".into(),
-                        ))?
+                        .ok_or_else(|| {
+                            napi::Error::from_reason(
+                                "Wrong threshold format. Should be fraction".into(),
+                            )
+                        })?
                         .parse()
                         .map_err(|_e| {
                             napi::Error::from_reason(
@@ -230,7 +236,6 @@ fn get_sai_array_argument(
     }
     Ok(parsed_sai)
 }
-
 
 #[js_function(2)]
 fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
@@ -357,10 +362,9 @@ fn get_current_public_key(ctx: CallContext) -> JsResult<JsObject> {
     let _key: Vec<_> = kel
         .get_current_public_keys(&prefix)
         .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?
-        .ok_or(napi::Error::from_reason(format!(
-            "There is no keys for prefix {}",
-            identifier
-        )))?
+        .ok_or_else(|| {
+            napi::Error::from_reason(format!("There is no keys for prefix {}", identifier))
+        })?
         .iter()
         .enumerate()
         .map(|(i, key)| {
