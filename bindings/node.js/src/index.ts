@@ -10,7 +10,7 @@ class KeriController {
   [idx: string]: any;
   private readonly controller: Controller;
 
-  constructor(private readonly prefix: string) {
+  constructor(public readonly prefix: string) {
     this.controller = new keri.Controller(prefix);
 
     return new Proxy(this, {
@@ -41,10 +41,10 @@ class KeriController {
   }
 }
 
-module.exports = {
+export default {
   incept: keri.incept,
-  finalizeIncept: (icpEvent: string, signature: string) => {
-    let prefix = keri.finalize_incept(icpEvent, signature);
+  finalizeIncept: (icpEvent: string, signatures: string[]) => {
+    let prefix = keri.finalize_incept(icpEvent, signatures);
     return new KeriController(prefix);
   },
   Controller: KeriController
