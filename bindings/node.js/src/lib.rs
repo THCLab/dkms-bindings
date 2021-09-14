@@ -132,6 +132,7 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
     }
 
     let threshold = if thresholds.iter().all(|t| t.is_none()) {
+        // Any key has weighted threshold set.
         let threshold: Result<i32, _> = ctx.get::<JsNumber>(1)?.try_into();
         match threshold {
             Ok(threshold) => SignatureThreshold::simple(threshold as u64),
@@ -141,7 +142,8 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
             }
         }
     } else {
-        // Check if threshold is set for all keys
+        // All keys has weighted threshold set. Or at least should. 
+        // If not, error is returned.
         let thres: JsResult<Vec<(u64, u64)>> = thresholds
             .into_iter()
             .map(|t| {
@@ -150,36 +152,58 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
             .map(|t| -> JsResult<_> {
                 let unwrapped_t = t?;
                 let mut split = unwrapped_t.split('/');
+
                 Ok((
                     split
                         .next()
-                        .ok_or_else(|| {
-                            napi::Error::from_reason(
-                                "Wrong threshold format. Should be fraction".into(),
-                            )
-                        })?
-                        .parse()
-                        .map_err(|_e| {
-                            napi::Error::from_reason(
-                                "Wrong threshold format. Can't parse dividend".into(),
-                            )
-                        })?,
+                        .map(|numerator| {
+                            numerator.parse().map_err(|_e| {
+                                napi::Error::from_reason(
+                                    "Wrong threshold format. Can't parse numerator".into(),
+                                )
+                            })
+                        }),
                     split
                         .next()
-                        .ok_or_else(|| {
-                            napi::Error::from_reason(
-                                "Wrong threshold format. Should be fraction".into(),
-                            )
-                        })?
-                        .parse()
-                        .map_err(|_e| {
-                            napi::Error::from_reason(
-                                "Wrong threshold format. Can't parse divisor".into(),
-                            )
-                        })?,
+                        .map(|denominator| {
+                            denominator.parse().map_err(|_e| {
+                                napi::Error::from_reason(
+                                    "Wrong threshold format. Can't parse denominator".into(),
+                                )
+                            })
+                        }),
                 ))
             })
+            .map(|fraction_tuple| -> JsResult<_> {
+                match fraction_tuple? {
+                    (Some(num), Some(den)) => {
+                        let numerator = num?;
+                        let denominator = den?;
+                        if numerator > denominator {
+                            Err(napi::Error::from_reason(
+                                "Wrong fraction. Should be not greater than 1".into(),
+                            ))
+                        } else {
+                            Ok((numerator, denominator))
+                        }
+                    }
+                    (Some(num), None) => {
+                        let numerator = num?;
+                        if numerator > 1 {
+                            Err(napi::Error::from_reason(
+                                "Wrong fraction. Should be not greater than 1".into(),
+                            ))
+                        } else {
+                            Ok((numerator, 1))
+                        }
+                    }
+                    _ => Err(napi::Error::from_reason(
+                        "Wrong threshold format. Should be fraction".into(),
+                    )),
+                }
+            })
             .collect();
+
         SignatureThreshold::single_weighted(thres?)
     };
 
