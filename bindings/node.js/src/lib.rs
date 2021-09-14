@@ -29,6 +29,7 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
             Property::new(&env, "process")?.with_method(process),
             Property::new(&env, "get_current_public_key")?.with_method(get_current_public_key),
             Property::new(&env, "verify")?.with_method(verify),
+            Property::new(&env, "is_anchored")?.with_method(is_anchored),
         ],
     )?;
     exports.set_named_property("Controller", controller_class)?;
@@ -331,6 +332,23 @@ fn finalize_anchor(ctx: CallContext) -> JsResult<JsBoolean> {
 
     let ixn_result = kel.finalize_anchor(ixn, signatures);
     ctx.env.get_boolean(ixn_result.is_ok())
+}
+
+#[js_function(1)]
+fn is_anchored(ctx: CallContext) -> JsResult<JsBoolean> {
+    let val: JsString = ctx.get::<JsString>(0)?;
+    let sai = val
+        .into_utf8()?
+        .as_str()?
+        .parse()
+        .map_err(|_e| napi::Error::from_reason("Can't parse sai prefix".into()))?;
+
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &mut KEL = ctx.env.unwrap(&this)?;
+    let check_result = kel
+        .is_anchored(sai)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    ctx.env.get_boolean(check_result)
 }
 
 #[js_function(1)]

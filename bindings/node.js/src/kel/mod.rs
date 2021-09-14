@@ -5,9 +5,13 @@ use std::{
 
 use keri::{
     database::sled::SledEventDatabase,
-    event::{sections::KeyConfig, EventMessage},
+    event::{
+        event_data::EventData,
+        sections::{seal::Seal, KeyConfig},
+        EventMessage,
+    },
     event_message::parse::signed_message,
-    event_message::parse::{message, signed_event_stream},
+    event_message::parse::{self, message, signed_event_stream, Deserialized},
     event_message::SignedEventMessage,
     prefix::AttachedSignaturePrefix,
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
@@ -258,6 +262,21 @@ impl<'d> KEL {
         processor.process(signed_message(&signed_ixn.serialize()?).unwrap().1)?;
 
         Ok(signed_ixn)
+    }
+
+    pub fn is_anchored(&self, sai: SelfAddressingPrefix) -> Result<bool, Error> {
+        let kel = self.get_kel()?.unwrap();
+        let parsed_kel = parse::signed_event_stream(&kel).unwrap().1;
+        Ok(parsed_kel.iter().any(|des| match des {
+            Deserialized::Event(ev) => match ev.deserialized_event.event_message.event.event_data {
+                EventData::Ixn(ref ixn) => ixn.data.iter().any(|seal| match seal {
+                    Seal::Digest(dig) => dig.dig == sai,
+                    _ => false,
+                }),
+                _ => false,
+            },
+            _ => false,
+        }))
     }
 
     pub fn get_prefix(&self) -> IdentifierPrefix {

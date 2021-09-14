@@ -42,9 +42,9 @@ describe("Anchoring on ledger", () => {
     let kel = controller.getKel();
     expect(countEvents(kel)).to.eq(2);
 
-    expect(kel).to.include(firstDigest);
-    expect(kel).to.include(secondDigest);
-    expect(kel).to.include(thirdDigest);
+    expect(controller.isAnchored(firstDigest));
+    expect(controller.isAnchored(secondDigest));
+    expect(controller.isAnchored(thirdDigest));
 
   });
 
