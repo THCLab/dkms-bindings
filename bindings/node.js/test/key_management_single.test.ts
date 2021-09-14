@@ -58,9 +58,9 @@ describe("Key management simple", () => {
         const currentKeyManager = new Tpm();
 
         let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
-        expect(() => keri.incept([[curKeySai, "ble bla"]])).to.throw("Can't pase public key prefix");
-        expect(() => keri.incept([["bla ble", "ble bla"]])).to.throw("Can't pase public key prefix");
-        expect(() => keri.incept([["bla ble"]])).to.throw("Can't pase public key prefix");
+        expect(() => keri.incept([[curKeySai, "ble bla"]])).to.throw("Can't parse public key prefix");
+        expect(() => keri.incept([["bla ble", "ble bla"]])).to.throw("Can't parse public key prefix");
+        expect(() => keri.incept([["bla ble"]])).to.throw("Can't parse public key prefix");
 
       });
 
