@@ -44,18 +44,6 @@ describe("Key management simple", () => {
     expect(countEvents(controller.getKel())).to.eq(2);
   });
 
-  it("Allows 1 as fraction threshold", () => {
-    const currentKeyManager = new Tpm();
-    // nextKeyManager is required for prerotation to be known
-    const nextKeyManager = new Tpm();
-
-    let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
-    let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
-
-    let inceptionEvent = keri.incept([[curKeySai, nextKeySai, "1"]]);
-
-  });
-
   describe("negative", () => {
     describe("for incepting", () => {
       it.skip("fails for missing next public key", () => {
@@ -108,24 +96,6 @@ describe("Key management simple", () => {
 
         expect(() => keri.finalizeIncept(inceptionEvent, ["whatever"]))
         .to.throw("Can't parse signature prefix");
-      });
-
-      it("fails for improper threshold argument", () => {
-          const currentKeyManager = new Tpm();
-        // nextKeyManager is required for prerotation to be known
-        const nextKeyManager = new Tpm();
-
-        let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
-        let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
-
-        expect(() => keri.incept([[curKeySai, nextKeySai, "2"]]))
-        .to.throw("Wrong fraction. Should be not greater than 1");
-        expect(() => keri.incept([[curKeySai, nextKeySai, "2/1"]]))
-        .to.throw("Wrong fraction. Should be not greater than 1");
-        expect(() => keri.incept([[curKeySai, nextKeySai, "2.1"]]))
-        .to.throw("Wrong threshold format. Can't parse numerator");
-
-
       });
     })
   });
