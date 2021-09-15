@@ -165,7 +165,7 @@ impl<'d> KEL {
         signatures: Vec<SelfSigningPrefix>,
     ) -> Result<bool, Error> {
         let (_rest, rot_event) =
-            message(&rotation).map_err(|e| Error::Generic("Can't parse rotation event".into()))?;
+            message(&rotation).map_err(|_e| Error::Generic("Invalid rotation event".into()))?;
 
         let pub_keys = match rot_event.event_message.event.event_data {
             keri::event::event_data::EventData::Rot(ref rot) => {
@@ -191,7 +191,7 @@ impl<'d> KEL {
         ixn: Vec<u8>,
         signatures: Vec<SelfSigningPrefix>,
     ) -> Result<bool, Error> {
-        let (_rest, ixn_event) = message(&ixn).map_err(|_e| Error::WrongEventArgument)?;
+        let (_rest, ixn_event) = message(&ixn).map_err(|_e| Error::Generic("Invalid interaction event".into()))?;
         let pub_keys = self
             .get_state()?
             .ok_or(Error::NoPublicKeys)?

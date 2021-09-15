@@ -50,11 +50,9 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
     let path_str = cfg.get("db_path").ok_or_else(|| {
         napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
     })?;
-    let icp = message(&icp)
-        .map_err(|e| napi::Error::from_reason(e.to_string()))?
-        .1
-        .event_message;
-    let kel = KEL::finalize_incept(&path_str, &icp, signatures)
+    let (_rest, icp) = message(&icp)
+        .map_err(|_e| napi::Error::from_reason("Invalid inception event".into()))?;
+    let kel = KEL::finalize_incept(&path_str, &icp.event_message, signatures)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
     let identifier = kel.get_prefix().to_str();
     ctx.env.create_string(&identifier)

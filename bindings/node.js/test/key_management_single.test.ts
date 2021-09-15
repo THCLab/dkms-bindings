@@ -65,7 +65,7 @@ describe("Key management simple", () => {
 
       });
 
-      it.skip("fails for finalizing invalid inception event", () => {
+      it("fails for finalizing invalid inception event", () => {
         const currentKeyManager = new Tpm();
         const nextKeyManager = new Tpm();
 
@@ -76,11 +76,12 @@ describe("Key management simple", () => {
 
         let signature = currentKeyManager.sign(inceptionEvent);
 
-        expect(() => keri.finalizeIncept(Buffer.from("whatever"), [b64EncodeUrlSafe(signature)]))
-        .to.throw("Invalid Inception Event");
+        expect(() => keri.finalizeIncept(Buffer.from("whatever"), [prefixedSignature(b64EncodeUrlSafe(signature))]))
+        .to.throw("Invalid inception event");
 
-        expect(() => keri.finalizeIncept("whatever" as any, [b64EncodeUrlSafe(signature)]))
-        .to.throw("Invalid Inception Event");
+        // TODO
+        // expect(() => keri.finalizeIncept("whatever" as any, [prefixedSignature(b64EncodeUrlSafe(signature))]))
+        // .to.throw("Invalid inception event");
 
         expect(() => keri.finalizeIncept(inceptionEvent, [b64EncodeUrlSafe(signature)]))
         .to.throw("Can't parse signature prefix");
@@ -113,7 +114,7 @@ describe("Key management simple", () => {
         expect(() => controller.finalizeRotation(
           Buffer.from("whatever"),
           [signature]
-        )).to.throw("Can't parse rotation event");
+        )).to.throw("Invalid rotation event");
 
         expect(() => controller.finalizeRotation(rotationEvent, ["whatever"]))
         .to.throw("Can't parse signature prefix");

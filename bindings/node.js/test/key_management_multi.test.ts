@@ -3,7 +3,6 @@ import Tpm from "./support/tpm";
 import { expect } from "chai";
 import { prefixedDerivative, prefixedSignature } from "./support/sai";
 import { b64EncodeUrlSafe } from "./support/b64";
-import { countEvents } from "./support/kel";
 
 describe("Key management multi", () => {
   it("Allows 1 as fraction threshold", () => {
