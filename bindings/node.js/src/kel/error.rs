@@ -22,4 +22,16 @@ pub enum Error {
 
     #[error("Database not initialized")]
     NoDatabase,
+
+    #[error("Wrong event in argument")]
+    WrongEventArgument,
+
+    #[error("No public keys in current identifier state")]
+    NoPublicKeys,
+
+    #[error("Not enough signatures")]
+    NotEnoughSignatures,
+
+    #[error("Can't find public key matching signature")]
+    KeyNotFound,
 }

@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { prefixedDerivative, prefixedSignature } from "./support/sai";
 import { b64EncodeUrlSafe } from "./support/b64";
 import { countEvents } from "./support/kel";
+import inceptor from "./support/inceptor";
 
 describe("Key management simple", () => {
   it("Allows for key rotation", () => {
@@ -95,6 +96,26 @@ describe("Key management simple", () => {
         let inceptionEvent = keri.incept([[curKeySai, nextKeySai]]);
 
         expect(() => keri.finalizeIncept(inceptionEvent, ["whatever"]))
+        .to.throw("Can't parse signature prefix");
+      });
+    }),
+    describe("for rotating", () => {
+      it("fails for finalizing rotation with incorrect signature", () => {
+        let [ controller ] = inceptor();
+        const nextKeyManager = new Tpm();
+        const newNextKeyManager = new Tpm();
+
+        let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
+        let newNextKeySai = prefixedDerivative(b64EncodeUrlSafe(newNextKeyManager.pubKey));
+        let rotationEvent = controller.rotate([[nextKeySai, newNextKeySai]]);
+        let signature = prefixedSignature(b64EncodeUrlSafe(nextKeyManager.sign(rotationEvent)));
+
+        expect(() => controller.finalizeRotation(
+          Buffer.from("whatever"),
+          [signature]
+        )).to.throw("Can't parse rotation event");
+
+        expect(() => controller.finalizeRotation(rotationEvent, ["whatever"]))
         .to.throw("Can't parse signature prefix");
       });
     })

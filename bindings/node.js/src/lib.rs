@@ -142,7 +142,7 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
             }
         }
     } else {
-        // All keys has weighted threshold set. Or at least should. 
+        // All keys has weighted threshold set. Or at least should.
         // If not, error is returned.
         let thres: JsResult<Vec<(u64, u64)>> = thresholds
             .into_iter()
@@ -154,24 +154,20 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
                 let mut split = unwrapped_t.split('/');
 
                 Ok((
-                    split
-                        .next()
-                        .map(|numerator| {
-                            numerator.parse().map_err(|_e| {
-                                napi::Error::from_reason(
-                                    "Wrong threshold format. Can't parse numerator".into(),
-                                )
-                            })
-                        }),
-                    split
-                        .next()
-                        .map(|denominator| {
-                            denominator.parse().map_err(|_e| {
-                                napi::Error::from_reason(
-                                    "Wrong threshold format. Can't parse denominator".into(),
-                                )
-                            })
-                        }),
+                    split.next().map(|numerator| {
+                        numerator.parse().map_err(|_e| {
+                            napi::Error::from_reason(
+                                "Wrong threshold format. Can't parse numerator".into(),
+                            )
+                        })
+                    }),
+                    split.next().map(|denominator| {
+                        denominator.parse().map_err(|_e| {
+                            napi::Error::from_reason(
+                                "Wrong threshold format. Can't parse denominator".into(),
+                            )
+                        })
+                    }),
                 ))
             })
             .map(|fraction_tuple| -> JsResult<_> {
@@ -324,8 +320,10 @@ fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
 
-    let rot_result = kel.finalize_rotation(rot, signatures);
-    ctx.env.get_boolean(rot_result.is_ok())
+    let rot_result = kel
+        .finalize_rotation(rot, signatures)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    ctx.env.get_boolean(rot_result)
 }
 
 #[js_function(1)]
@@ -354,8 +352,11 @@ fn finalize_anchor(ctx: CallContext) -> JsResult<JsBoolean> {
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
 
-    let ixn_result = kel.finalize_anchor(ixn, signatures);
-    ctx.env.get_boolean(ixn_result.is_ok())
+    let ixn_result = kel
+        .finalize_anchor(ixn, signatures)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+
+    ctx.env.get_boolean(ixn_result)
 }
 
 #[js_function(1)]

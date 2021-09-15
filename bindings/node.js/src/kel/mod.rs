@@ -141,31 +141,7 @@ impl<'d> KEL {
             }
             _ => Err(Error::Generic("Improper event type".into())),
         }?;
-
-        let indexed_signatures: Vec<AttachedSignaturePrefix> = signatures
-            .into_iter()
-            .map(|signature| {
-                (
-                    pub_keys
-                        .iter()
-                        .position(|x| x.verify(&icp.serialize().unwrap(), &signature).unwrap())
-                        .unwrap(),
-                    signature,
-                )
-            })
-            .map(|(i, signature)| {
-                AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
-            })
-            .collect();
-
-        let sigged = icp.sign(indexed_signatures);
-
-        let processor = match database {
-            Some(ref db) => Ok(EventProcessor::new(db)),
-            None => Err(Error::NoDatabase),
-        }?;
-        processor.process(signed_message(&sigged.serialize()?).unwrap().1)?;
-
+        KEL::finalize_event(database.as_ref(), icp, &signatures, &pub_keys)?;
         Ok(KEL { prefix, database })
     }
 
@@ -187,41 +163,23 @@ impl<'d> KEL {
         &self,
         rotation: Vec<u8>,
         signatures: Vec<SelfSigningPrefix>,
-    ) -> Result<SignedEventMessage, Error> {
-        let rot_event = message(&rotation).unwrap().1.event_message;
+    ) -> Result<bool, Error> {
+        let (_rest, rot_event) =
+            message(&rotation).map_err(|e| Error::Generic("Can't parse rotation event".into()))?;
 
-        let pub_keys = match rot_event.event.event_data {
+        let pub_keys = match rot_event.event_message.event.event_data {
             keri::event::event_data::EventData::Rot(ref rot) => {
                 Ok(rot.key_config.public_keys.to_owned())
             }
             _ => Err(Error::Generic("Improper event type".into())),
         }?;
 
-        let indexed_signatures: Vec<AttachedSignaturePrefix> = signatures
-            .into_iter()
-            .map(|signature| {
-                (
-                    pub_keys
-                        .iter()
-                        .position(|x| x.verify(&rotation, &signature).unwrap())
-                        .unwrap(),
-                    signature,
-                )
-            })
-            .map(|(i, signature)| {
-                AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
-            })
-            .collect();
-
-        let rot = rot_event.sign(indexed_signatures);
-
-        let processor = match self.database {
-            Some(ref db) => Ok(EventProcessor::new(db)),
-            None => Err(Error::NoDatabase),
-        }?;
-        processor.process(signed_message(&rot.serialize()?).unwrap().1)?;
-
-        Ok(rot)
+        KEL::finalize_event(
+            self.database.as_ref(),
+            &rot_event.event_message,
+            &signatures,
+            &pub_keys,
+        )
     }
 
     pub fn anchor(&self, payload: &[SelfAddressingPrefix]) -> Result<EventMessage, Error> {
@@ -232,36 +190,20 @@ impl<'d> KEL {
         &self,
         ixn: Vec<u8>,
         signatures: Vec<SelfSigningPrefix>,
-    ) -> Result<SignedEventMessage, Error> {
-        let ixn_event = message(&ixn).unwrap().1.event_message;
+    ) -> Result<bool, Error> {
+        let (_rest, ixn_event) = message(&ixn).map_err(|_e| Error::WrongEventArgument)?;
+        let pub_keys = self
+            .get_state()?
+            .ok_or(Error::NoPublicKeys)?
+            .current
+            .public_keys;
 
-        let pub_keys = self.get_state()?.unwrap().current.public_keys;
-
-        let indexed_signatures: Vec<AttachedSignaturePrefix> = signatures
-            .into_iter()
-            .map(|signature| {
-                (
-                    pub_keys
-                        .iter()
-                        .position(|x| x.verify(&ixn, &signature).unwrap())
-                        .unwrap(),
-                    signature,
-                )
-            })
-            .map(|(i, signature)| {
-                AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), i as u16)
-            })
-            .collect();
-
-        let signed_ixn = ixn_event.sign(indexed_signatures);
-
-        let processor = match self.database {
-            Some(ref db) => Ok(EventProcessor::new(db)),
-            None => Err(Error::NoDatabase),
-        }?;
-        processor.process(signed_message(&signed_ixn.serialize()?).unwrap().1)?;
-
-        Ok(signed_ixn)
+        KEL::finalize_event(
+            self.database.as_ref(),
+            &ixn_event.event_message,
+            &signatures,
+            &pub_keys,
+        )
     }
 
     pub fn is_anchored(&self, sai: SelfAddressingPrefix) -> Result<bool, Error> {
@@ -277,6 +219,71 @@ impl<'d> KEL {
             },
             _ => false,
         }))
+    }
+
+    fn find_signatures_indexes(
+        msg: &[u8],
+        signatures: &[SelfSigningPrefix],
+        pub_keys: &[BasicPrefix],
+    ) -> Result<(Vec<AttachedSignaturePrefix>, Vec<Error>), Error> {
+        let (found_indexes, not_found_indexes): (Vec<Result<AttachedSignaturePrefix, Error>>, _) =
+            signatures
+                .iter()
+                .map(|signature| {
+                    // make tuples (Option<index>, signature)
+                    (
+                        pub_keys
+                            .iter()
+                            .position(|x| x.verify(msg, signature).unwrap_or(false)),
+                        signature,
+                    )
+                })
+                .map(|(index, signature)| -> Result<_, Error> {
+                    Ok(AttachedSignaturePrefix::new(
+                        signature.derivation,
+                        signature.derivative(),
+                        index.ok_or(Error::KeyNotFound)? as u16,
+                    ))
+                })
+                .partition(Result::is_ok);
+        let signatures: Vec<AttachedSignaturePrefix> =
+            found_indexes.into_iter().map(Result::unwrap).collect();
+        let errors = not_found_indexes
+            .into_iter()
+            .map(|e| e.unwrap_err())
+            .collect();
+        Ok((signatures, errors))
+    }
+
+    fn finalize_event(
+        db: Option<&SledEventDatabase>,
+        event: &EventMessage,
+        signatures_list: &[SelfSigningPrefix],
+        current_pub_keys: &[BasicPrefix],
+    ) -> Result<bool, Error> {
+        let (signatures, errors) =
+            KEL::find_signatures_indexes(&event.serialize()?, signatures_list, current_pub_keys)?;
+        let signed_event = event.sign(signatures);
+
+        let processor = match db {
+            Some(db) => Ok(EventProcessor::new(db)),
+            None => Err(Error::NoDatabase),
+        }?;
+        // TODO avoid unwrap
+        match processor.process(signed_message(&signed_event.serialize()?).unwrap().1) {
+            Ok(_) => Ok(true),
+            Err(keri::error::Error::NotEnoughSigsError) => {
+                if !errors.is_empty() {
+                    Err(Error::Generic(
+                        "Not enough signatures. Some signatures don't match identifier public keys"
+                            .into(),
+                    ))
+                } else {
+                    Err(Error::NotEnoughSignatures)
+                }
+            }
+            Err(e) => Err(e.into()),
+        }
     }
 
     pub fn get_prefix(&self) -> IdentifierPrefix {
