@@ -47,11 +47,11 @@ describe("Key management simple", () => {
 
   describe("negative", () => {
     describe("for incepting", () => {
-      it.skip("fails for missing next public key", () => {
+      it("fails for missing next public key", () => {
         const currentKeyManager = new Tpm();
 
         let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
-        expect(() => keri.incept([[curKeySai]])).to.throw("missing next public key for inception");
+        expect(() => keri.incept([[curKeySai]])).to.throw("Missing next public key argument");
 
       });
 
