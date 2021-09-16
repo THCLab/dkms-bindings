@@ -22,14 +22,16 @@ pub struct Key {
 pub struct PublicKeysConfig {
     pub current: Vec<BasicPrefix>,
     pub next: Vec<BasicPrefix>,
-    pub threshold: SignatureThreshold,
+    pub current_threshold: SignatureThreshold,
+    pub next_threshold: SignatureThreshold,
 }
 
 impl PublicKeysConfig {
     pub fn new(
         current: Vec<(Basic, Vec<u8>)>,
         next: Vec<(Basic, Vec<u8>)>,
-        threshold: SignatureThreshold,
+        current_threshold: SignatureThreshold,
+        next_threshold: SignatureThreshold,
     ) -> PublicKeysConfig {
         let current = current
             .into_iter()
@@ -42,19 +44,25 @@ impl PublicKeysConfig {
         PublicKeysConfig {
             current,
             next,
-            threshold,
+            current_threshold,
+            next_threshold,
         }
     }
 
-    pub fn rotate(&self, new_next_keys: Vec<(Basic, Vec<u8>)>) -> PublicKeysConfig {
+    pub fn rotate(
+        &self,
+        new_next_keys: Vec<(Basic, Vec<u8>)>,
+        new_next_threshold: SignatureThreshold,
+    ) -> PublicKeysConfig {
         let new_next = new_next_keys
             .into_iter()
-            .map(|(der, key)| Key { key_type: der, key }.derive())
+            .map(|(der, key)| (Key { key_type: der, key }.derive()))
             .collect();
         PublicKeysConfig {
             current: self.next.clone(),
             next: new_next,
-            threshold: self.threshold.clone(),
+            current_threshold: self.next_threshold.clone(),
+            next_threshold: new_next_threshold,
         }
     }
 }
@@ -70,7 +78,8 @@ pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
     let icp = EventMsgBuilder::new(EventType::Inception)?
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
-        .with_threshold(keys.threshold.clone())
+        .with_threshold(keys.current_threshold.clone())
+        .with_next_threshold(keys.next_threshold.clone())
         .build()?;
     Ok(icp)
 }
@@ -82,7 +91,8 @@ pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<Event
         .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
-        .with_threshold(keys.threshold.clone())
+        .with_threshold(keys.current_threshold.clone())
+        .with_next_threshold(keys.next_threshold.clone())
         .build()?;
     Ok(ixn)
 }

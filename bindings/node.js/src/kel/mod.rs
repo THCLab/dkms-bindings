@@ -191,7 +191,8 @@ impl<'d> KEL {
         ixn: Vec<u8>,
         signatures: Vec<SelfSigningPrefix>,
     ) -> Result<bool, Error> {
-        let (_rest, ixn_event) = message(&ixn).map_err(|_e| Error::Generic("Invalid interaction event".into()))?;
+        let (_rest, ixn_event) =
+            message(&ixn).map_err(|_e| Error::Generic("Invalid interaction event".into()))?;
         let pub_keys = self
             .get_state()?
             .ok_or(Error::NoPublicKeys)?
@@ -475,6 +476,7 @@ pub fn test_inception() -> Result<(), Error> {
     let key_conig = PublicKeysConfig::new(
         vec![(Basic::Ed25519, current_keypair.pk.to_vec())],
         vec![(Basic::Ed25519, next_keypair.pk.to_vec())],
+        SignatureThreshold::Simple(1),
         SignatureThreshold::Simple(1),
     );
     // Create inception event.

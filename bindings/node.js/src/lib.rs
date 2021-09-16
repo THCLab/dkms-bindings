@@ -50,8 +50,8 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
     let path_str = cfg.get("db_path").ok_or_else(|| {
         napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
     })?;
-    let (_rest, icp) = message(&icp)
-        .map_err(|_e| napi::Error::from_reason("Invalid inception event".into()))?;
+    let (_rest, icp) =
+        message(&icp).map_err(|_e| napi::Error::from_reason("Invalid inception event".into()))?;
     let kel = KEL::finalize_incept(&path_str, &icp.event_message, signatures)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
     let identifier = kel.get_prefix().to_str();
@@ -86,7 +86,7 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
 
 fn get_keys_settings_argument(
     key_object: JsObject,
-) -> JsResult<(BasicPrefix, BasicPrefix, Option<String>)> {
+) -> JsResult<(BasicPrefix, BasicPrefix, Option<String>, Option<String>)> {
     let curr_pk: BasicPrefix = key_object
         .get_element::<JsString>(0)
         .map_err(|_e| napi::Error::from_reason("Missing current public key argument".into()))?
@@ -101,12 +101,16 @@ fn get_keys_settings_argument(
         .as_str()?
         .parse()
         .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix".into()))?;
-    let threshold = match key_object.get_element::<JsString>(2) {
+    let current_threshold = match key_object.get_element::<JsString>(2) {
+        Ok(t) => Some(t.into_utf8()?.as_str()?.to_string()),
+        Err(_) => None,
+    };
+    let next_threshold = match key_object.get_element::<JsString>(3) {
         Ok(t) => Some(t.into_utf8()?.as_str()?.to_string()),
         Err(_) => None,
     };
 
-    Ok((curr_pk, next_pk, threshold))
+    Ok((curr_pk, next_pk, current_threshold, next_threshold))
 }
 
 fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<PublicKeysConfig> {
@@ -120,18 +124,31 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
     };
     let mut current: Vec<BasicPrefix> = vec![];
     let mut next: Vec<BasicPrefix> = vec![];
-    let mut thresholds: Vec<Option<String>> = vec![];
+    let mut current_thresholds: Vec<Option<String>> = vec![];
+    let mut next_thresholds: Vec<Option<String>> = vec![];
     for i in 0..len {
         let val: JsObject = cur.get_element(i)?;
-        let (cur, nxt, threshold) = get_keys_settings_argument(val)?;
+        let (cur, nxt, current_threshold, next_threshold) = get_keys_settings_argument(val)?;
         current.push(cur);
         next.push(nxt);
-        thresholds.push(threshold);
+        current_thresholds.push(current_threshold);
+        next_thresholds.push(next_threshold);
     }
 
-    let threshold = if thresholds.iter().all(|t| t.is_none()) {
-        // Any key has weighted threshold set.
-        let threshold: Result<i32, _> = ctx.get::<JsNumber>(1)?.try_into();
+    let current_threshold = set_threshold(ctx, current_thresholds)?;
+    let next_threshold = set_threshold(ctx, next_thresholds)?;
+    Ok(PublicKeysConfig {
+        current,
+        next,
+        current_threshold,
+        next_threshold,
+    })
+}
+
+fn set_threshold(ctx: &CallContext, thres: Vec<Option<String>>) -> JsResult<SignatureThreshold> {
+    Ok(if thres.iter().any(|t| t.is_none()) {
+        // Any key has no weighted threshold set.
+        let threshold: JsResult<i32> = ctx.get::<JsNumber>(1)?.try_into();
         match threshold {
             Ok(threshold) => SignatureThreshold::simple(threshold as u64),
             Err(_) => {
@@ -142,70 +159,62 @@ fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Publ
     } else {
         // All keys has weighted threshold set. Or at least should.
         // If not, error is returned.
-        let thres: JsResult<Vec<(u64, u64)>> = thresholds
+        let thres: JsResult<Vec<(u64, u64)>> = thres
             .into_iter()
             .map(|t| {
                 t.ok_or_else(|| napi::Error::from_reason("Missing threshold settings. ".into()))
             })
             .map(|t| -> JsResult<_> {
                 let unwrapped_t = t?;
-                let mut split = unwrapped_t.split('/');
-
-                Ok((
-                    split.next().map(|numerator| {
-                        numerator.parse().map_err(|_e| {
-                            napi::Error::from_reason(
-                                "Wrong threshold format. Can't parse numerator".into(),
-                            )
-                        })
-                    }),
-                    split.next().map(|denominator| {
-                        denominator.parse().map_err(|_e| {
-                            napi::Error::from_reason(
-                                "Wrong threshold format. Can't parse denominator".into(),
-                            )
-                        })
-                    }),
-                ))
-            })
-            .map(|fraction_tuple| -> JsResult<_> {
-                match fraction_tuple? {
-                    (Some(num), Some(den)) => {
-                        let numerator = num?;
-                        let denominator = den?;
-                        if numerator > denominator {
-                            Err(napi::Error::from_reason(
-                                "Wrong fraction. Should be not greater than 1".into(),
-                            ))
-                        } else {
-                            Ok((numerator, denominator))
-                        }
-                    }
-                    (Some(num), None) => {
-                        let numerator = num?;
-                        if numerator > 1 {
-                            Err(napi::Error::from_reason(
-                                "Wrong fraction. Should be not greater than 1".into(),
-                            ))
-                        } else {
-                            Ok((numerator, 1))
-                        }
-                    }
-                    _ => Err(napi::Error::from_reason(
-                        "Wrong threshold format. Should be fraction".into(),
-                    )),
-                }
+                parse_weighted_threshold(unwrapped_t)
             })
             .collect();
 
         SignatureThreshold::single_weighted(thres?)
-    };
-
-    Ok(PublicKeysConfig {
-        current,
-        next,
-        threshold,
     })
+}
+
+fn parse_weighted_threshold(threshold: String) -> JsResult<(u64, u64)> {
+    let mut split = threshold.split('/');
+
+    let fraction_tuple: (Option<JsResult<u64>>, Option<JsResult<u64>>) = (
+        split.next().map(|numerator| -> JsResult<_> {
+            numerator.parse().map_err(|_e| {
+                napi::Error::from_reason("Wrong threshold format. Can't parse numerator".into())
+            })
+        }),
+        split.next().map(|denominator| {
+            denominator.parse().map_err(|_e| {
+                napi::Error::from_reason("Wrong threshold format. Can't parse denominator".into())
+            })
+        }),
+    );
+    match fraction_tuple {
+        (Some(num), Some(den)) => {
+            let numerator = num?;
+            let denominator = den?;
+            if numerator > denominator {
+                Err(napi::Error::from_reason(
+                    "Wrong fraction. Should be not greater than 1".into(),
+                ))
+            } else {
+                Ok((numerator, denominator))
+            }
+        }
+        (Some(num), None) => {
+            let numerator = num?;
+            if numerator > 1 {
+                Err(napi::Error::from_reason(
+                    "Wrong fraction. Should be not greater than 1".into(),
+                ))
+            } else {
+                Ok((numerator, 1))
+            }
+        }
+        _ => Err(napi::Error::from_reason(
+            "Wrong threshold format. Should be fraction".into(),
+        )),
+    }
 }
 
 fn get_signature_array_argument(
