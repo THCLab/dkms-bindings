@@ -51,7 +51,7 @@ describe("Key management simple", () => {
         const currentKeyManager = new Tpm();
 
         let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
-        expect(() => keri.incept([[curKeySai]])).to.throw("Missing next public key argument");
+        expect(() => keri.incept([[curKeySai]])).to.throw("Missing public key argument");
 
       });
 

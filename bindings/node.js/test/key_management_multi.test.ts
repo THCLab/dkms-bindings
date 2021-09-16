@@ -62,6 +62,97 @@ describe("Key management multi", () => {
     expect(countEvents(controller.getKel())).to.eq(2);
   });
 
+ it("Allows actor removing", () => {
+   const currentKeyManager0 = new Tpm();
+   const currentKeyManager1 = new Tpm();
+   // nextKeyManager is required for prerotation to be known
+   const nextKeyManager0 = new Tpm();
+   const nextKeyManager1 = new Tpm();
+   
+   let actor1 = {
+     currentKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(currentKeyManager0.pubKey)),
+     nextKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(nextKeyManager0.pubKey)),
+     currentKeyMan: currentKeyManager0,
+     currentThreshold: "1", 
+     nextKeyManager: nextKeyManager0, 
+     nextThreshold: "1"
+    }
+    let actor2 = {
+     currentKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(currentKeyManager1.pubKey)),
+     nextKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(nextKeyManager1.pubKey)),
+     currentKeyMan: currentKeyManager1, 
+     currentThreshold: "1", 
+     nextKeyManager: nextKeyManager1, 
+     nextThreshold: "1"
+    }
+
+    let inceptionEvent = keri.incept(
+      [
+        [actor1.currentKeyPrefix, actor1.nextKeyPrefix, actor1.currentThreshold, actor1.nextThreshold],
+        [actor2.currentKeyPrefix, actor2.nextKeyPrefix, actor2.currentThreshold, actor2.nextThreshold]
+      ]);
+
+    let signature = actor1.currentKeyMan.sign(inceptionEvent);
+
+    let controller = keri.finalizeIncept(
+      inceptionEvent,
+      [prefixedSignature(b64EncodeUrlSafe(signature))]
+    );
+
+    expect(countEvents(controller.getKel())).to.eq(1);
+
+    // Start removing actor2 from group. Prepare new next keypair for
+    // actor1 and rotate his keys.
+    let newNextKeyManager = new Tpm();
+    actor1.currentKeyMan = actor1.nextKeyManager
+    actor1.currentKeyPrefix = actor1.nextKeyPrefix
+    actor1.currentThreshold = actor1.nextThreshold
+    actor1.nextKeyManager = newNextKeyManager;
+    actor1.nextKeyPrefix = prefixedDerivative(b64EncodeUrlSafe(newNextKeyManager.pubKey));
+    actor1.nextThreshold = "1"
+
+    // Set next key of actor2 to null
+    let rotationEvent = controller.rotate(
+      [
+        [actor1.currentKeyPrefix, actor1.nextKeyPrefix, actor1.currentThreshold, actor1.nextThreshold], 
+        [actor2.nextKeyPrefix, null, actor2.nextThreshold]
+      ])
+
+    let signature0 = actor1.currentKeyMan.sign(rotationEvent);
+
+    let result = controller.finalizeRotation(
+      rotationEvent,
+      [prefixedSignature(b64EncodeUrlSafe(signature0))]
+    );
+    expect(result).to.be.true;
+    expect(countEvents(controller.getKel())).to.eq(2);
+
+    // Prepare second rotation, which will remove actor2 from the group.
+    // Rotate actors1 keys again.
+    let newKeyManager = new Tpm();
+    actor1.currentKeyMan = actor1.nextKeyManager
+    actor1.currentThreshold = actor1.nextThreshold
+    actor1.currentKeyPrefix = actor1.nextKeyPrefix
+    actor1.nextKeyManager = newKeyManager;
+    actor1.nextKeyPrefix = prefixedDerivative(b64EncodeUrlSafe(newKeyManager.pubKey));
+    actor1.nextThreshold = "1"
+
+    let secondRotationEvent = controller.rotate(
+      [
+        [actor1.currentKeyPrefix, actor1.nextKeyPrefix, actor1.currentThreshold, actor1.nextThreshold]
+      ])
+
+    signature0 = actor1.currentKeyMan.sign(secondRotationEvent);
+
+    result = controller.finalizeRotation(
+      secondRotationEvent,
+      [prefixedSignature(b64EncodeUrlSafe(signature0))]
+    );
+    expect(result).to.be.true;
+
+    expect(countEvents(controller.getKel())).to.eq(3);
+  });  
+
 describe("negative", () => {
   it("fails for improper threshold argument", () => {
       const currentKeyManager = new Tpm();
