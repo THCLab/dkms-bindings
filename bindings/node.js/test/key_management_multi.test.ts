@@ -73,7 +73,7 @@ describe("Key management multi", () => {
      currentKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(currentKeyManager0.pubKey)),
      nextKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(nextKeyManager0.pubKey)),
      currentKeyMan: currentKeyManager0,
-     currentThreshold: "1", 
+     currentThreshold: "1/2", 
      nextKeyManager: nextKeyManager0, 
      nextThreshold: "1"
     }
@@ -81,7 +81,7 @@ describe("Key management multi", () => {
      currentKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(currentKeyManager1.pubKey)),
      nextKeyPrefix: prefixedDerivative(b64EncodeUrlSafe(nextKeyManager1.pubKey)),
      currentKeyMan: currentKeyManager1, 
-     currentThreshold: "1", 
+     currentThreshold: "1/2", 
      nextKeyManager: nextKeyManager1, 
      nextThreshold: "1"
     }
@@ -92,14 +92,23 @@ describe("Key management multi", () => {
         [actor2.currentKeyPrefix, actor2.nextKeyPrefix, actor2.currentThreshold, actor2.nextThreshold]
       ]);
 
-    let signature = actor1.currentKeyMan.sign(inceptionEvent);
+    let signature1 = actor1.currentKeyMan.sign(inceptionEvent);
+    let signature2 = actor2.currentKeyMan.sign(inceptionEvent);
 
     let controller = keri.finalizeIncept(
       inceptionEvent,
-      [prefixedSignature(b64EncodeUrlSafe(signature))]
+      [prefixedSignature(b64EncodeUrlSafe(signature1)), prefixedSignature(b64EncodeUrlSafe(signature2))]
     );
 
     expect(countEvents(controller.getKel())).to.eq(1);
+
+    // Check if message signed by actors can be verified.
+    let some_message = Buffer.from("to be signed");
+    let actor1_signature = prefixedSignature(b64EncodeUrlSafe(actor1.currentKeyMan.sign(some_message)))
+    let actor2_signature = prefixedSignature(b64EncodeUrlSafe(actor2.currentKeyMan.sign(some_message)))
+    let prefix = controller.getPrefix()
+    let ver = controller.verify(some_message, [actor1_signature, actor2_signature], prefix)
+    expect(ver).to.be.true
 
     // Start removing actor2 from group. Prepare new next keypair for
     // actor1 and rotate his keys.
@@ -149,6 +158,12 @@ describe("Key management multi", () => {
       [prefixedSignature(b64EncodeUrlSafe(signature0))]
     );
     expect(result).to.be.true;
+
+    // Check if message signed by actor2 can be verified.
+    actor2_signature = prefixedSignature(b64EncodeUrlSafe(actor2.currentKeyMan.sign(some_message)))
+    
+    expect(() => controller.verify(some_message, [actor2_signature], prefix)).to.throw("Error while verifing: Signature doesn't match any public key")
+
 
     expect(countEvents(controller.getKel())).to.eq(3);
   });  
