@@ -5,7 +5,10 @@ use keri::{
     event_message::parse::message,
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
-use napi::{CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, JsUnknown, Property, Result as JsResult};
+use napi::{
+    CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, JsUnknown,
+    Property, Result as JsResult,
+};
 use napi_derive::{js_function, module_exports};
 pub mod kel;
 use kel::{event_generator::PublicKeysConfig, KEL};
@@ -83,7 +86,12 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
 
 fn get_keys_settings_argument(
     key_object: JsObject,
-) -> JsResult<(Option<BasicPrefix>, Option<BasicPrefix>, Option<String>, Option<String>)> {
+) -> JsResult<(
+    Option<BasicPrefix>,
+    Option<BasicPrefix>,
+    Option<String>,
+    Option<String>,
+)> {
     let curr_pk: Option<BasicPrefix> = get_key(&key_object, 0)?;
     let next_pk: Option<BasicPrefix> = get_key(&key_object, 1)?;
     let current_threshold = match key_object.get_element::<JsString>(2) {
@@ -99,21 +107,22 @@ fn get_keys_settings_argument(
 }
 
 fn get_key(key_object: &JsObject, index: u32) -> JsResult<Option<BasicPrefix>> {
-    Ok(match key_object
-        .get_element::<JsString>(index) {
-            Ok(pk) => {
-                Some(pk.into_utf8()?
-                    .as_str()?
-                    .parse()
-                    .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix".into()))?)
-                },
-            Err(_) => {
-                match key_object.get_element::<JsUnknown>(index)?.get_type()? {
-                    napi::ValueType::Null => None,
-                    _ => return Err(napi::Error::from_reason("Missing public key argument".into()))
-                }
-            },
-        })
+    Ok(match key_object.get_element::<JsString>(index) {
+        Ok(pk) => Some(
+            pk.into_utf8()?
+                .as_str()?
+                .parse()
+                .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix".into()))?,
+        ),
+        Err(_) => match key_object.get_element::<JsUnknown>(index)?.get_type()? {
+            napi::ValueType::Null => None,
+            _ => {
+                return Err(napi::Error::from_reason(
+                    "Missing public key argument".into(),
+                ))
+            }
+        },
+    })
 }
 
 fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<PublicKeysConfig> {
