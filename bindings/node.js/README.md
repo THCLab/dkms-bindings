@@ -58,11 +58,29 @@ let result = controller.finalizeRotation(
 );
 ```
 
-
-## Operational Modes
-
-### Classic mode
-
-### Multisig mode
-
 ## Interface overview
+
+### `#anchor`
+
+* `keri.anchor(ListOfDigests: Array)`
+
+### `#finalizeAnchor`
+
+* `keri.finalizeAnchor(ixn: InteractionEvent, sig: Signature)`
+
+### `#finalizeIncept`
+
+* `keri.finalizeIncept(icp: InceptionEvent, sig: Signature)`
+
+### `#finalizeRotation`
+
+* `keri.finalizeRotation(rot: RotationEvent, sig: Signature)`
+
+### `.incept`
+
+* `keri.incept(currentNextKeyPairs: Array)`
+
+### `.rotate`
+
+* `keri.incept(currentNextKeyPairs: Array)`
+
