@@ -65,7 +65,7 @@ Worth noting most methods listed below require a three step process to either es
 * sign data;
 * provide data along with signature to desired `finalizeX`.
 
-It may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their use case.
+It may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their environment and use case.
 
 ### `#anchor`
 
