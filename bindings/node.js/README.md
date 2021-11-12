@@ -62,11 +62,21 @@ let result = controller.finalizeRotation(
 
 ### `#anchor`
 
+Creates new Interaction Event along with arbitrary data. The purpose of Interaction Events is anchoring into the Identifier KEL anything that may be considered significant in given use case. Since KEL is a form of a provenance log, it is also an authentic evidence of events that have happened, hence anchoring arbitrary data allows to prove that such data have been seen or is related to given Identifier.
+
 * `keri.anchor(ListOfDigests: Array)`
 
-### `#finalizeAnchor`
+### `#delegate` **[WIP]**
 
-* `keri.finalizeAnchor(ixn: InteractionEvent, sig: Signature)`
+Bootstraps delegated Identifier, so a Delegatee.
+
+### `#establishDelegatee` **[WIP]**
+
+Establishes delegation from the Delegator perspective.
+
+### `#finalizeDelegate` **[WIP]**
+
+Provides 
 
 ### `#finalizeIncept`
 
@@ -80,7 +90,11 @@ let result = controller.finalizeRotation(
 
 * `keri.incept(currentNextKeyPairs: Array)`
 
-### `.rotate`
+### `#rotate`
 
 * `keri.incept(currentNextKeyPairs: Array)`
+
+### `#rotateWitnesses`
+
+* `keri.rotateWitnesses(witnessesToAdd: Array, witnessesToRemove: Array)`
 
