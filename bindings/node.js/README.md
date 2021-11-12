@@ -77,6 +77,10 @@ Creates new Interaction Event along with arbitrary data. The purpose of Interact
 
 Bootstraps delegated Identifier, so a Delegatee.
 
+### `#getKel`
+
+Returns Key Event Log for current Identifier.
+
 ### `#establishDelegatee` **[WIP]**
 
 Establishes delegation from the Delegator perspective.
