@@ -60,11 +60,18 @@ let result = controller.finalizeRotation(
 
 ## Interface overview
 
+Worth noting most methods listed below require a three step process to either establish new Identifier and its KEL or to append changes to the KEL:
+* prepare data for external signature;
+* sign data;
+* provide data along with signature to desired `finalizeX`.
+
+The process may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their use case.
+
 ### `#anchor`
 
 Creates new Interaction Event along with arbitrary data. The purpose of Interaction Events is anchoring into the Identifier KEL anything that may be considered significant in given use case. Since KEL is a form of a provenance log, it is also an authentic evidence of events that have happened, hence anchoring arbitrary data allows to prove that such data have been seen or is related to given Identifier.
 
-* `keri.anchor(ListOfDigests: Array)`
+* `keri.anchor(ListOfDigests: Array): InteractionEvent`
 
 ### `#delegate` **[WIP]**
 
@@ -74,27 +81,47 @@ Bootstraps delegated Identifier, so a Delegatee.
 
 Establishes delegation from the Delegator perspective.
 
+### `#finalizeAnchor`
+
+Finalizes appending `InteractionEvent` to KEL.
+
 ### `#finalizeDelegate` **[WIP]**
 
-Provides 
+Finalizes delegation from the Delegator perspective.
 
 ### `#finalizeIncept`
 
-* `keri.finalizeIncept(icp: InceptionEvent, sig: Signature)`
+Finalizes inception (bootstrapping an Identifier and its Key Event Log).
+
+* `controller.finalizeIncept(icp: InceptionEvent, sig: Signature): Controller`
+
+### `#finalizeRotateWitnesses`
+
+Finalizes Witnesses rotation by appending new rotation event to KEL.
+
+* `controller.finalizeRotateWitnesses(rot: RotationEvent, sig: Signature)`
 
 ### `#finalizeRotation`
 
-* `keri.finalizeRotation(rot: RotationEvent, sig: Signature)`
+Finalizes key rotation by appending new rotation event to KEL.
+
+* `controller.finalizeRotation(rot: RotationEvent, sig: Signature)`
 
 ### `.incept`
 
-* `keri.incept(currentNextKeyPairs: Array)`
+Creates inception event that needs to be signed externally.
+
+* `controller.incept(currentNextKeyPairs: Array)`
 
 ### `#rotate`
 
-* `keri.incept(currentNextKeyPairs: Array)`
+Creates rotation event that needs to be signed externally.
 
-### `#rotateWitnesses`
+* `controller.rotate(currentNextKeyPairs: Array)`
 
-* `keri.rotateWitnesses(witnessesToAdd: Array, witnessesToRemove: Array)`
+### `#rotateWitnesses` **[WIP]**
+
+Creates rotation event for Witnesses rotation that needs to be signed externally.
+
+* `controller.rotateWitnesses(witnessesToAdd: Array, witnessesToRemove: Array)`
 
