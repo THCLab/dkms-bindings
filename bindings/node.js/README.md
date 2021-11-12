@@ -60,7 +60,7 @@ let result = controller.finalizeRotation(
 
 ## Interface overview
 
-Worth noting most methods listed below require a three step process to either establish new Identifier and its KEL or to append changes to the KEL. The process goes as following:
+Most methods listed below require a three step process to either establish new Identifier and its KEL or to append changes to the KEL. The process goes as following:
 * prepare data for external signature;
 * sign data;
 * provide data along with signature to desired `finalizeX`.
