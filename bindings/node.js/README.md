@@ -60,12 +60,12 @@ let result = controller.finalizeRotation(
 
 ## Interface overview
 
-Worth noting most methods listed below require a three step process to either establish new Identifier and its KEL or to append changes to the KEL:
+Worth noting most methods listed below require a three step process to either establish new Identifier and its KEL or to append changes to the KEL. The process goes as following:
 * prepare data for external signature;
 * sign data;
 * provide data along with signature to desired `finalizeX`.
 
-The process may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their use case.
+It may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their use case.
 
 ### `#anchor`
 
