@@ -79,7 +79,7 @@ Bootstraps delegated Identifier, so a Delegatee.
 
 ### `#getKel`
 
-Returns Key Event Log for current Identifier.
+Returns Key Event Log in the CESR representation for current Identifier.
 
 * `controller.getKel(): String`
 
