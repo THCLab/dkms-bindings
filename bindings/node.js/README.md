@@ -81,6 +81,8 @@ Bootstraps delegated Identifier, so a Delegatee.
 
 Returns Key Event Log for current Identifier.
 
+* `controller.getKel(): String`
+
 ### `#establishDelegatee` **[WIP]**
 
 Establishes delegation from the Delegator perspective.
@@ -88,6 +90,8 @@ Establishes delegation from the Delegator perspective.
 ### `#finalizeAnchor`
 
 Finalizes appending `InteractionEvent` to KEL.
+
+* `controller.finalizeAnchor(icp: InteractionEvent, sig: Signature): Controller`
 
 ### `#finalizeDelegate` **[WIP]**
 
@@ -103,29 +107,29 @@ Finalizes inception (bootstrapping an Identifier and its Key Event Log).
 
 Finalizes Witnesses rotation by appending new rotation event to KEL.
 
-* `controller.finalizeRotateWitnesses(rot: RotationEvent, sig: Signature)`
+* `controller.finalizeRotateWitnesses(rot: RotationEvent, sig: Signature): bool`
 
 ### `#finalizeRotation`
 
 Finalizes key rotation by appending new rotation event to KEL.
 
-* `controller.finalizeRotation(rot: RotationEvent, sig: Signature)`
+* `controller.finalizeRotation(rot: RotationEvent, sig: Signature): bool`
 
 ### `.incept`
 
 Creates inception event that needs to be signed externally.
 
-* `controller.incept(currentNextKeyPairs: Array)`
+* `controller.incept(currentNextKeyPairs: Array): InceptionEvent`
 
 ### `#rotate`
 
 Creates rotation event that needs to be signed externally.
 
-* `controller.rotate(currentNextKeyPairs: Array)`
+* `controller.rotate(currentNextKeyPairs: Array): RotationEvent`
 
 ### `#rotateWitnesses` **[WIP]**
 
 Creates rotation event for Witnesses rotation that needs to be signed externally.
 
-* `controller.rotateWitnesses(witnessesToAdd: Array, witnessesToRemove: Array)`
+* `controller.rotateWitnesses(witnessesToAdd: Array, witnessesToRemove: Array): RotationEvent`
 
