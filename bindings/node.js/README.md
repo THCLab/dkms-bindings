@@ -103,7 +103,7 @@ Finalizes inception (bootstrapping an Identifier and its Key Event Log).
 
 * `controller.finalizeIncept(icp: InceptionEvent, sig: Signature): Controller`
 
-### `#finalizeRotateWitnesses`
+### `#finalizeRotateWitnesses` **[WIP]**
 
 Finalizes Witnesses rotation by appending new rotation event to KEL.
 
