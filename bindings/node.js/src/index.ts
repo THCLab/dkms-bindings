@@ -11,7 +11,11 @@ export class KeriController {
   private readonly controller: Controller;
 
   constructor(public readonly prefix: string) {
-    this.controller = new keri.Controller(prefix);
+    if (prefix) {
+      this.controller = new keri.Controller(prefix);
+    } else {
+      this.controller = new keri.Controller();
+    }
 
     return new Proxy(this, {
       get: (target, name: string) => {
@@ -47,5 +51,9 @@ export default {
     let prefix = keri.finalize_incept(icpEvent, signatures);
     return new KeriController(prefix);
   },
-  Controller: KeriController
+  Controller: KeriController,
+  new: () => {
+    return new KeriController("");
+  },
 };
+

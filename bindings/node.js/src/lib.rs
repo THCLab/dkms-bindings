@@ -2,7 +2,8 @@ use std::convert::TryInto;
 
 use keri::{
     event::sections::threshold::SignatureThreshold,
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix}, event_parsing::message::message,
+    event_parsing::message::message,
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
 use napi::{
     CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, JsUnknown,
@@ -60,25 +61,27 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
 
 #[js_function(1)]
 fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
-    let prefix = ctx
-        .get::<JsString>(0)?
-        .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
-        .as_str()?
-        .to_owned();
-
-    let mut cfg = Config::new(Some("settings.cfg"));
     // Read / parse config file
+    let mut cfg = Config::new(Some("settings.cfg"));
     cfg.read()
         .ok()
         .ok_or_else(|| napi::Error::from_reason("Can't read a config file".into()))?;
-
     let path_str = cfg.get("db_path").ok_or_else(|| {
         napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
     })?;
-    let prefix: IdentifierPrefix = prefix.parse().expect("Can't parse signature");
-    let kel =
-        KEL::load_kel(&path_str, prefix).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let kel = match ctx.get::<JsString>(0)?.into_utf8() {
+        Ok(pref_str) => {
+            let prefix = pref_str.as_str()?.to_owned();
+
+            let prefix: IdentifierPrefix = prefix.parse().expect("Can't parse signature");
+            KEL::load_kel(&path_str, prefix).map_err(|e| napi::Error::from_reason(e.to_string()))?
+        }
+        Err(_err) => {
+            // If there's no arguments, return empty kel
+            KEL::new(&path_str)
+        }
+    };
+
     let mut this: JsObject = ctx.this_unchecked();
     ctx.env.wrap(&mut this, kel)?;
     ctx.env.get_undefined()

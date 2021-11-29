@@ -1,6 +1,8 @@
 use std::{
+    convert::TryFrom,
     fmt::{self, Debug},
-    path::Path, sync::Arc, convert::TryFrom,
+    path::Path,
+    sync::Arc,
 };
 
 use keri::{
@@ -10,10 +12,12 @@ use keri::{
         sections::{seal::Seal, KeyConfig},
         EventMessage,
     },
+    event_message::signed_event_message::{Message, SignedEventMessage},
+    event_parsing::message::{message, signed_event_stream, signed_message},
     prefix::AttachedSignaturePrefix,
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
     processor::EventProcessor,
-    state::IdentifierState, event_message::signed_event_message::{SignedEventMessage, Message}, event_parsing::message::{message, signed_message, signed_event_stream},
+    state::IdentifierState,
 };
 
 pub mod error;
@@ -39,11 +43,14 @@ impl Debug for KEL {
 
 impl<'d> KEL {
     // incept a state and keys
-    pub fn new() -> Result<KEL, Error> {
-        Ok(KEL {
+    pub fn new(path: &str) -> KEL {
+        let db = KEL::create_kel_db(Path::new(path))
+            .map(|db| Arc::new(db))
+            .ok();
+        KEL {
             prefix: IdentifierPrefix::default(),
-            database: None,
-        })
+            database: db,
+        }
     }
 
     fn create_kel_db(path: &Path) -> Result<SledEventDatabase, Error> {
@@ -77,12 +84,17 @@ impl<'d> KEL {
             None => Err(Error::NoDatabase),
         }?;
         let message = message(event).unwrap().1;
-        let sigged = message.sign(vec![AttachedSignaturePrefix::new(
-            signature.derivation,
-            signature.derivative(),
-            0,
-        )], None);
-        processor.process(Message::try_from(signed_message(&sigged.serialize()?).unwrap().1)?)?;
+        let sigged = message.sign(
+            vec![AttachedSignaturePrefix::new(
+                signature.derivation,
+                signature.derivative(),
+                0,
+            )],
+            None,
+        );
+        processor.process(Message::try_from(
+            signed_message(&sigged.serialize()?).unwrap().1,
+        )?)?;
 
         Ok(sigged)
     }
@@ -102,7 +114,11 @@ impl<'d> KEL {
             signed_event_stream(stream).map_err(|e| Error::Generic(e.to_string()))?;
         let (_processed_ok, _processed_failed): (Vec<_>, Vec<_>) = events
             .into_iter()
-            .map(|event| processor.process(Message::try_from(event.clone())?).map(|_| event))
+            .map(|event| {
+                processor
+                    .process(Message::try_from(event.clone())?)
+                    .map(|_| event)
+            })
             .partition(Result::is_ok);
         Ok(())
     }
@@ -171,12 +187,7 @@ impl<'d> KEL {
             _ => Err(Error::Generic("Improper event type".into())),
         }?;
 
-        KEL::finalize_event(
-            self.database.clone(),
-            &rot_event,
-            &signatures,
-            &pub_keys,
-        )
+        KEL::finalize_event(self.database.clone(), &rot_event, &signatures, &pub_keys)
     }
 
     pub fn anchor(&self, payload: &[SelfAddressingPrefix]) -> Result<EventMessage, Error> {
@@ -196,24 +207,21 @@ impl<'d> KEL {
             .current
             .public_keys;
 
-        KEL::finalize_event(
-            self.database.clone(),
-            &ixn_event,
-            &signatures,
-            &pub_keys,
-        )
+        KEL::finalize_event(self.database.clone(), &ixn_event, &signatures, &pub_keys)
     }
 
     pub fn is_anchored(&self, sai: SelfAddressingPrefix) -> Result<bool, Error> {
         let kel = self.get_kel()?.unwrap();
         let parsed_kel = signed_event_stream(&kel).unwrap().1;
-        Ok(parsed_kel.iter().any(|des| match des.deserialized_event.event.event_data {
+        Ok(parsed_kel
+            .iter()
+            .any(|des| match des.deserialized_event.event.event_data {
                 EventData::Ixn(ref ixn) => ixn.data.iter().any(|seal| match seal {
                     Seal::Digest(dig) => dig.dig == sai,
                     _ => false,
                 }),
                 _ => false,
-        }))
+            }))
     }
 
     fn find_signatures_indexes(

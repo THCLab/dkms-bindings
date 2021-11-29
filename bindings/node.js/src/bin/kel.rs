@@ -1,4 +1,8 @@
-use std::{io::{self, Read}, sync::Arc, convert::TryFrom};
+use std::{
+    convert::TryFrom,
+    io::{self, Read},
+    sync::Arc,
+};
 
 use clap::{App, Arg};
 use keri::{
@@ -6,11 +10,13 @@ use keri::{
     derivation::self_addressing::SelfAddressing,
     error::Error,
     event_message::{
-        event_msg_builder::{EventMsgBuilder, EventType}, signed_event_message::Message,
+        event_msg_builder::{EventMsgBuilder, EventType},
+        signed_event_message::Message,
     },
+    event_parsing::message::{message, signed_event_stream, signed_message},
     prefix::{AttachedSignaturePrefix, BasicPrefix, Prefix, SelfSigningPrefix},
     processor::EventProcessor,
-    state::IdentifierState, event_parsing::message::{signed_event_stream, signed_message, message},
+    state::IdentifierState,
 };
 
 fn main() -> Result<(), Error> {
@@ -28,9 +34,10 @@ fn main() -> Result<(), Error> {
     let proc = EventProcessor::new(Arc::clone(&db));
     let states: Vec<Option<IdentifierState>> = signed_event_stream(serialized_kel.as_bytes())
         .unwrap()
-        .1.into_iter()
+        .1
+        .into_iter()
         .map(|sem| Message::try_from(sem))
-        .map(|msg| proc.process( msg.unwrap()).unwrap())
+        .map(|msg| proc.process(msg.unwrap()).unwrap())
         .collect();
 
     // Parse arguments
