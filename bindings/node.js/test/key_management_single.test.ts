@@ -122,3 +122,30 @@ describe("Key management simple", () => {
     })
   });
 });
+
+describe("Event processing", () => {
+  it("Allows for event stream processing", () => {
+    const currentKeyManager = new Tpm();
+    const nextKeyManager = new Tpm();
+
+    let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
+    let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
+
+    let inceptionEvent = keri.incept([[curKeySai, nextKeySai]]);
+
+    let signature = currentKeyManager.sign(inceptionEvent);
+
+    let controller = keri.finalizeIncept(
+      inceptionEvent,
+      [prefixedSignature(b64EncodeUrlSafe(signature))]
+    );
+
+    let stream = '{"v":"KERI10JSON0000ed_","i":"Df8yygohMOcTVRxLr74Zbk5DKtRjT35gg9hcr2lOlEh4","s":"0","t":"icp","kt":"1","k":["Df8yygohMOcTVRxLr74Zbk5DKtRjT35gg9hcr2lOlEh4"],"n":"EMFLLpV9jSGyGGIBx4IdOQlTa6LZX6kC6QwDlS_0L_Gk","bt":"0","b":[],"c":[],"a":[]}-AABAATe_FOqPrp6JUNv0_i5Xmm4Y30YJWrNwx-7-o2c63p_u0UF9ptiAobv8getj5HOtllChT2Gb3Li_g-CYmpONpAw{"v":"KERI10JSON000122_","i":"Df8yygohMOcTVRxLr74Zbk5DKtRjT35gg9hcr2lOlEh4","s":"1","t":"rot","p":"EIOBKs0FH5A_IlE7SRJMmRBqHj5QZuXWx2mKwdGKwESk","kt":"1","k":["DAZ4CXhMsI_Ix-iK-QoMvFrHVSKg1TfEJjIhy0whYDXU"],"n":"EO_vdGoQQRqmKM2089bNnB7tNc1XMse3wX0vVN79-bpU","bt":"0","br":[],"ba":[],"a":[]}-AABAAP74qL41Eq2js3xSbHBXlQEN_BSRyM2xjyI0cjjYd7xU0hgWPNGBD_mfx7Fx5H4W8KTTNafxaIS2CDWYUKt6zCg{"v":"KERI10JSON000098_","i":"Df8yygohMOcTVRxLr74Zbk5DKtRjT35gg9hcr2lOlEh4","s":"2","t":"ixn","p":"EVP3aOimJHaDcHLiFeKQ27woiZaspY3dKjh7YcfQChSM","a":[]}-AABAArtb0OPt5ZDbFdUJqWxmURTvQMrPGcz1U0hd88CNsy9fWs2cGeF3hQ3f4-utB6jHSbXgVAU_IgOVF7lKmYNnzBQ'
+    controller.process(Buffer.from(stream))
+    
+    let kel = controller.get_kel_for_prefix("Df8yygohMOcTVRxLr74Zbk5DKtRjT35gg9hcr2lOlEh4")
+
+    expect(kel).to.eql(stream);
+    expect(countEvents(kel)).to.eq(3);
+    });
+  });

@@ -21,6 +21,7 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
         &[
             Property::new(&env, "get_prefix")?.with_method(get_prefix),
             Property::new(&env, "get_kel")?.with_method(get_kel),
+            Property::new(&env, "get_kel_for_prefix")?.with_method(get_kel_for_prefix),
             Property::new(&env, "rotate")?.with_method(rotate),
             Property::new(&env, "finalize_rotation")?.with_method(finalize_rotation),
             Property::new(&env, "anchor")?.with_method(anchor),
@@ -310,6 +311,28 @@ fn get_kel(ctx: CallContext) -> JsResult<JsString> {
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let kel_str = match kel
         .get_kel()
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?
+    {
+        Some(kel) => String::from_utf8(kel).map_err(|e| napi::Error::from_reason(e.to_string()))?,
+        None => "".to_owned(),
+    };
+    ctx.env.create_string(&kel_str)
+}
+
+#[js_function(1)]
+fn get_kel_for_prefix(ctx: CallContext) -> JsResult<JsString> {
+    let prefix = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
+        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
+        .as_str()?
+        .to_owned()
+        .parse::<IdentifierPrefix>()
+        .map_err(|_e| napi::Error::from_reason("Can't parse prefix".into()))?;
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &KEL = ctx.env.unwrap(&this)?;
+    let kel_str = match kel
+        .get_kel_for_prefix(&prefix)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?
     {
         Some(kel) => String::from_utf8(kel).map_err(|e| napi::Error::from_reason(e.to_string()))?,
