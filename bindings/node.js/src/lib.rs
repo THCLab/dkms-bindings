@@ -2,8 +2,7 @@ use std::convert::TryInto;
 
 use keri::{
     event::sections::threshold::SignatureThreshold,
-    event_message::parse::message,
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix}, event_parsing::message::message,
 };
 use napi::{
     CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, JsUnknown,
@@ -52,7 +51,7 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
     })?;
     let (_rest, icp) =
         message(&icp).map_err(|_e| napi::Error::from_reason("Invalid inception event".into()))?;
-    let kel = KEL::finalize_incept(&path_str, &icp.event_message, signatures)
+    let kel = KEL::finalize_incept(&path_str, &icp, signatures)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
     let identifier = kel.get_prefix().to_str();
     ctx.env.create_string(&identifier)

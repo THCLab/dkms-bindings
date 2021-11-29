@@ -75,24 +75,24 @@ impl Key {
 }
 
 pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
-    let icp = EventMsgBuilder::new(EventType::Inception)?
+    let icp = EventMsgBuilder::new(EventType::Inception)
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
-        .with_threshold(keys.current_threshold.clone())
-        .with_next_threshold(keys.next_threshold.clone())
+        .with_threshold(&keys.current_threshold.clone())
+        .with_next_threshold(&keys.next_threshold.clone())
         .build()?;
     Ok(icp)
 }
 
 pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<EventMessage, Error> {
-    let ixn = EventMsgBuilder::new(EventType::Rotation)?
-        .with_prefix(state.prefix.clone())
+    let ixn = EventMsgBuilder::new(EventType::Rotation)
+        .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
-        .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
+        .with_previous_event(&SelfAddressing::Blake3_256.derive(&state.last))
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
-        .with_threshold(keys.current_threshold.clone())
-        .with_next_threshold(keys.next_threshold.clone())
+        .with_threshold(&keys.current_threshold.clone())
+        .with_next_threshold(&keys.next_threshold.clone())
         .build()?;
     Ok(ixn)
 }
@@ -109,10 +109,10 @@ pub fn make_ixn(
             })
         })
         .collect();
-    let ev = EventMsgBuilder::new(EventType::Interaction)?
-        .with_prefix(state.prefix.clone())
+    let ev = EventMsgBuilder::new(EventType::Interaction)
+        .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
-        .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
+        .with_previous_event(&SelfAddressing::Blake3_256.derive(&state.last))
         .with_seal(seal_list)
         .build()?;
     Ok(ev)
@@ -122,10 +122,10 @@ pub fn make_ixn_with_seal(
     seal_list: &[Seal],
     state: IdentifierState,
 ) -> Result<EventMessage, Error> {
-    let ev = EventMsgBuilder::new(EventType::Interaction)?
-        .with_prefix(state.prefix.clone())
+    let ev = EventMsgBuilder::new(EventType::Interaction)
+        .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
-        .with_previous_event(SelfAddressing::Blake3_256.derive(&state.last))
+        .with_previous_event(&SelfAddressing::Blake3_256.derive(&state.last))
         .with_seal(seal_list.to_owned())
         .build()?;
     Ok(ev)

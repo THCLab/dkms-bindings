@@ -1,4 +1,4 @@
-use std::io::{self, Read};
+use std::{io::{self, Read}, sync::Arc, convert::TryFrom};
 
 use clap::{App, Arg};
 use keri::{
@@ -6,12 +6,11 @@ use keri::{
     derivation::self_addressing::SelfAddressing,
     error::Error,
     event_message::{
-        event_msg_builder::{EventMsgBuilder, EventType},
-        parse::{message, signed_event_stream, signed_message},
+        event_msg_builder::{EventMsgBuilder, EventType}, signed_event_message::Message,
     },
     prefix::{AttachedSignaturePrefix, BasicPrefix, Prefix, SelfSigningPrefix},
     processor::EventProcessor,
-    state::IdentifierState,
+    state::IdentifierState, event_parsing::message::{signed_event_stream, signed_message, message},
 };
 
 fn main() -> Result<(), Error> {
@@ -25,11 +24,14 @@ fn main() -> Result<(), Error> {
     let db_root = Builder::new().prefix("test-db").tempdir().unwrap();
     let path = db_root.path();
 
-    let db = SledEventDatabase::new(path)?;
-    let proc = EventProcessor::new(&db);
-    let s = signed_event_stream(serialized_kel.as_bytes()).unwrap().1;
-    let states: Vec<Option<IdentifierState>> =
-        s.into_iter().map(|p| proc.process(p).unwrap()).collect();
+    let db = Arc::new(SledEventDatabase::new(path)?);
+    let proc = EventProcessor::new(Arc::clone(&db));
+    let states: Vec<Option<IdentifierState>> = signed_event_stream(serialized_kel.as_bytes())
+        .unwrap()
+        .1.into_iter()
+        .map(|sem| Message::try_from(sem))
+        .map(|msg| proc.process( msg.unwrap()).unwrap())
+        .collect();
 
     // Parse arguments
     let matches = App::new("kel")
@@ -115,7 +117,7 @@ fn main() -> Result<(), Error> {
             vec![]
         };
 
-        let icp = EventMsgBuilder::new(EventType::Inception)?
+        let icp = EventMsgBuilder::new(EventType::Inception)
             .with_keys(current_keys.clone())
             .with_next_keys(next_keys.clone())
             .build()?;
@@ -140,11 +142,11 @@ fn main() -> Result<(), Error> {
         let prefix = states.last().clone().unwrap().to_owned().unwrap().prefix;
         let last = states.last().clone().unwrap().to_owned().unwrap().last;
 
-        let rot = EventMsgBuilder::new(EventType::Rotation)?
-            .with_prefix(prefix)
+        let rot = EventMsgBuilder::new(EventType::Rotation)
+            .with_prefix(&prefix)
             .with_keys(current_keys.clone())
             .with_next_keys(next_keys.clone())
-            .with_previous_event(SelfAddressing::Blake3_256.derive(&last))
+            .with_previous_event(&SelfAddressing::Blake3_256.derive(&last))
             .build()?;
         println!("{}", String::from_utf8(rot.serialize().unwrap()).unwrap())
     };
@@ -152,7 +154,7 @@ fn main() -> Result<(), Error> {
     if let Some(ref matches) = matches.subcommand_matches("process") {
         let event = if let Some(c) = matches.value_of("event") {
             let (_rest, msg) = message(c.as_bytes()).unwrap();
-            Ok(msg.event_message)
+            Ok(msg)
         } else {
             Err(Error::SemanticError("not event msg".into()))
         }?;
@@ -165,10 +167,10 @@ fn main() -> Result<(), Error> {
         }?;
         let att = AttachedSignaturePrefix::new(signature.derivation, signature.derivative(), 0);
 
-        let sig_message = event.sign(vec![att]).serialize().unwrap();
+        let sig_message = event.sign(vec![att], None).serialize().unwrap();
         let s = signed_message(&sig_message).unwrap().1;
 
-        let p = proc.process(s)?;
+        let p = proc.process(Message::try_from(s)?)?;
         let prefix = p.unwrap().prefix;
         let kel = proc.get_kerl(&prefix)?.unwrap();
         println!("{}", String::from_utf8(kel).unwrap())
