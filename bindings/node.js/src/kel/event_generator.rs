@@ -1,15 +1,19 @@
 use super::error::Error;
 use keri::{
-    derivation::{basic::Basic, self_addressing::SelfAddressing},
+    derivation::basic::Basic,
     event::{
-        event_data::{EventData, Receipt},
+        receipt::Receipt,
         sections::{
             seal::{DigestSeal, EventSeal, Seal},
             threshold::SignatureThreshold,
         },
-        Event, EventMessage, SerializationFormats,
+        EventMessage,
     },
-    event_message::event_msg_builder::{EventMsgBuilder, EventType},
+    event_message::{
+        event_msg_builder::{EventMsgBuilder, ReceiptBuilder},
+        key_event_message::KeyEvent,
+        EventTypeTag,
+    },
     prefix::{BasicPrefix, SelfAddressingPrefix},
     state::IdentifierState,
 };
@@ -74,8 +78,8 @@ impl Key {
     }
 }
 
-pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
-    let icp = EventMsgBuilder::new(EventType::Inception)
+pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage<KeyEvent>, Error> {
+    let icp = EventMsgBuilder::new(EventTypeTag::Icp)
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
         .with_threshold(&keys.current_threshold.clone())
@@ -84,11 +88,14 @@ pub fn make_icp(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
     Ok(icp)
 }
 
-pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<EventMessage, Error> {
-    let ixn = EventMsgBuilder::new(EventType::Rotation)
+pub fn make_rot(
+    keys: &PublicKeysConfig,
+    state: IdentifierState,
+) -> Result<EventMessage<KeyEvent>, Error> {
+    let ixn = EventMsgBuilder::new(EventTypeTag::Rot)
         .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
-        .with_previous_event(&SelfAddressing::Blake3_256.derive(&state.last))
+        .with_previous_event(&state.last_event_digest)
         .with_keys(keys.current.clone())
         .with_next_keys(keys.next.clone())
         .with_threshold(&keys.current_threshold.clone())
@@ -100,7 +107,7 @@ pub fn make_rot(keys: &PublicKeysConfig, state: IdentifierState) -> Result<Event
 pub fn make_ixn(
     payload: &[SelfAddressingPrefix],
     state: IdentifierState,
-) -> Result<EventMessage, Error> {
+) -> Result<EventMessage<KeyEvent>, Error> {
     let seal_list = payload
         .iter()
         .map(|seal| {
@@ -109,10 +116,10 @@ pub fn make_ixn(
             })
         })
         .collect();
-    let ev = EventMsgBuilder::new(EventType::Interaction)
+    let ev = EventMsgBuilder::new(EventTypeTag::Icp)
         .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
-        .with_previous_event(&SelfAddressing::Blake3_256.derive(&state.last))
+        .with_previous_event(&state.last_event_digest)
         .with_seal(seal_list)
         .build()?;
     Ok(ev)
@@ -121,29 +128,24 @@ pub fn make_ixn(
 pub fn make_ixn_with_seal(
     seal_list: &[Seal],
     state: IdentifierState,
-) -> Result<EventMessage, Error> {
-    let ev = EventMsgBuilder::new(EventType::Interaction)
+) -> Result<EventMessage<KeyEvent>, Error> {
+    let ev = EventMsgBuilder::new(EventTypeTag::Ixn)
         .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
-        .with_previous_event(&SelfAddressing::Blake3_256.derive(&state.last))
+        .with_previous_event(&state.last_event_digest)
         .with_seal(seal_list.to_owned())
         .build()?;
     Ok(ev)
 }
 
 pub fn make_rct(
-    event: EventMessage,
+    event: EventMessage<KeyEvent>,
     _validator_seal: EventSeal,
     _state: IdentifierState,
-) -> Result<EventMessage, Error> {
-    let ser = event.serialize()?;
-    let rcp = Event {
-        prefix: event.event.prefix,
-        sn: event.event.sn,
-        event_data: EventData::Rct(Receipt {
-            receipted_event_digest: SelfAddressing::Blake3_256.derive(&ser),
-        }),
-    }
-    .to_message(SerializationFormats::JSON)?;
+) -> Result<EventMessage<Receipt>, Error> {
+    let rcp = ReceiptBuilder::default()
+        .with_receipted_event(event)
+        .build()?;
+
     Ok(rcp)
 }

@@ -12,8 +12,14 @@ use keri::{
         sections::{seal::Seal, KeyConfig},
         EventMessage,
     },
-    event_message::signed_event_message::{Message, SignedEventMessage},
-    event_parsing::message::{message, signed_event_stream, signed_message},
+    event_message::{
+        key_event_message::KeyEvent,
+        signed_event_message::{Message, SignedEventMessage},
+    },
+    event_parsing::{
+        message::{key_event_message, message, signed_event_stream, signed_message},
+        EventType,
+    },
     prefix::AttachedSignaturePrefix,
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix},
     processor::EventProcessor,
@@ -127,7 +133,7 @@ impl<'d> KEL {
     /// # Arguments
     ///
     /// * `keys` - `PublicKeysConfig` which store current and next public keys.
-    pub fn incept(keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
+    pub fn incept(keys: &PublicKeysConfig) -> Result<EventMessage<KeyEvent>, Error> {
         event_generator::make_icp(keys)
     }
 
@@ -140,15 +146,15 @@ impl<'d> KEL {
     /// *` signatures`
     pub fn finalize_incept(
         database_root: &str,
-        icp: &EventMessage,
+        icp: &EventMessage<KeyEvent>,
         signatures: Vec<SelfSigningPrefix>,
     ) -> Result<KEL, Error> {
-        let prefix = icp.event.prefix.clone();
+        let prefix = icp.event.get_prefix();
         let database = Some(Arc::new(KEL::create_kel_db(Path::new(
             &[database_root, &prefix.to_str()].join("/"),
         ))?));
 
-        let pub_keys = match icp.event.event_data {
+        let pub_keys = match icp.event.get_event_data() {
             keri::event::event_data::EventData::Icp(ref icp) => {
                 Ok(icp.key_config.public_keys.to_owned())
             }
@@ -162,7 +168,7 @@ impl<'d> KEL {
     /// # Arguments
     ///
     /// * `keys` - public keys config for new rotation event.
-    pub fn rotate(&self, keys: &PublicKeysConfig) -> Result<EventMessage, Error> {
+    pub fn rotate(&self, keys: &PublicKeysConfig) -> Result<EventMessage<KeyEvent>, Error> {
         event_generator::make_rot(keys, self.get_state()?.unwrap())
     }
 
@@ -177,20 +183,27 @@ impl<'d> KEL {
         rotation: Vec<u8>,
         signatures: Vec<SelfSigningPrefix>,
     ) -> Result<bool, Error> {
-        let (_rest, rot_event) =
-            message(&rotation).map_err(|_e| Error::Generic("Invalid rotation event".into()))?;
+        let (_rest, rot_event) = key_event_message(&rotation)
+            .map_err(|_e| Error::Generic("Invalid rotation event".into()))?;
 
-        let pub_keys = match rot_event.event.event_data {
-            keri::event::event_data::EventData::Rot(ref rot) => {
-                Ok(rot.key_config.public_keys.to_owned())
-            }
-            _ => Err(Error::Generic("Improper event type".into())),
-        }?;
+        if let EventType::KeyEvent(rot) = rot_event {
+            let pub_keys = match rot.event.get_event_data() {
+                keri::event::event_data::EventData::Rot(ref rot) => {
+                    Ok(rot.key_config.public_keys.to_owned())
+                }
+                _ => Err(Error::Generic("Improper event type".into())),
+            }?;
 
-        KEL::finalize_event(self.database.clone(), &rot_event, &signatures, &pub_keys)
+            KEL::finalize_event(self.database.clone(), &rot, &signatures, &pub_keys)
+        } else {
+            todo!()
+        }
     }
 
-    pub fn anchor(&self, payload: &[SelfAddressingPrefix]) -> Result<EventMessage, Error> {
+    pub fn anchor(
+        &self,
+        payload: &[SelfAddressingPrefix],
+    ) -> Result<EventMessage<KeyEvent>, Error> {
         event_generator::make_ixn(payload, self.get_state()?.unwrap())
     }
 
@@ -213,14 +226,21 @@ impl<'d> KEL {
     pub fn is_anchored(&self, sai: SelfAddressingPrefix) -> Result<bool, Error> {
         let kel = self.get_kel()?.unwrap();
         let parsed_kel = signed_event_stream(&kel).unwrap().1;
+
         Ok(parsed_kel
-            .iter()
-            .any(|des| match des.deserialized_event.event.event_data {
-                EventData::Ixn(ref ixn) => ixn.data.iter().any(|seal| match seal {
-                    Seal::Digest(dig) => dig.dig == sai,
+            .into_iter()
+            .map(|des| match Message::try_from(des).unwrap() {
+                Message::Event(key_event) => key_event,
+                _ => todo!(),
+            })
+            .any(|key_event_message| {
+                match key_event_message.event_message.event.get_event_data() {
+                    EventData::Ixn(ref ixn) => ixn.data.iter().any(|seal| match seal {
+                        Seal::Digest(dig) => dig.dig == sai,
+                        _ => false,
+                    }),
                     _ => false,
-                }),
-                _ => false,
+                }
             }))
     }
 
@@ -260,7 +280,7 @@ impl<'d> KEL {
 
     fn finalize_event(
         db: Option<Arc<SledEventDatabase>>,
-        event: &EventMessage,
+        event: &EventMessage<KeyEvent>,
         signatures_list: &[SelfSigningPrefix],
         current_pub_keys: &[BasicPrefix],
     ) -> Result<bool, Error> {
@@ -307,7 +327,7 @@ impl<'d> KEL {
         &self,
         id: &IdentifierPrefix,
         sn: u64,
-    ) -> Result<Option<EventMessage>, Error> {
+    ) -> Result<Option<EventMessage<KeyEvent>>, Error> {
         let processor = match self.database.clone() {
             Some(db) => Ok(EventProcessor::new(db)),
             None => Err(Error::NoDatabase),

@@ -7,11 +7,9 @@ use std::{
 use clap::{App, Arg};
 use keri::{
     database::sled::SledEventDatabase,
-    derivation::self_addressing::SelfAddressing,
     error::Error,
     event_message::{
-        event_msg_builder::{EventMsgBuilder, EventType},
-        signed_event_message::Message,
+        event_msg_builder::EventMsgBuilder, signed_event_message::Message, EventTypeTag,
     },
     event_parsing::message::{message, signed_event_stream, signed_message},
     prefix::{AttachedSignaturePrefix, BasicPrefix, Prefix, SelfSigningPrefix},
@@ -124,7 +122,7 @@ fn main() -> Result<(), Error> {
             vec![]
         };
 
-        let icp = EventMsgBuilder::new(EventType::Inception)
+        let icp = EventMsgBuilder::new(EventTypeTag::Icp)
             .with_keys(current_keys.clone())
             .with_next_keys(next_keys.clone())
             .build()?;
@@ -147,13 +145,19 @@ fn main() -> Result<(), Error> {
         };
 
         let prefix = states.last().clone().unwrap().to_owned().unwrap().prefix;
-        let last = states.last().clone().unwrap().to_owned().unwrap().last;
+        let last = states
+            .last()
+            .clone()
+            .unwrap()
+            .to_owned()
+            .unwrap()
+            .last_event_digest;
 
-        let rot = EventMsgBuilder::new(EventType::Rotation)
+        let rot = EventMsgBuilder::new(EventTypeTag::Rot)
             .with_prefix(&prefix)
             .with_keys(current_keys.clone())
             .with_next_keys(next_keys.clone())
-            .with_previous_event(&SelfAddressing::Blake3_256.derive(&last))
+            .with_previous_event(&last)
             .build()?;
         println!("{}", String::from_utf8(rot.serialize().unwrap()).unwrap())
     };
