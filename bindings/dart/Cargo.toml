@@ -1,0 +1,20 @@
+[package]
+name = "dart"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dartkeriox"
+crate-type = ["cdylib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+flutter_rust_bridge = "1.23.0"
+keriox-wrapper = { path = "../../keriox-wrapper" }
+anyhow = { version = "1.0.56", features = ["backtrace"] }
+thiserror = "1.0.30"
+ed25519-dalek = "1.0.1"
+rand = { version = "0.7.3", features = ["std", "getrandom"] }
+base64 = "0.13.0"
+keri = { git = "ssh://github.com/THCLab/keriox.git"}

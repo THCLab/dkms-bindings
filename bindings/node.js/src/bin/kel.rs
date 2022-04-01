@@ -49,16 +49,16 @@ fn main() -> Result<(), Error> {
                         .short('e')
                         .long("event")
                         .takes_value(true)
-                        .value_name("EVENT")
-                        .about("Process event"),
+                        .value_name("EVENT"),
+                        // .about("Process event"),
                 )
                 .arg(
                     Arg::new("signature")
                         .short('s')
                         .long("signature")
                         .takes_value(true)
-                        .value_name("SIGNATURE")
-                        .about("Signature of message"),
+                        .value_name("SIGNATURE"),
+                        // .about("Signature of message"),
                 ),
         )
         .subcommand(
@@ -70,8 +70,8 @@ fn main() -> Result<(), Error> {
                         .long("current")
                         .takes_value(true)
                         .multiple_occurrences(true)
-                        .value_name("PREFIX")
-                        .about("Set current public key"),
+                        .value_name("PREFIX"),
+                        // .about("Set current public key"),
                 )
                 .arg(
                     Arg::new("next")
@@ -79,8 +79,8 @@ fn main() -> Result<(), Error> {
                         .long("next")
                         .takes_value(true)
                         .multiple_occurrences(true)
-                        .value_name("PREFIX")
-                        .about("Set next public key"),
+                        .value_name("PREFIX"),
+                        // .about("Set next public key"),
                 ),
         )
         .subcommand(
@@ -92,8 +92,8 @@ fn main() -> Result<(), Error> {
                         .long("current")
                         .takes_value(true)
                         .multiple_occurrences(true)
-                        .value_name("PREFIX")
-                        .about("Set current public key"),
+                        .value_name("PREFIX"),
+                        // .about("Set current public key"),
                 )
                 .arg(
                     Arg::new("next")
@@ -101,8 +101,8 @@ fn main() -> Result<(), Error> {
                         .long("next")
                         .takes_value(true)
                         .multiple_occurrences(true)
-                        .value_name("PREFIX")
-                        .about("Set next public key"),
+                        .value_name("PREFIX"),
+                        // .about("Set next public key"),
                 ),
         )
         .get_matches();

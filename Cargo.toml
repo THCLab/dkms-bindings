@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "keriox-wrapper",
+    "bindings/node.js",
+    "bindings/dart",
+]
