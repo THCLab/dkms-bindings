@@ -219,13 +219,12 @@ pub enum KelError {
 
 #[test]
 pub fn test_ed_key() {
-    let public_key = "iyeqxcd9P48e0bFXAAdWjSO83CNwNKxbnyoYnFGJx6U=";
+    let public_key = "6UMthURGxkWVEKxJ/m3OpgV3Be/STsM//4tONKaiTrA=";
     let decoded_pk = base64::decode(public_key).unwrap();
     let pk = keri::keys::PublicKey::new(decoded_pk);
     let bp = Basic::Ed25519.derive(pk);
-    let sig_hex = "08C00CA0FCEFD34FF57D28D19D3CE08399B5149D93B652DCA399D8E26BDDB668C44D28159E3B59E15AE3FA1CF1E05BACDCEC9778BAB419593F3BE0D77E01420A".as_bytes();
+    let sig_hex = "F36EBB3CC564630B1A306CA5AE639D88A8884CE8CAF3FBB69E2616000DD24E5A34AB555EC0039D9CBD52488DF2A054B99AA18D4FF63529C8E4E6C389DD0BFE03";
     let decoded_signature = hex::decode(sig_hex).expect("Decoding failed");
-
     let ss = SelfSigning::Ed25519Sha512.derive(decoded_signature);
     let res = bp.verify("kotki".as_bytes(), &ss).unwrap();
     assert!(res);

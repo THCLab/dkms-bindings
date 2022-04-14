@@ -4,7 +4,8 @@ use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::Result;
 use keriox_wrapper::kel::{
-    key_prefix_from_b64, signature_prefix_from_b64, Kel, KeyDerivation, SignatureDerivation,
+    key_prefix_from_b64, signature_prefix_from_b64, signature_prefix_from_hex, Kel, KeyDerivation,
+    SignatureDerivation,
 };
 
 pub enum KeyType {
@@ -45,6 +46,7 @@ impl Into<SignatureDerivation> for SignatureType {
 
 pub struct PublicKey {
     pub(crate) algorithm: KeyType,
+    /// base 64 string of public key
     pub(crate) key: String,
 }
 impl PublicKey {
@@ -58,13 +60,14 @@ impl PublicKey {
 
 pub struct Signature {
     pub(crate) algorithm: SignatureType,
+    /// hex string of signature
     pub(crate) key: String,
 }
 impl Signature {
-    pub fn new(algorithm: SignatureType, key: &str) -> Self {
+    pub fn new(algorithm: SignatureType, key: String) -> Self {
         Self {
             algorithm,
-            key: key.to_string(),
+            key: key,
         }
     }
 }
@@ -115,7 +118,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Control
         .unwrap()
         .finalize_inception(
             event,
-            signature_prefix_from_b64(&signature.key, signature.algorithm.into())?,
+            signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
         )?;
     Ok(Controller {
         identifier: controller_id,
