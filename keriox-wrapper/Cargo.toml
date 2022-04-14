@@ -7,4 +7,6 @@ edition = "2021"
 
 [dependencies]
 keri = { git = "ssh://github.com/THCLab/keriox.git"}
+base64 = "0.13.0"
 thiserror = "1.0.30"
+hex = "0.4.3"

@@ -50,7 +50,7 @@ fn main() -> Result<(), Error> {
                         .long("event")
                         .takes_value(true)
                         .value_name("EVENT"),
-                        // .about("Process event"),
+                    // .about("Process event"),
                 )
                 .arg(
                     Arg::new("signature")
@@ -58,7 +58,7 @@ fn main() -> Result<(), Error> {
                         .long("signature")
                         .takes_value(true)
                         .value_name("SIGNATURE"),
-                        // .about("Signature of message"),
+                    // .about("Signature of message"),
                 ),
         )
         .subcommand(
@@ -71,7 +71,7 @@ fn main() -> Result<(), Error> {
                         .takes_value(true)
                         .multiple_occurrences(true)
                         .value_name("PREFIX"),
-                        // .about("Set current public key"),
+                    // .about("Set current public key"),
                 )
                 .arg(
                     Arg::new("next")
@@ -80,7 +80,7 @@ fn main() -> Result<(), Error> {
                         .takes_value(true)
                         .multiple_occurrences(true)
                         .value_name("PREFIX"),
-                        // .about("Set next public key"),
+                    // .about("Set next public key"),
                 ),
         )
         .subcommand(
@@ -93,7 +93,7 @@ fn main() -> Result<(), Error> {
                         .takes_value(true)
                         .multiple_occurrences(true)
                         .value_name("PREFIX"),
-                        // .about("Set current public key"),
+                    // .about("Set current public key"),
                 )
                 .arg(
                     Arg::new("next")
@@ -102,7 +102,7 @@ fn main() -> Result<(), Error> {
                         .takes_value(true)
                         .multiple_occurrences(true)
                         .value_name("PREFIX"),
-                        // .about("Set next public key"),
+                    // .about("Set next public key"),
                 ),
         )
         .get_matches();

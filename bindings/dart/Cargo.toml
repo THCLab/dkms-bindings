@@ -14,7 +14,7 @@ flutter_rust_bridge = "1.23.0"
 keriox-wrapper = { path = "../../keriox-wrapper" }
 anyhow = { version = "1.0.56", features = ["backtrace"] }
 thiserror = "1.0.30"
-ed25519-dalek = "1.0.1"
-rand = { version = "0.7.3", features = ["std", "getrandom"] }
 base64 = "0.13.0"
-keri = { git = "ssh://github.com/THCLab/keriox.git"}
+
+[dev-dependencies]
+tempfile = "3.1"

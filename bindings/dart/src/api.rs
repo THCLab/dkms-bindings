@@ -1,35 +1,72 @@
 use std::sync::Mutex;
 
 use flutter_rust_bridge::support::lazy_static;
-use keri::signer::Signer;
-use rand::rngs::OsRng;
 
-use anyhow::{Result};
-use keriox_wrapper::kel::{Kel};
+use anyhow::Result;
+use keriox_wrapper::kel::{
+    key_prefix_from_b64, signature_prefix_from_b64, Kel, KeyDerivation, SignatureDerivation,
+};
 
-pub struct PublicKey(pub Vec<u8>);
-
-#[derive(Clone)]
-pub struct KeyPair {
-    pub sk: Vec<u8>,
-    pub pk: Vec<u8>,
+pub enum KeyType {
+    ECDSAsecp256k1,
+    Ed25519,
+    Ed448,
+    X25519,
+    X448,
 }
 
-pub fn generate_key_pair() -> KeyPair {
-    let kp = ed25519_dalek::Keypair::generate(&mut OsRng {});
-    let (vk, sk) = (kp.public, kp.secret);
-    let pk = vk.to_bytes().to_vec();
-    let sk = sk.to_bytes().to_vec();
-    KeyPair { pk, sk }
+impl Into<KeyDerivation> for KeyType {
+    fn into(self) -> KeyDerivation {
+        match self {
+            KeyType::ECDSAsecp256k1 => KeyDerivation::ECDSAsecp256k1NT,
+            KeyType::Ed25519 => KeyDerivation::Ed25519NT,
+            KeyType::Ed448 => KeyDerivation::Ed448NT,
+            KeyType::X25519 => KeyDerivation::X25519,
+            KeyType::X448 => KeyDerivation::X448,
+        }
+    }
 }
 
-pub fn get_public_key(kp: KeyPair) -> PublicKey {
-    PublicKey(kp.pk.clone())
+pub enum SignatureType {
+    Ed25519Sha512,
+    ECDSAsecp256k1Sha256,
+    Ed448,
 }
 
-pub fn sign(kp: KeyPair, message: String) -> Result<Vec<u8>> {
-    let signer = Signer::new_with_key(&kp.sk).unwrap();
-    Ok(signer.sign(message.as_bytes())?)
+impl Into<SignatureDerivation> for SignatureType {
+    fn into(self) -> SignatureDerivation {
+        match self {
+            SignatureType::Ed25519Sha512 => SignatureDerivation::Ed25519Sha512,
+            SignatureType::ECDSAsecp256k1Sha256 => SignatureDerivation::ECDSAsecp256k1Sha256,
+            SignatureType::Ed448 => SignatureDerivation::Ed448,
+        }
+    }
+}
+
+pub struct PublicKey {
+    pub(crate) algorithm: KeyType,
+    pub(crate) key: String,
+}
+impl PublicKey {
+    pub fn new(algorithm: KeyType, key: &str) -> Self {
+        Self {
+            algorithm,
+            key: key.to_string(),
+        }
+    }
+}
+
+pub struct Signature {
+    pub(crate) algorithm: SignatureType,
+    pub(crate) key: String,
+}
+impl Signature {
+    pub fn new(algorithm: SignatureType, key: &str) -> Self {
+        Self {
+            algorithm,
+            key: key.to_string(),
+        }
+    }
 }
 
 lazy_static! {
@@ -38,6 +75,12 @@ lazy_static! {
 
 pub struct Controller {
     pub identifier: String,
+}
+
+impl Controller {
+    pub fn get_id(&self) -> String {
+        self.identifier.clone()
+    }
 }
 
 pub fn init_kel(input_app_dir: String) -> Result<()> {
@@ -52,19 +95,28 @@ pub fn incept(
     witness_threshold: u64,
 ) -> Result<String> {
     let icp = (*KEL.lock().unwrap()).as_ref().unwrap().incept(
-        public_keys.into_iter().map(|pk| pk.0).collect(),
-        next_pub_keys.into_iter().map(|pk| pk.0).collect(),
+        public_keys
+            .into_iter()
+            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+            .collect(),
+        next_pub_keys
+            .into_iter()
+            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+            .collect(),
         witnesses,
         witness_threshold,
     )?;
     Ok(icp)
 }
 
-pub fn finalize_inception(event: String, signature: Vec<u8>) -> Result<Controller> {
+pub fn finalize_inception(event: String, signature: Signature) -> Result<Controller> {
     let controller_id = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .finalize_inception(event, signature)?;
+        .finalize_inception(
+            event,
+            signature_prefix_from_b64(&signature.key, signature.algorithm.into())?,
+        )?;
     Ok(Controller {
         identifier: controller_id,
     })
@@ -80,8 +132,14 @@ pub fn rotate(
 ) -> Result<String> {
     let rot = (*KEL.lock().unwrap()).as_ref().unwrap().rotate(
         controller.identifier,
-        current_keys.into_iter().map(|pk| pk.0).collect(),
-        new_next_keys.into_iter().map(|pk| pk.0).collect(),
+        current_keys
+            .into_iter()
+            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+            .collect(),
+        new_next_keys
+            .into_iter()
+            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+            .collect(),
         witness_to_add,
         witness_to_remove,
         witness_threshold,
@@ -89,11 +147,11 @@ pub fn rotate(
     Ok(rot)
 }
 
-pub fn finalize_event(event: String, signature: Vec<u8>) -> Result<()> {
-    let signed_event = (*KEL.lock().unwrap())
-        .as_ref()
-        .unwrap()
-        .finalize_event(event, signature)?;
+pub fn finalize_event(event: String, signature: Signature) -> Result<()> {
+    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
+        event,
+        signature_prefix_from_b64(&signature.key, signature.algorithm.into())?,
+    )?;
     Ok(signed_event)
 }
 

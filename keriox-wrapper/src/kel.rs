@@ -1,5 +1,3 @@
-use std::{path::Path, sync::Arc};
-
 use keri::{
     database::sled::SledEventDatabase,
     derivation::{basic::Basic, self_signing::SelfSigning},
@@ -9,11 +7,35 @@ use keri::{
     },
     event_parsing::message::key_event_message,
     keys::PublicKey as KeriPK,
-    prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix},
+    prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
     processor::{event_storage::EventStorage, notification::NotificationBus, EventProcessor},
 };
+use std::{path::Path, sync::Arc};
 use thiserror::Error;
 
+pub type KeyDerivation = Basic;
+pub type SignatureDerivation = SelfSigning;
+
+pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, KelError> {
+    let key = KeriPK::new(base64::decode(key).unwrap());
+    Ok(derivation.derive(key))
+}
+
+pub fn signature_prefix_from_b64(
+    sig: &str,
+    derivation: SelfSigning,
+) -> Result<SelfSigningPrefix, KelError> {
+    let sig = base64::decode(sig).unwrap();
+    Ok(derivation.derive(sig))
+}
+
+pub fn signature_prefix_from_hex(
+    sig_hex: &str,
+    derivation: SelfSigning,
+) -> Result<SelfSigningPrefix, KelError> {
+    let sig = hex::decode(sig_hex)?;
+    Ok(derivation.derive(sig))
+}
 
 pub struct Kel {
     db: Arc<SledEventDatabase>,
@@ -30,8 +52,8 @@ impl Kel {
 
     pub fn incept(
         &self,
-        public_keys: Vec<Vec<u8>>,
-        next_pub_keys: Vec<Vec<u8>>,
+        public_keys: Vec<BasicPrefix>,
+        next_pub_keys: Vec<BasicPrefix>,
         witnesses: Vec<String>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
@@ -40,14 +62,8 @@ impl Kel {
             .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_e| KelError::InceptionError)?;
-        let pks = public_keys
-            .into_iter()
-            .map(|pk| Basic::Ed25519.derive(KeriPK::new(pk)))
-            .collect();
-        let npks = next_pub_keys
-            .into_iter()
-            .map(|pk| Basic::Ed25519.derive(KeriPK::new(pk)))
-            .collect();
+        let pks = public_keys;
+        let npks = next_pub_keys;
         let serialized_icp = EventMsgBuilder::new(EventTypeTag::Icp)
             .with_keys(pks)
             .with_next_keys(npks)
@@ -55,7 +71,8 @@ impl Kel {
             .with_witness_threshold(&SignatureThreshold::Simple(witness_threshold))
             .build()
             .map_err(|_e| KelError::InceptionError)?
-            .serialize().map_err(|_e| KelError::InceptionError)?;
+            .serialize()
+            .map_err(|_e| KelError::InceptionError)?;
 
         let icp = String::from_utf8(serialized_icp).map_err(|_e| KelError::InceptionError)?;
         Ok(icp)
@@ -64,8 +81,8 @@ impl Kel {
     pub fn rotate(
         &self,
         identifier: String,
-        current_keys: Vec<Vec<u8>>,
-        new_next_keys: Vec<Vec<u8>>,
+        current_keys: Vec<BasicPrefix>,
+        new_next_keys: Vec<BasicPrefix>,
         witness_to_add: Vec<String>,
         witness_to_remove: Vec<String>,
         witness_threshold: u64,
@@ -82,14 +99,8 @@ impl Kel {
             .iter()
             .map(|wit| wit.parse::<BasicPrefix>().unwrap())
             .collect::<Vec<_>>();
-        let pks = current_keys
-            .into_iter()
-            .map(|pk| Basic::Ed25519.derive(KeriPK::new(pk)))
-            .collect::<Vec<_>>();
-        let npks = new_next_keys
-            .into_iter()
-            .map(|pk| Basic::Ed25519.derive(KeriPK::new(pk)))
-            .collect::<Vec<_>>();
+        let pks = current_keys;
+        let npks = new_next_keys;
         let storage = EventStorage::new(self.db.clone());
         let state = storage
             .get_state(&identifier)
@@ -115,7 +126,7 @@ impl Kel {
     pub fn finalize_inception(
         &self,
         event: String,
-        signature: Vec<u8>,
+        signature: SelfSigningPrefix,
     ) -> Result<String, KelError> {
         let parsed_event = key_event_message(event.as_bytes())
             .map_err(|_e| KelError::ParseEventError)?
@@ -125,11 +136,10 @@ impl Kel {
                 if let EventData::Icp(_) = ke.event.get_event_data() {
                     let processor = EventProcessor::new(self.db.clone());
                     // TODO set index
-                    let sigs = vec![AttachedSignaturePrefix::new(
-                        SelfSigning::Ed25519Sha512,
-                        signature.to_vec(),
-                        0,
-                    )];
+                    let sigs = vec![AttachedSignaturePrefix {
+                        index: 0,
+                        signature,
+                    }];
                     let signed_message = ke.sign(sigs, None);
                     let not = processor
                         .process(Message::Event(signed_message))
@@ -145,7 +155,11 @@ impl Kel {
         }
     }
 
-    pub fn finalize_event(&self, event: String, signature: Vec<u8>) -> Result<(), KelError> {
+    pub fn finalize_event(
+        &self,
+        event: String,
+        signature: SelfSigningPrefix,
+    ) -> Result<(), KelError> {
         let parsed_event = key_event_message(event.as_bytes())
             .map_err(|_e| KelError::ParseEventError)?
             .1;
@@ -153,11 +167,10 @@ impl Kel {
             keri::event_parsing::EventType::KeyEvent(ke) => {
                 let processor = EventProcessor::new(self.db.clone());
                 // TODO set index
-                let sigs = vec![AttachedSignaturePrefix::new(
-                    SelfSigning::Ed25519Sha512,
-                    signature.to_vec(),
-                    0,
-                )];
+                let sigs = vec![AttachedSignaturePrefix {
+                    index: 0,
+                    signature,
+                }];
                 let signed_message = ke.sign(sigs, None);
                 let not = processor
                     .process(Message::Event(signed_message))
@@ -198,4 +211,22 @@ pub enum KelError {
     UnknownIdentifierError,
     #[error("keri error")]
     KeriError(#[from] keri::error::Error),
+    #[error("base64 decode error")]
+    Base64Error(#[from] base64::DecodeError),
+    #[error("hex decode error")]
+    HexError(#[from] hex::FromHexError),
+}
+
+#[test]
+pub fn test_ed_key() {
+    let public_key = "iyeqxcd9P48e0bFXAAdWjSO83CNwNKxbnyoYnFGJx6U=";
+    let decoded_pk = base64::decode(public_key).unwrap();
+    let pk = keri::keys::PublicKey::new(decoded_pk);
+    let bp = Basic::Ed25519.derive(pk);
+    let sig_hex = "08C00CA0FCEFD34FF57D28D19D3CE08399B5149D93B652DCA399D8E26BDDB668C44D28159E3B59E15AE3FA1CF1E05BACDCEC9778BAB419593F3BE0D77E01420A".as_bytes();
+    let decoded_signature = hex::decode(sig_hex).expect("Decoding failed");
+
+    let ss = SelfSigning::Ed25519Sha512.derive(decoded_signature);
+    let res = bp.verify("kotki".as_bytes(), &ss).unwrap();
+    assert!(res);
 }
