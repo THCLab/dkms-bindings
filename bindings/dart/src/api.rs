@@ -158,6 +158,12 @@ pub fn finalize_event(event: String, signature: Signature) -> Result<()> {
     Ok(signed_event)
 }
 
+pub fn process_stream(stream: String) -> Result<()> {
+    (*KEL.lock().unwrap()).as_ref().unwrap().process_stream(stream)?;
+    
+    Ok(())
+}
+
 pub fn get_kel(id: String) -> Result<String> {
     let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().get_kel(id)?;
     Ok(signed_event)

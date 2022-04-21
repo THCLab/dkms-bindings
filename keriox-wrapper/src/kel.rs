@@ -5,7 +5,7 @@ use keri::{
     event_message::{
         event_msg_builder::EventMsgBuilder, signed_event_message::Message, EventTypeTag,
     },
-    event_parsing::message::key_event_message,
+    event_parsing::message::{key_event_message, signed_event_stream},
     keys::PublicKey as KeriPK,
     prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
     processor::{event_storage::EventStorage, notification::NotificationBus, EventProcessor},
@@ -196,6 +196,21 @@ impl Kel {
                 .ok_or(KelError::UnknownIdentifierError)?,
         )
         .map_err(|e| KelError::ParseEventError(e.to_string()))
+    }
+
+    pub fn process_stream(&self, stream: String) -> Result<(), KelError> {
+        let processor = EventProcessor::new(self.db.clone());
+        signed_event_stream(stream.as_bytes()).map_err(|e| KelError::ParseEventError(e.to_string()))?.1
+            .into_iter()
+            .for_each(|sed| {
+                let msg = Message::try_from(sed).unwrap();
+                let not = processor.process(msg).unwrap();
+                self.notification_bus
+                    .notify(&not)
+                    .map_err(|_e| KelError::NotificationError).unwrap();
+            });
+        
+        Ok(())
     }
 }
 
