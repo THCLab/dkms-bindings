@@ -4,8 +4,7 @@ use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::Result;
 use keriox_wrapper::kel::{
-    key_prefix_from_b64, signature_prefix_from_b64, signature_prefix_from_hex, Kel, KeyDerivation,
-    SignatureDerivation,
+    key_prefix_from_b64, signature_prefix_from_hex, Kel, KeyDerivation, SignatureDerivation,
 };
 
 pub enum KeyType {
@@ -153,14 +152,17 @@ pub fn rotate(
 pub fn finalize_event(event: String, signature: Signature) -> Result<()> {
     let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
         event,
-        signature_prefix_from_b64(&signature.key, signature.algorithm.into())?,
+        signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
     )?;
     Ok(signed_event)
 }
 
 pub fn process_stream(stream: String) -> Result<()> {
-    (*KEL.lock().unwrap()).as_ref().unwrap().process_stream(stream)?;
-    
+    (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .process_stream(stream)?;
+
     Ok(())
 }
 

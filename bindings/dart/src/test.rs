@@ -28,12 +28,9 @@ pub fn test_api() -> Result<()> {
     Ok(())
 }
 
-
 #[test]
 pub fn test_process() -> Result<()> {
-    use crate::api::{
-        process_stream, init_kel, get_kel
-    };
+    use crate::api::{get_kel, init_kel, process_stream};
     use tempfile::Builder;
 
     // Create temporary db file.

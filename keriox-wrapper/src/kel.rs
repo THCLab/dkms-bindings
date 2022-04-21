@@ -163,7 +163,6 @@ impl Kel {
         let parsed_event = key_event_message(event.as_bytes())
             .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
-            println!("event proiglem");
         match parsed_event {
             keri::event_parsing::EventType::KeyEvent(ke) => {
                 let processor = EventProcessor::new(self.db.clone());
