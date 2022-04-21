@@ -129,7 +129,7 @@ impl Kel {
         signature: SelfSigningPrefix,
     ) -> Result<String, KelError> {
         let parsed_event = key_event_message(event.as_bytes())
-            .map_err(|_e| KelError::ParseEventError)?
+            .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
         match parsed_event {
             keri::event_parsing::EventType::KeyEvent(ke) => {
@@ -143,7 +143,7 @@ impl Kel {
                     let signed_message = ke.sign(sigs, None);
                     let not = processor
                         .process(Message::Event(signed_message))
-                        .map_err(|_e| KelError::ParseEventError)?;
+                        .map_err(|e| KelError::ParseEventError(e.to_string()))?;
                     self.notification_bus
                         .notify(&not)
                         .map_err(|_e| KelError::NotificationError)?;
@@ -161,8 +161,9 @@ impl Kel {
         signature: SelfSigningPrefix,
     ) -> Result<(), KelError> {
         let parsed_event = key_event_message(event.as_bytes())
-            .map_err(|_e| KelError::ParseEventError)?
+            .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
+            println!("event proiglem");
         match parsed_event {
             keri::event_parsing::EventType::KeyEvent(ke) => {
                 let processor = EventProcessor::new(self.db.clone());
@@ -172,9 +173,10 @@ impl Kel {
                     signature,
                 }];
                 let signed_message = ke.sign(sigs, None);
+
                 let not = processor
-                    .process(Message::Event(signed_message))
-                    .map_err(|_e| KelError::ParseEventError)?;
+                    .process(Message::Event(signed_message));
+                    let not = not.map_err(|e| KelError::ParseEventError(e.to_string()))?;
                 self.notification_bus
                     .notify(&not)
                     .map_err(|_e| KelError::NotificationError)
@@ -189,11 +191,11 @@ impl Kel {
             storage
                 .get_kel(
                     &id.parse::<IdentifierPrefix>()
-                        .map_err(|_e| KelError::ParseEventError)?,
+                        .map_err(|e| KelError::ParseEventError(e.to_string()))?,
                 )?
                 .ok_or(KelError::UnknownIdentifierError)?,
         )
-        .map_err(|_e| KelError::ParseEventError)
+        .map_err(|e| KelError::ParseEventError(e.to_string()))
     }
 }
 
@@ -203,8 +205,8 @@ pub enum KelError {
     InceptionError,
     #[error("can't generate rotation event")]
     RotationError,
-    #[error("can't parse event")]
-    ParseEventError,
+    #[error("can't parse event: {0}")]
+    ParseEventError(String),
     #[error("can't notify")]
     NotificationError,
     #[error("unknown identifier")]
