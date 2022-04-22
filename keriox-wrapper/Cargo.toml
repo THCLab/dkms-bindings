@@ -6,7 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-keri = { git = "ssh://github.com/THCLab/keriox.git"}
+keri = { git = "ssh://github.com/THCLab/keriox.git", branch = "attachments_parsing"}
 base64 = "0.13.0"
 thiserror = "1.0.30"
 hex = "0.4.3"
+
+[dev-dependencies]
+tempfile = "3.1"

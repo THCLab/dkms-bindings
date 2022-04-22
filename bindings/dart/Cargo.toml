@@ -15,6 +15,7 @@ keriox-wrapper = { path = "../../keriox-wrapper" }
 anyhow = { version = "1.0.56", features = ["backtrace"] }
 thiserror = "1.0.30"
 base64 = "0.13.0"
+hex = "0.4.3"
 
 [dev-dependencies]
 tempfile = "3.1"

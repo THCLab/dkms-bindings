@@ -27,6 +27,21 @@ impl Into<KeyDerivation> for KeyType {
     }
 }
 
+impl From<KeyDerivation> for KeyType {
+    fn from(kd: KeyDerivation) -> Self {
+        match kd {
+            KeyDerivation::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
+            KeyDerivation::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
+            KeyDerivation::Ed25519NT => KeyType::Ed25519,
+            KeyDerivation::Ed25519 => KeyType::Ed25519,
+            KeyDerivation::Ed448NT => KeyType::Ed448,
+            KeyDerivation::Ed448 => KeyType::Ed448,
+            KeyDerivation::X25519 => KeyType::X25519,
+            KeyDerivation::X448 => KeyType::X448,
+        }
+    }
+}
+
 pub enum SignatureType {
     Ed25519Sha512,
     ECDSAsecp256k1Sha256,
@@ -39,6 +54,16 @@ impl Into<SignatureDerivation> for SignatureType {
             SignatureType::Ed25519Sha512 => SignatureDerivation::Ed25519Sha512,
             SignatureType::ECDSAsecp256k1Sha256 => SignatureDerivation::ECDSAsecp256k1Sha256,
             SignatureType::Ed448 => SignatureDerivation::Ed448,
+        }
+    }
+}
+
+impl From<SignatureDerivation> for SignatureType {
+    fn from(sd: SignatureDerivation) -> Self {
+        match sd {
+            SignatureDerivation::Ed25519Sha512 => SignatureType::Ed25519Sha512,
+            SignatureDerivation::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
+            SignatureDerivation::Ed448 => SignatureType::Ed448,
         }
     }
 }
@@ -161,7 +186,7 @@ pub fn process_stream(stream: String) -> Result<()> {
     (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .process_stream(stream)?;
+        .parse_and_process(stream.as_bytes())?;
 
     Ok(())
 }
@@ -169,4 +194,22 @@ pub fn process_stream(stream: String) -> Result<()> {
 pub fn get_kel(id: String) -> Result<String> {
     let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().get_kel(id)?;
     Ok(signed_event)
+}
+
+pub struct PublicKeySignaturePair {
+    pub key: PublicKey,
+    pub signature: Signature,
+}
+
+/// Returns pairs: public key encoded in base64 and signature encoded in hex
+pub fn parse_attachment(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
+    let attachment = (*KEL.lock().unwrap()).as_ref().unwrap().parse_attachment(attachment)?;
+    Ok(attachment
+        .iter()
+        .map(|(bp, sp)| 
+            PublicKeySignaturePair {
+                key: PublicKey::new(bp.derivation.into(), &base64::encode(bp.public_key.key())),
+                signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone()))
+            }
+        ).collect::<Vec<_>>())
 }
