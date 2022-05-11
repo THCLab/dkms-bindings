@@ -1,4 +1,4 @@
-use keriox_wrapper::kel::{KeyDerivation, KeyPrefix, Threshold, PublicKey};
+use keriox_wrapper::kel::{KeyDerivation, KeyPrefix, PublicKey, Threshold};
 
 pub struct Key {
     pub key_type: KeyDerivation,
@@ -55,8 +55,7 @@ impl PublicKeysConfig {
 
 impl Key {
     pub fn derive(&self) -> KeyPrefix {
-        self.key_type
-            .derive(PublicKey::new(self.key.clone()))
+        self.key_type.derive(PublicKey::new(self.key.clone()))
     }
 }
 

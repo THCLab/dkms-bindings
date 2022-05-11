@@ -203,13 +203,15 @@ pub struct PublicKeySignaturePair {
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex
 pub fn parse_attachment(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
-    let attachment = (*KEL.lock().unwrap()).as_ref().unwrap().parse_attachment(attachment)?;
+    let attachment = (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .parse_attachment(attachment)?;
     Ok(attachment
         .iter()
-        .map(|(bp, sp)| 
-            PublicKeySignaturePair {
-                key: PublicKey::new(bp.derivation.into(), &base64::encode(bp.public_key.key())),
-                signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone()))
-            }
-        ).collect::<Vec<_>>())
+        .map(|(bp, sp)| PublicKeySignaturePair {
+            key: PublicKey::new(bp.derivation.into(), &base64::encode(bp.public_key.key())),
+            signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone())),
+        })
+        .collect::<Vec<_>>())
 }

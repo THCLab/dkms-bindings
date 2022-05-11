@@ -1,12 +1,12 @@
 use std::convert::TryInto;
 
-use utils::PublicKeysConfig;
-use keriox_wrapper::kel::{Kel, Identifier, SignaturePrefix, KeyPrefix, Threshold, SAI};
+use keriox_wrapper::kel::{Identifier, Kel, KeyPrefix, SignaturePrefix, Threshold, SAI};
 use napi::{
     CallContext, Env, JsBoolean, JsBuffer, JsNumber, JsObject, JsString, JsUndefined, JsUnknown,
     Property, Result as JsResult,
 };
 use napi_derive::{js_function, module_exports};
+use utils::PublicKeysConfig;
 pub mod utils;
 use simple_config_parser::config::Config;
 
@@ -22,10 +22,10 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
             Property::new("incept")?.with_method(incept),
             Property::new("rotate")?.with_method(rotate),
             Property::new("finalize_rotation")?.with_method(finalize_rotation),
-            // Property::new("anchor")?.with_method(anchor),
-            // Property::new("finalize_anchor")?.with_method(finalize_anchor),
+            Property::new("anchor")?.with_method(anchor),
+            Property::new("finalize_anchor")?.with_method(finalize_anchor),
             Property::new("process")?.with_method(process),
-            // Property::new("get_current_public_key")?.with_method(get_current_public_key),
+            Property::new("get_current_public_key")?.with_method(get_current_public_key),
             // Property::new("verify")?.with_method(verify),
             // Property::new("is_anchored")?.with_method(is_anchored),
         ],
@@ -36,8 +36,6 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
     Ok(())
 }
 
-
-
 #[js_function(1)]
 fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
     // Read / parse config file
@@ -45,10 +43,9 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
     cfg.read()
         .ok()
         .ok_or_else(|| napi::Error::from_reason("Can't read a config file"))?;
-    let path_str = cfg.get("db_path").ok_or_else(|| {
-        napi::Error::from_reason("Missing `db_path` setting in settings.cfg")
-    })?;
-
+    let path_str = cfg
+        .get("db_path")
+        .ok_or_else(|| napi::Error::from_reason("Missing `db_path` setting in settings.cfg"))?;
 
     let kel = match ctx.get::<JsString>(0)?.into_utf8() {
         Ok(pref_str) => {
@@ -100,11 +97,7 @@ fn get_key(key_object: &JsObject, index: u32) -> JsResult<Option<KeyPrefix>> {
         ),
         Err(_) => match key_object.get_element::<JsUnknown>(index)?.get_type()? {
             napi::ValueType::Null => None,
-            _ => {
-                return Err(napi::Error::from_reason(
-                    "Missing public key argument",
-                ))
-            }
+            _ => return Err(napi::Error::from_reason("Missing public key argument")),
         },
     })
 }
@@ -163,9 +156,7 @@ fn set_threshold(ctx: &CallContext, thres: Vec<Option<String>>) -> JsResult<Thre
         // If not, error is returned.
         let thres: JsResult<Vec<(u64, u64)>> = thres
             .into_iter()
-            .map(|t| {
-                t.ok_or_else(|| napi::Error::from_reason("Missing threshold settings"))
-            })
+            .map(|t| t.ok_or_else(|| napi::Error::from_reason("Missing threshold settings")))
             .map(|t| -> JsResult<_> {
                 let unwrapped_t = t?;
                 parse_weighted_threshold(unwrapped_t)
@@ -244,10 +235,7 @@ fn get_signature_array_argument(
     Ok(parsed_signatures)
 }
 
-fn get_sai_array_argument(
-    ctx: &CallContext,
-    arg_index: usize,
-) -> JsResult<Vec<SAI>> {
+fn get_sai_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<Vec<SAI>> {
     let sai = ctx
         .get::<JsObject>(arg_index)
         .map_err(|_e| napi::Error::from_reason("Missing sai parameter"))?;
@@ -275,7 +263,8 @@ fn incept(ctx: CallContext) -> JsResult<JsBuffer> {
     let this: JsObject = ctx.this_unchecked();
     let kel: &mut Kel = ctx.env.unwrap(&this)?;
 
-    let icp = kel.incept(pub_keys.current, pub_keys.next, vec![], 0)
+    let icp = kel
+        .incept(pub_keys.current, pub_keys.next, vec![], 0)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
     ctx.env.create_buffer_copy(&icp).map(|b| b.into_raw())
@@ -296,7 +285,8 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
 
     let this: JsObject = ctx.this_unchecked();
     let kel: &mut Kel = ctx.env.unwrap(&this)?;
-    let prefix = kel.finalize_inception(String::from_utf8(icp).unwrap(), signatures[0].clone())
+    let prefix = kel
+        .finalize_inception(String::from_utf8(icp).unwrap(), signatures[0].clone())
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
     ctx.env.create_string(&prefix)
@@ -304,23 +294,26 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
 
 #[js_function(1)]
 fn get_kel(ctx: CallContext) -> JsResult<JsString> {
-    let id = ctx.get::<JsString>(0)?.into_utf8()
+    let id = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
         .as_str()?
         .to_owned();
     let this: JsObject = ctx.this_unchecked();
     let kel: &Kel = ctx.env.unwrap(&this)?;
-    let kel_str = kel.get_kel(id)
+    let kel_str = kel
+        .get_kel(id)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
     ctx.env.create_string(&kel_str)
 }
 
-
 #[js_function(3)]
 fn rotate(ctx: CallContext) -> JsResult<JsBuffer> {
     let pub_keys = get_keys_array_argument(&ctx, 0)?;
-    let id = ctx.get::<JsString>(0)?
+    let id = ctx
+        .get::<JsString>(0)?
         .into_utf8()
         .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
         .as_str()?
@@ -350,42 +343,52 @@ fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
 
     let rot_result = kel
         .finalize_event(rot, signatures[0].clone())
-        .map_err(|e| napi::Error::from_reason(e.to_string())).is_ok();
+        .map_err(|e| napi::Error::from_reason(e.to_string()))
+        .is_ok();
     ctx.env.get_boolean(rot_result)
 }
 
-// #[js_function(1)]
-// fn anchor(ctx: CallContext) -> JsResult<JsBuffer> {
-//     let payload = get_sai_array_argument(&ctx, 0)?;
+#[js_function(2)]
+fn anchor(ctx: CallContext) -> JsResult<JsBuffer> {
+    let id = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
+        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
+        .as_str()?
+        .parse::<Identifier>()
+        .map_err(|_e| napi::Error::from_reason("Can't parse identifier"))?;
+    let payload = get_sai_array_argument(&ctx, 1)?;
 
-//     let this: JsObject = ctx.this_unchecked();
-//     let kel: &mut KEL = ctx.env.unwrap(&this)?;
-//     let ixn_event = kel
-//         .anchor(&payload)
-//         .map_err(|e| napi::Error::from_reason(e.to_string()))?
-//         .serialize()
-//         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-//     ctx.env.create_buffer_copy(&ixn_event).map(|b| b.into_raw())
-// }
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &mut Kel = ctx.env.unwrap(&this)?;
+    let ixn_event = kel
+        .anchor(&id, &payload)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?
+        .serialize()
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    ctx.env.create_buffer_copy(&ixn_event).map(|b| b.into_raw())
+}
 
-// #[js_function(2)]
-// fn finalize_anchor(ctx: CallContext) -> JsResult<JsBoolean> {
-//     let ixn = ctx
-//         .get::<JsBuffer>(0)?
-//         .into_value() //?.to_vec()
-//         .map_err(|_e| napi::Error::from_reason("Missing interaction event parameter"))?
-//         .to_vec();
-//     let signatures = get_signature_array_argument(&ctx, 1)?;
+#[js_function(2)]
+fn finalize_anchor(ctx: CallContext) -> JsResult<JsBoolean> {
+    let ixn = ctx
+        .get::<JsString>(0)?
+        .into_utf8() //?.to_vec()
+        .map_err(|_e| napi::Error::from_reason("Missing interaction event parameter"))?
+        .as_str()?
+        .to_owned();
+    let signatures = get_signature_array_argument(&ctx, 1)?;
 
-//     let this: JsObject = ctx.this_unchecked();
-//     let kel: &KEL = ctx.env.unwrap(&this)?;
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &Kel = ctx.env.unwrap(&this)?;
 
-//     let ixn_result = kel
-//         .finalize_anchor(ixn, signatures)
-//         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let ixn_result = kel
+        .finalize_event(ixn, signatures[0].clone())
+        .map_err(|e| napi::Error::from_reason(e.to_string()))
+        .is_ok();
 
-//     ctx.env.get_boolean(ixn_result)
-// }
+    ctx.env.get_boolean(ixn_result)
+}
 
 // #[js_function(1)]
 // fn is_anchored(ctx: CallContext) -> JsResult<JsBoolean> {
@@ -418,34 +421,34 @@ fn process(ctx: CallContext) -> JsResult<JsUndefined> {
     ctx.env.get_undefined()
 }
 
-// #[js_function(1)]
-// fn get_current_public_key(ctx: CallContext) -> JsResult<JsObject> {
-//     let identifier: String = ctx
-//         .get::<JsString>(0)?
-//         .into_utf8()
-//         .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
-//         .as_str()?
-//         .to_owned();
-//     let prefix: Identifier = identifier
-//         .parse()
-//         .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix"))?;
-//     let this: JsObject = ctx.this_unchecked();
-//     let kel: &KEL = ctx.env.unwrap(&this)?;
-//     let mut key_array = ctx.env.create_array_with_length(2)?;
-//     let _key: Vec<_> = kel
-//         .get_current_public_keys(&prefix)
-//         .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix"))?
-//         .ok_or_else(|| {
-//             napi::Error::from_reason(format!("There is no keys for prefix {}", identifier))
-//         })?
-//         .iter()
-//         .enumerate()
-//         .map(|(i, key)| {
-//             key_array.set_element(i as u32, ctx.env.create_string_from_std(key.to_str())?)
-//         })
-//         .collect();
-//     Ok(key_array)
-// }
+#[js_function(1)]
+fn get_current_public_key(ctx: CallContext) -> JsResult<JsObject> {
+    let identifier: String = ctx
+        .get::<JsString>(0)?
+        .into_utf8()
+        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
+        .as_str()?
+        .to_owned();
+    let prefix: Identifier = identifier
+        .parse()
+        .map_err(|_e| napi::Error::from_reason("Wrong identifier prefix"))?;
+    let this: JsObject = ctx.this_unchecked();
+    let kel: &Kel = ctx.env.unwrap(&this)?;
+    let mut key_array = ctx.env.create_array_with_length(2)?;
+    let _key: Vec<_> = kel
+        .get_current_public_keys(&prefix)
+        .map_err(|_e| napi::Error::from_reason("Wrong identifier prefix"))?
+        .ok_or_else(|| {
+            napi::Error::from_reason(format!("There is no keys for prefix {}", identifier))
+        })?
+        .iter()
+        .enumerate()
+        .map(|(i, key)| {
+            key_array.set_element(i as u32, ctx.env.create_string_from_std(key.into())?)
+        })
+        .collect();
+    Ok(key_array)
+}
 
 // #[js_function(3)]
 // fn verify(ctx: CallContext) -> JsResult<JsBoolean> {

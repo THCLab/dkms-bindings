@@ -3,18 +3,33 @@ use keri::{
     derivation::{basic::Basic, self_signing::SelfSigning},
     event::{
         event_data::EventData,
-        sections::{threshold::SignatureThreshold}, receipt::Receipt, SerializationFormats,
+        receipt::Receipt,
+        sections::{
+            seal::{DigestSeal, Seal},
+            threshold::SignatureThreshold,
+        },
+        EventMessage, SerializationFormats,
     },
     event_message::{
-        event_msg_builder::EventMsgBuilder, signed_event_message::{Message, SignedNontransferableReceipt}, EventTypeTag,
+        event_msg_builder::EventMsgBuilder,
+        key_event_message::KeyEvent,
+        signed_event_message::{Message, SignedNontransferableReceipt},
+        EventTypeTag,
     },
     event_parsing::{
         attachment::attachment,
         message::{key_event_message, signed_event_stream},
     },
     keys::PublicKey as KeriPK,
-    prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix, SelfAddressingPrefix},
-    processor::{event_storage::EventStorage, notification::NotificationBus, EventProcessor, escrow::default_escrow_bus},
+    prefix::{
+        AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix,
+        SelfSigningPrefix,
+    },
+    processor::{
+        escrow::default_escrow_bus, event_storage::EventStorage, notification::NotificationBus,
+        EventProcessor,
+    },
+    state::IdentifierState,
 };
 use std::{path::Path, sync::Arc};
 use thiserror::Error;
@@ -22,7 +37,7 @@ use thiserror::Error;
 pub type KeyDerivation = Basic;
 pub type SignatureDerivation = SelfSigning;
 pub type KeyPrefix = BasicPrefix;
-pub type Threshold= SignatureThreshold;
+pub type Threshold = SignatureThreshold;
 pub type PublicKey = keri::keys::PublicKey;
 pub type SAI = SelfAddressingPrefix;
 pub type Identifier = IdentifierPrefix;
@@ -112,7 +127,6 @@ pub struct Kel {
     notification_bus: NotificationBus,
 }
 impl Kel {
-
     pub fn load_kel(path: &str, id: IdentifierPrefix) -> Result<Self, keri::error::Error> {
         todo!()
     }
@@ -154,6 +168,38 @@ impl Kel {
         Ok(icp)
     }
 
+    pub fn finalize_inception(
+        &self,
+        event: String,
+        signature: SelfSigningPrefix,
+    ) -> Result<String, KelError> {
+        let parsed_event = key_event_message(event.as_bytes())
+            .map_err(|e| KelError::ParseEventError(e.to_string()))?
+            .1;
+        match parsed_event {
+            keri::event_parsing::EventType::KeyEvent(ke) => {
+                if let EventData::Icp(_) = ke.event.get_event_data() {
+                    let processor = EventProcessor::new(self.db.clone());
+                    // TODO set index
+                    let sigs = vec![AttachedSignaturePrefix {
+                        index: 0,
+                        signature,
+                    }];
+                    let signed_message = ke.sign(sigs, None, None);
+                    let not = processor
+                        .process(Message::Event(signed_message))
+                        .map_err(|e| KelError::ParseEventError(e.to_string()))?;
+                    self.notification_bus
+                        .notify(&not)
+                        .map_err(|_e| KelError::NotificationError)?;
+                    // TODO check if id match
+                }
+                Ok(ke.event.get_prefix().to_string())
+            }
+            keri::event_parsing::EventType::Receipt(_) => todo!(),
+        }
+    }
+
     pub fn rotate(
         &self,
         identifier: String,
@@ -185,7 +231,7 @@ impl Kel {
             .map_err(|_e| KelError::RotationError)?;
         let rot = EventMsgBuilder::new(EventTypeTag::Rot)
             .with_prefix(&identifier)
-            .with_sn(state.sn + 1)
+            .with_sn(state.sn + 0)
             .with_previous_event(&state.last_event_digest)
             .with_keys(pks)
             .with_next_keys(npks)
@@ -199,36 +245,66 @@ impl Kel {
         String::from_utf8(rot).map_err(|_e| KelError::RotationError)
     }
 
-    pub fn finalize_inception(
+    pub fn anchor(
         &self,
-        event: String,
-        signature: SelfSigningPrefix,
-    ) -> Result<String, KelError> {
-        let parsed_event = key_event_message(event.as_bytes())
-            .map_err(|e| KelError::ParseEventError(e.to_string()))?
-            .1;
-        match parsed_event {
-            keri::event_parsing::EventType::KeyEvent(ke) => {
-                if let EventData::Icp(_) = ke.event.get_event_data() {
-                    let processor = EventProcessor::new(self.db.clone());
-                    // TODO set index
-                    let sigs = vec![AttachedSignaturePrefix {
-                        index: 0,
-                        signature,
-                    }];
-                    let signed_message = ke.sign(sigs, None, None);
-                    let not = processor
-                        .process(Message::Event(signed_message))
-                        .map_err(|e| KelError::ParseEventError(e.to_string()))?;
-                    self.notification_bus
-                        .notify(&not)
-                        .map_err(|_e| KelError::NotificationError)?;
-                    // TODO check if id match
-                }
-                Ok(ke.event.get_prefix().to_string())
-            }
-            keri::event_parsing::EventType::Receipt(_) => todo!(),
-        }
+        identifier: &IdentifierPrefix,
+        payload: &[SelfAddressingPrefix],
+    ) -> Result<EventMessage<KeyEvent>, KelError> {
+        let storage = EventStorage::new(self.db.clone());
+        let state = storage
+            .get_state(&identifier)
+            .map_err(|_e| KelError::RotationError)?
+            .ok_or_else(|| format!("no state for prefix {}", identifier.to_str()))
+            .map_err(|_e| KelError::RotationError)?;
+        Self::make_ixn(payload, state)
+    }
+
+    fn make_ixn(
+        payload: &[SelfAddressingPrefix],
+        state: IdentifierState,
+    ) -> Result<EventMessage<KeyEvent>, KelError> {
+        let seal_list = payload
+            .iter()
+            .map(|seal| {
+                Seal::Digest(DigestSeal {
+                    dig: seal.to_owned(),
+                })
+            })
+            .collect();
+        let ev = EventMsgBuilder::new(EventTypeTag::Icp)
+            .with_prefix(&state.prefix)
+            .with_sn(state.sn + 1)
+            .with_previous_event(&state.last_event_digest)
+            .with_seal(seal_list)
+            .build()?;
+        Ok(ev)
+    }
+
+    pub fn anchor_with_seal(
+        &self,
+        identifier: &IdentifierPrefix,
+        seal_list: &[Seal],
+    ) -> Result<EventMessage<KeyEvent>, KelError> {
+        let storage = EventStorage::new(self.db.clone());
+        let state = storage
+            .get_state(&identifier)
+            .map_err(|_e| KelError::RotationError)?
+            .ok_or_else(|| format!("no state for prefix {}", identifier.to_str()))
+            .map_err(|_e| KelError::RotationError)?;
+        Self::make_ixn_with_seal(seal_list, state)
+    }
+
+    fn make_ixn_with_seal(
+        seal_list: &[Seal],
+        state: IdentifierState,
+    ) -> Result<EventMessage<KeyEvent>, KelError> {
+        let ev = EventMsgBuilder::new(EventTypeTag::Ixn)
+            .with_prefix(&state.prefix)
+            .with_sn(state.sn + 1)
+            .with_previous_event(&state.last_event_digest)
+            .with_seal(seal_list.to_owned())
+            .build()?;
+        Ok(ev)
     }
 
     pub fn finalize_event(
@@ -271,7 +347,6 @@ impl Kel {
         .map_err(|e| KelError::ParseEventError(e.to_string()))
     }
 
-
     pub fn parse_and_process(&self, msg: &[u8]) -> Result<(), KelError> {
         let events = signed_event_stream(msg)
             .map_err(|e| KelError::ParseEventError(e.to_string()))?
@@ -309,9 +384,7 @@ impl Kel {
             .map(|message| {
                 processor
                     .process(message.clone())
-                    .and_then(|not| {
-                        self.notification_bus.notify(&not)
-                    })
+                    .and_then(|not| self.notification_bus.notify(&not))
             })
             .partition(Result::is_ok);
         let _oks = process_ok
@@ -326,6 +399,21 @@ impl Kel {
         Ok(())
     }
 
+    pub fn get_current_public_keys(
+        &self,
+        prefix: &IdentifierPrefix,
+    ) -> Result<Option<Vec<String>>, KelError> {
+        let storage = EventStorage::new(self.db.clone());
+        let keys = storage.get_state(prefix)?.map(|state| {
+            state
+                .current
+                .public_keys
+                .iter()
+                .map(|k| k.to_str())
+                .collect()
+        });
+        Ok(keys)
+    }
 
     pub fn parse_attachment(
         &self,
@@ -382,7 +470,7 @@ pub fn test_parse_attachment() {
     let kel = Kel::init(root.path().to_str().unwrap().into());
 
     let issuer_kel = r#"{"v":"KERI10JSON0001b7_","t":"icp","d":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"0","kt":"1","k":["DruZ2ykSgEmw2EHm34wIiEGsUa_1QkYlsCAidBSzUkTU"],"nt":"1","n":["Eao8tZQinzilol20Ot-PPlVz6ta8C4z-NpDOeVs63U8s"],"bt":"3","b":["BGKVzj4ve0VSd8z_AmvhLg4lqcC_9WYX90k03q-R_Ydo","BuyRFMideczFZoapylLIyCjSdhtqVb31wZkRKvPfNqkw","Bgoq68HCmYNUDgOz4Skvlu306o_NY-NrYuKAVhk3Zh9c"],"c":[],"a":[]}-VBq-AABAA0EpZtBNLxOIncUDeLgwX3trvDXFA5adfjpUwb21M5HWwNuzBMFiMZQ9XqM5L2bFUVi6zXomcYuF-mR7CFpP8DQ-BADAAWUZOb17DTdCd2rOaWCf01ybl41U7BImalPLJtUEU-FLrZhDHls8iItGRQsFDYfqft_zOr8cNNdzUnD8hlSziBwABmUbyT6rzGLWk7SpuXGAj5pkSw3vHQZKQ1sSRKt6x4P13NMbZyoWPUYb10ftJlfXSyyBRQrc0_TFqfLTu_bXHCwACKPLkcCa_tZKalQzn3EgZd1e_xImWdVyzfYQmQvBpfJZFfg2c-sYIL3zl1WHpMQQ_iDmxLSmLSQ9jZ9WAjcmDCg-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2022-04-11T20c50c16d643400p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"1","p":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","a":[{"i":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM","s":"0","d":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM"}]}-VBq-AABAAZZlCpwL0QwqF-eTuqEgfn95QV9S4ruh4wtxKQbf1-My60Nmysprv71y0tJGEHkMsUBRz0bf-JZsMKyZ3N8m7BQ-BADAA6ghW2PpLC0P9CxmW13G6AeZpHinH-_HtVOu2jWS7K08MYkDPrfghmkKXzdsMZ44RseUgPPty7ZEaAxZaj95bAgABKy0uBR3LGMwg51xjMZeVZcxlBs6uARz6quyl0t65BVrHX3vXgoFtzwJt7BUl8LXuMuoM9u4PQNv6yBhxg_XEDwACJe4TwVqtGy1fTDrfPxa14JabjsdRxAzZ90wz18-pt0IwG77CLHhi9vB5fF99-fgbYp2Zoa9ZVEI8pkU6iejcDg-EAB0AAAAAAAAAAAAAAAAAAAAAAQ1AAG2022-04-11T20c50c22d909900p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"EPYT0dEpoc_5QKIGnRYFRqpXHGpeYOhveJTmHoVC6LMU","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"2","p":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","a":[{"i":"EzSVC7-SuizvdVkpXmHQx5FhUElLjUOjCbgN81ymeWOE","s":"0","d":"EQ6RIFoVUDmmyuoMDMPPHDm14GtXaIf98j4AG2vNfZ1U"}]}-VBq-AABAAYycRM_VyvV2fKyHdUceMcK8ioVrBSixEFqY1nEO9eTZQ2NV8hrLc_ux9_sKn1p58kyZv5_y2NW3weEiqn-5KAA-BADAAQl22xz4Vzkkf14xsHMAOm0sDkuxYY8SAgJV-RwDDwdxhN4WPr-3Pi19x57rDJAE_VkyYwKloUuzB5Dekh-JzCQABk98CK_xwG52KFWt8IEUU-Crmf058ZJPB0dCffn-zjiNNgjv9xyGVs8seb0YGInwrB351JNu0sMHuEEgPJLKxAgACw556h2q5_BG6kPHAF1o9neMLDrZN_sCaJ-3slWWX-y8M3ddPN8Zp89R9A36t3m2rq-sbC5h_UDg5qdnrZ-ZxAw-EAB0AAAAAAAAAAAAAAAAAAAAAAg1AAG2022-04-11T20c50c23d726188p00c00"#;
-  
+
     kel.parse_and_process(issuer_kel.as_bytes()).unwrap();
 
     let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";

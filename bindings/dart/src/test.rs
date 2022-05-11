@@ -49,7 +49,7 @@ pub fn test_process() -> Result<()> {
 
 #[test]
 pub fn test_parse_attachment() -> Result<()> {
-    use crate::api::{get_kel, init_kel, process_stream, parse_attachment};
+    use crate::api::{get_kel, init_kel, parse_attachment, process_stream};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -62,14 +62,11 @@ pub fn test_parse_attachment() -> Result<()> {
     process_stream(test_kel.to_string())?;
     let kel = get_kel("Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M".to_string())?;
 
-     let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";
+    let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";
 
     let a = parse_attachment(attachment_stream.into()).unwrap();
-    let public_key_signature_pair = a
-        .iter()
-        .collect::<Vec<_>>();
+    let public_key_signature_pair = a.iter().collect::<Vec<_>>();
     assert_eq!(public_key_signature_pair.len(), 1);
 
     Ok(())
 }
-
