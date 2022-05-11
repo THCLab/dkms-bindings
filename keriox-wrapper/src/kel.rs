@@ -13,7 +13,7 @@ use keri::{
         message::{key_event_message, signed_event_stream},
     },
     keys::PublicKey as KeriPK,
-    prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
+    prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix, SelfAddressingPrefix},
     processor::{event_storage::EventStorage, notification::NotificationBus, EventProcessor, escrow::default_escrow_bus},
 };
 use std::{path::Path, sync::Arc};
@@ -21,6 +21,12 @@ use thiserror::Error;
 
 pub type KeyDerivation = Basic;
 pub type SignatureDerivation = SelfSigning;
+pub type KeyPrefix = BasicPrefix;
+pub type Threshold= SignatureThreshold;
+pub type PublicKey = keri::keys::PublicKey;
+pub type SAI = SelfAddressingPrefix;
+pub type Identifier = IdentifierPrefix;
+pub type SignaturePrefix = SelfSigningPrefix;
 
 pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, KelError> {
     let key = KeriPK::new(base64::decode(key).unwrap());
@@ -106,7 +112,12 @@ pub struct Kel {
     notification_bus: NotificationBus,
 }
 impl Kel {
-    pub fn init(path: String) -> Self {
+
+    pub fn load_kel(path: &str, id: IdentifierPrefix) -> Result<Self, keri::error::Error> {
+        todo!()
+    }
+
+    pub fn init(path: &str) -> Self {
         let db = Arc::new(SledEventDatabase::new(Path::new(&path)).unwrap());
         Kel {
             db: db.clone(),
@@ -114,6 +125,7 @@ impl Kel {
         }
     }
 
+    // todo add setting signing threshold
     pub fn incept(
         &self,
         public_keys: Vec<BasicPrefix>,

@@ -8,7 +8,7 @@ exclude = ["index.node"]
 crate-type = ["cdylib"]
 
 [dependencies]
-keri =  { git = "https://github.com/WebOfTrust/keriox" } 
+keriox-wrapper = { path = "../../keriox-wrapper" }
 thiserror = "1.0"
 base64 = "0.13.0"
 napi = { version = "2", features = ["serde-json"]}

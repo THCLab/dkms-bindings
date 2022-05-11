@@ -111,7 +111,7 @@ impl Controller {
 }
 
 pub fn init_kel(input_app_dir: String) -> Result<()> {
-    *KEL.lock().unwrap() = Some(Kel::init(input_app_dir));
+    *KEL.lock().unwrap() = Some(Kel::init(&input_app_dir));
     Ok(())
 }
 
