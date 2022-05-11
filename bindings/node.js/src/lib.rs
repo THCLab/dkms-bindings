@@ -20,17 +20,17 @@ pub fn init(mut exports: JsObject, env: Env) -> JsResult<()> {
         "Controller",
         load_controller,
         &[
-            Property::new(&env, "get_prefix")?.with_method(get_prefix),
-            Property::new(&env, "get_kel")?.with_method(get_kel),
-            Property::new(&env, "get_kel_for_prefix")?.with_method(get_kel_for_prefix),
-            Property::new(&env, "rotate")?.with_method(rotate),
-            Property::new(&env, "finalize_rotation")?.with_method(finalize_rotation),
-            Property::new(&env, "anchor")?.with_method(anchor),
-            Property::new(&env, "finalize_anchor")?.with_method(finalize_anchor),
-            Property::new(&env, "process")?.with_method(process),
-            Property::new(&env, "get_current_public_key")?.with_method(get_current_public_key),
-            Property::new(&env, "verify")?.with_method(verify),
-            Property::new(&env, "is_anchored")?.with_method(is_anchored),
+            Property::new("get_prefix")?.with_method(get_prefix),
+            Property::new("get_kel")?.with_method(get_kel),
+            Property::new("get_kel_for_prefix")?.with_method(get_kel_for_prefix),
+            Property::new("rotate")?.with_method(rotate),
+            Property::new("finalize_rotation")?.with_method(finalize_rotation),
+            Property::new("anchor")?.with_method(anchor),
+            Property::new("finalize_anchor")?.with_method(finalize_anchor),
+            Property::new("process")?.with_method(process),
+            Property::new("get_current_public_key")?.with_method(get_current_public_key),
+            Property::new("verify")?.with_method(verify),
+            Property::new("is_anchored")?.with_method(is_anchored),
         ],
     )?;
     exports.set_named_property("Controller", controller_class)?;
@@ -49,10 +49,10 @@ fn finalize_inception(ctx: CallContext) -> JsResult<JsString> {
     cfg.read().ok().expect("There is no `settings.cfg` file");
 
     let path_str = cfg.get("db_path").ok_or_else(|| {
-        napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
+        napi::Error::from_reason("Missing `db_path` setting in settings.cfg")
     })?;
     let (_rest, icp) =
-        message(&icp).map_err(|_e| napi::Error::from_reason("Invalid inception event".into()))?;
+        message(&icp).map_err(|_e| napi::Error::from_reason("Invalid inception event"))?;
     let kel = KEL::finalize_incept(&path_str, &icp, signatures)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
     let identifier = kel.get_prefix().to_str();
@@ -65,9 +65,9 @@ fn load_controller(ctx: CallContext) -> JsResult<JsUndefined> {
     let mut cfg = Config::new(Some("settings.cfg"));
     cfg.read()
         .ok()
-        .ok_or_else(|| napi::Error::from_reason("Can't read a config file".into()))?;
+        .ok_or_else(|| napi::Error::from_reason("Can't read a config file"))?;
     let path_str = cfg.get("db_path").ok_or_else(|| {
-        napi::Error::from_reason("Missing `db_path` setting in settings.cfg".into())
+        napi::Error::from_reason("Missing `db_path` setting in settings.cfg")
     })?;
     let kel = match ctx.get::<JsString>(0)?.into_utf8() {
         Ok(pref_str) => {
@@ -115,13 +115,13 @@ fn get_key(key_object: &JsObject, index: u32) -> JsResult<Option<BasicPrefix>> {
             pk.into_utf8()?
                 .as_str()?
                 .parse()
-                .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix".into()))?,
+                .map_err(|_e| napi::Error::from_reason("Can't parse public key prefix"))?,
         ),
         Err(_) => match key_object.get_element::<JsUnknown>(index)?.get_type()? {
             napi::ValueType::Null => None,
             _ => {
                 return Err(napi::Error::from_reason(
-                    "Missing public key argument".into(),
+                    "Missing public key argument",
                 ))
             }
         },
@@ -131,7 +131,7 @@ fn get_key(key_object: &JsObject, index: u32) -> JsResult<Option<BasicPrefix>> {
 fn get_keys_array_argument(ctx: &CallContext, arg_index: usize) -> JsResult<PublicKeysConfig> {
     let cur = ctx
         .get::<JsObject>(arg_index)
-        .map_err(|_e| napi::Error::from_reason("Missing keys parameter".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Missing keys parameter"))?;
     let len = if cur.is_array()? {
         cur.get_array_length()?
     } else {
@@ -183,7 +183,7 @@ fn set_threshold(ctx: &CallContext, thres: Vec<Option<String>>) -> JsResult<Sign
         let thres: JsResult<Vec<(u64, u64)>> = thres
             .into_iter()
             .map(|t| {
-                t.ok_or_else(|| napi::Error::from_reason("Missing threshold settings. ".into()))
+                t.ok_or_else(|| napi::Error::from_reason("Missing threshold settings"))
             })
             .map(|t| -> JsResult<_> {
                 let unwrapped_t = t?;
@@ -201,12 +201,12 @@ fn parse_weighted_threshold(threshold: String) -> JsResult<(u64, u64)> {
     let fraction_tuple: (Option<JsResult<u64>>, Option<JsResult<u64>>) = (
         split.next().map(|numerator| -> JsResult<_> {
             numerator.parse().map_err(|_e| {
-                napi::Error::from_reason("Wrong threshold format. Can't parse numerator".into())
+                napi::Error::from_reason("Wrong threshold format. Can't parse numerator")
             })
         }),
         split.next().map(|denominator| {
             denominator.parse().map_err(|_e| {
-                napi::Error::from_reason("Wrong threshold format. Can't parse denominator".into())
+                napi::Error::from_reason("Wrong threshold format. Can't parse denominator")
             })
         }),
     );
@@ -216,7 +216,7 @@ fn parse_weighted_threshold(threshold: String) -> JsResult<(u64, u64)> {
             let denominator = den?;
             if numerator > denominator {
                 Err(napi::Error::from_reason(
-                    "Wrong fraction. Should be not greater than 1".into(),
+                    "Wrong fraction. Should be not greater than 1",
                 ))
             } else {
                 Ok((numerator, denominator))
@@ -226,14 +226,14 @@ fn parse_weighted_threshold(threshold: String) -> JsResult<(u64, u64)> {
             let numerator = num?;
             if numerator > 1 {
                 Err(napi::Error::from_reason(
-                    "Wrong fraction. Should be not greater than 1".into(),
+                    "Wrong fraction. Should be not greater than 1",
                 ))
             } else {
                 Ok((numerator, 1))
             }
         }
         _ => Err(napi::Error::from_reason(
-            "Wrong threshold format. Should be fraction".into(),
+            "Wrong threshold format. Should be fraction",
         )),
     }
 }
@@ -244,7 +244,7 @@ fn get_signature_array_argument(
 ) -> JsResult<Vec<SelfSigningPrefix>> {
     let signatures = ctx
         .get::<JsObject>(arg_index)
-        .map_err(|_e| napi::Error::from_reason("Missing signatures parameter".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Missing signatures parameter"))?;
     let len = if signatures.is_array()? {
         signatures.get_array_length()?
     } else {
@@ -257,7 +257,7 @@ fn get_signature_array_argument(
             .into_utf8()?
             .as_str()?
             .parse()
-            .map_err(|_e| napi::Error::from_reason("Can't parse signature prefix".into()))?;
+            .map_err(|_e| napi::Error::from_reason("Can't parse signature prefix"))?;
         parsed_signatures.push(bp);
     }
     Ok(parsed_signatures)
@@ -269,7 +269,7 @@ fn get_sai_array_argument(
 ) -> JsResult<Vec<SelfAddressingPrefix>> {
     let sai = ctx
         .get::<JsObject>(arg_index)
-        .map_err(|_e| napi::Error::from_reason("Missing sai parameter".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Missing sai parameter"))?;
     let len = if sai.is_array()? {
         sai.get_array_length()?
     } else {
@@ -282,7 +282,7 @@ fn get_sai_array_argument(
             .into_utf8()?
             .as_str()?
             .parse()
-            .map_err(|_e| napi::Error::from_reason("Can't parse sai prefix".into()))?;
+            .map_err(|_e| napi::Error::from_reason("Can't parse sai prefix"))?;
         parsed_sai.push(bp);
     }
     Ok(parsed_sai)
@@ -327,11 +327,11 @@ fn get_kel_for_prefix(ctx: CallContext) -> JsResult<JsString> {
     let prefix = ctx
         .get::<JsString>(0)?
         .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
         .as_str()?
         .to_owned()
         .parse::<IdentifierPrefix>()
-        .map_err(|_e| napi::Error::from_reason("Can't parse prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Can't parse prefix"))?;
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let kel_str = match kel
@@ -363,7 +363,7 @@ fn finalize_rotation(ctx: CallContext) -> JsResult<JsBoolean> {
     let rot = ctx
         .get::<JsBuffer>(0)?
         .into_value() //?.to_vec()
-        .map_err(|_e| napi::Error::from_reason("Missing rotation event parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing rotation event parameter"))?
         .to_vec();
     let signatures = get_signature_array_argument(&ctx, 1)?;
 
@@ -395,7 +395,7 @@ fn finalize_anchor(ctx: CallContext) -> JsResult<JsBoolean> {
     let ixn = ctx
         .get::<JsBuffer>(0)?
         .into_value() //?.to_vec()
-        .map_err(|_e| napi::Error::from_reason("Missing interaction event parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing interaction event parameter"))?
         .to_vec();
     let signatures = get_signature_array_argument(&ctx, 1)?;
 
@@ -416,7 +416,7 @@ fn is_anchored(ctx: CallContext) -> JsResult<JsBoolean> {
         .into_utf8()?
         .as_str()?
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Can't parse sai prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Can't parse sai prefix"))?;
 
     let this: JsObject = ctx.this_unchecked();
     let kel: &mut KEL = ctx.env.unwrap(&this)?;
@@ -431,7 +431,7 @@ fn process(ctx: CallContext) -> JsResult<JsUndefined> {
     let stream = ctx
         .get::<JsBuffer>(0)?
         .into_value()
-        .map_err(|_e| napi::Error::from_reason("Missing event stream parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing event stream parameter"))?
         .to_vec();
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
@@ -445,18 +445,18 @@ fn get_current_public_key(ctx: CallContext) -> JsResult<JsObject> {
     let identifier: String = ctx
         .get::<JsString>(0)?
         .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
         .as_str()?
         .to_owned();
     let prefix: IdentifierPrefix = identifier
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix"))?;
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let mut key_array = ctx.env.create_array_with_length(2)?;
     let _key: Vec<_> = kel
         .get_current_public_keys(&prefix)
-        .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?
+        .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix"))?
         .ok_or_else(|| {
             napi::Error::from_reason(format!("There is no keys for prefix {}", identifier))
         })?
@@ -474,21 +474,21 @@ fn verify(ctx: CallContext) -> JsResult<JsBoolean> {
     let message = ctx
         .get::<JsBuffer>(0)?
         .into_value()
-        .map_err(|_e| napi::Error::from_reason("Missing message parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing message parameter"))?
         .to_vec();
     let signatures = get_signature_array_argument(&ctx, 1)?;
 
     let identifier: String = ctx
         .get::<JsString>(2)?
         .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing identifier prefix parameter"))?
         .as_str()?
         .to_owned();
     let this: JsObject = ctx.this_unchecked();
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let prefix = identifier
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Wrong identifeir prefix"))?;
 
     ctx.env
         .get_boolean(kel.verify(&message, &signatures, &prefix).map_err(|e| {
@@ -501,18 +501,18 @@ fn verify_at_sn(ctx: CallContext) -> JsResult<JsBoolean> {
     let message = ctx
         .get::<JsBuffer>(0)?
         .into_value()
-        .map_err(|_e| napi::Error::from_reason("Missing message parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing message parameter"))?
         .to_vec();
     let signature = ctx
         .get::<JsString>(0)?
         .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing signature parameter"))?
         .as_str()?
         .to_owned();
     let identifier: String = ctx
         .get::<JsString>(2)?
         .into_utf8()
-        .map_err(|_e| napi::Error::from_reason("Missing signature parameter".into()))?
+        .map_err(|_e| napi::Error::from_reason("Missing signature parameter"))?
         .as_str()?
         .to_owned();
     let sn: i64 = ctx.get::<JsNumber>(3)?.try_into()?;
@@ -520,14 +520,14 @@ fn verify_at_sn(ctx: CallContext) -> JsResult<JsBoolean> {
     let kel: &KEL = ctx.env.unwrap(&this)?;
     let prefix = identifier
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong identifier prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Wrong identifier prefix"))?;
     let signature: SelfSigningPrefix = signature
         .parse()
-        .map_err(|_e| napi::Error::from_reason("Wrong signature prefix".into()))?;
+        .map_err(|_e| napi::Error::from_reason("Wrong signature prefix"))?;
     ctx.env.get_boolean(
         kel.verify_at_sn(&message, &signature, &prefix, sn as u64)
             .map_err(|e| {
-                napi::Error::from_reason(format!("Error while verifing: {}", e.to_string()))
+                napi::Error::from_reason(format!("Error while verifing: {}", e))
             })?,
     )
 }

@@ -1,8 +1,7 @@
 [package]
-name = "keri-neon"
+name = "keri-node"
 version = "0.1.0"
-license = "ISC"
-edition = "2018"
+edition = "2021"
 exclude = ["index.node"]
 
 [lib]
@@ -12,8 +11,8 @@ crate-type = ["cdylib"]
 keri =  { git = "https://github.com/WebOfTrust/keriox" } 
 thiserror = "1.0"
 base64 = "0.13.0"
-napi = { version = "1", features = ["serde-json"]}
-napi-derive = "1"
+napi = { version = "2", features = ["serde-json"]}
+napi-derive = "2"
 simple_config_parser = "0.1.5"
 clap = "3.0.0-beta.4"
 tempfile = "3.1"
