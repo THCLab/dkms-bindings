@@ -1,12 +1,10 @@
 use keri::{
     database::sled::SledEventDatabase,
-    derivation::{basic::Basic, self_signing::SelfSigning},
     event::{
         event_data::EventData,
         receipt::Receipt,
         sections::{
             seal::{DigestSeal, Seal},
-            threshold::SignatureThreshold,
         },
         EventMessage, SerializationFormats,
     },
@@ -22,8 +20,7 @@ use keri::{
     },
     keys::PublicKey as KeriPK,
     prefix::{
-        AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix,
-        SelfSigningPrefix,
+        AttachedSignaturePrefix
     },
     processor::{
         escrow::default_escrow_bus, event_storage::EventStorage, notification::NotificationBus,
@@ -33,15 +30,10 @@ use keri::{
 };
 use std::{path::Path, sync::Arc};
 use thiserror::Error;
-
-pub type KeyDerivation = Basic;
-pub type SignatureDerivation = SelfSigning;
-pub type KeyPrefix = BasicPrefix;
-pub type Threshold = SignatureThreshold;
-pub type PublicKey = keri::keys::PublicKey;
-pub type SAI = SelfAddressingPrefix;
-pub type Identifier = IdentifierPrefix;
-pub type SignaturePrefix = SelfSigningPrefix;
+pub use keri::prefix::{Prefix, BasicPrefix, SelfAddressingPrefix, SelfSigningPrefix, IdentifierPrefix};
+pub use keri::derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning};
+pub use keri::keys::PublicKey;
+pub use keri::event::sections::threshold::SignatureThreshold;
 
 pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, KelError> {
     let key = KeriPK::new(base64::decode(key).unwrap());
@@ -122,26 +114,75 @@ pub fn parse_attachment(
     }
 }
 
-pub struct Kel {
-    db: Arc<SledEventDatabase>,
-    notification_bus: NotificationBus,
+pub struct IdentifierController {
+    pub id: IdentifierPrefix,
+    pub source: Arc<Kel>,
 }
-impl Kel {
-    pub fn load_kel(path: &str, id: IdentifierPrefix) -> Result<Self, keri::error::Error> {
-        todo!()
+
+impl IdentifierController {
+    pub fn new(id: IdentifierPrefix, kel: Arc<Kel>) -> Self {
+        Self {id, source: kel}
     }
 
+    pub fn get_kel(&self) -> Result<String, KelError> {
+        let storage = EventStorage::new(self.source.db.clone());
+        String::from_utf8(
+            storage
+                .get_kel(
+                    &self.id
+                )?
+                .ok_or(KelError::UnknownIdentifierError)?,
+        )
+        .map_err(|e| KelError::ParseEventError(e.to_string()))
+    }
+
+    pub fn rotate(
+        &self,
+        current_keys: Vec<BasicPrefix>,
+        new_next_keys: Vec<BasicPrefix>,
+        witness_to_add: Vec<String>,
+        witness_to_remove: Vec<String>,
+        witness_threshold: u64,
+    ) -> Result<String, KelError> {
+        self.source.rotate(self.id.clone(), current_keys, new_next_keys, witness_to_add, witness_to_remove, witness_threshold)
+
+    }
+
+    pub fn anchor(
+        &self,
+        payload: &[SelfAddressingPrefix],
+    ) -> Result<EventMessage<KeyEvent>, KelError> {
+        self.source.anchor(self.id.clone(), payload)
+    }
+
+    pub fn anchor_with_seal(
+        &self,
+        seal_list: &[Seal],
+    ) -> Result<EventMessage<KeyEvent>, KelError> {
+        self.source.anchor_with_seal(self.id.clone(), seal_list)
+    }
+
+    pub fn finalize_event(&self, event: &[u8], sig: Vec<SelfSigningPrefix>) -> Result<(), KelError> {
+        self.source.finalize_event(event, sig)
+    }
+
+}
+
+pub struct Kel {
+    db: Arc<SledEventDatabase>,
+    notification_bus: Arc<NotificationBus>,
+}
+impl Kel {
     pub fn init(path: &str) -> Self {
         let db = Arc::new(SledEventDatabase::new(Path::new(&path)).unwrap());
         Kel {
             db: db.clone(),
-            notification_bus: default_escrow_bus(db.clone()),
+            notification_bus: Arc::new(default_escrow_bus(db.clone())),
         }
     }
 
     // todo add setting signing threshold
     pub fn incept(
-        &self,
         public_keys: Vec<BasicPrefix>,
         next_pub_keys: Vec<BasicPrefix>,
         witnesses: Vec<String>,
@@ -171,8 +212,8 @@ impl Kel {
     pub fn finalize_inception(
         &self,
         event: String,
-        signature: SelfSigningPrefix,
-    ) -> Result<String, KelError> {
+        signature: Vec<SelfSigningPrefix>,
+    ) -> Result<IdentifierPrefix, KelError> {
         let parsed_event = key_event_message(event.as_bytes())
             .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
@@ -181,10 +222,16 @@ impl Kel {
                 if let EventData::Icp(_) = ke.event.get_event_data() {
                     let processor = EventProcessor::new(self.db.clone());
                     // TODO set index
-                    let sigs = vec![AttachedSignaturePrefix {
-                        index: 0,
-                        signature,
-                    }];
+                    let sigs = signature
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, sig)| {
+                            AttachedSignaturePrefix {
+                                index: i as u16,
+                                signature: sig,
+                    }
+                        }).collect();
+                   
                     let signed_message = ke.sign(sigs, None, None);
                     let not = processor
                         .process(Message::Event(signed_message))
@@ -194,7 +241,7 @@ impl Kel {
                         .map_err(|_e| KelError::NotificationError)?;
                     // TODO check if id match
                 }
-                Ok(ke.event.get_prefix().to_string())
+                Ok(ke.event.get_prefix())
             }
             keri::event_parsing::EventType::Receipt(_) => todo!(),
         }
@@ -202,16 +249,13 @@ impl Kel {
 
     pub fn rotate(
         &self,
-        identifier: String,
+        identifier: IdentifierPrefix,
         current_keys: Vec<BasicPrefix>,
         new_next_keys: Vec<BasicPrefix>,
         witness_to_add: Vec<String>,
         witness_to_remove: Vec<String>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-        let identifier = identifier
-            .parse::<IdentifierPrefix>()
-            .map_err(|_e| KelError::RotationError)?;
         let witnesses_to_add = witness_to_add
             .iter()
             .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
@@ -221,8 +265,6 @@ impl Kel {
             .iter()
             .map(|wit| wit.parse::<BasicPrefix>().unwrap())
             .collect::<Vec<_>>();
-        let pks = current_keys;
-        let npks = new_next_keys;
         let storage = EventStorage::new(self.db.clone());
         let state = storage
             .get_state(&identifier)
@@ -231,10 +273,10 @@ impl Kel {
             .map_err(|_e| KelError::RotationError)?;
         let rot = EventMsgBuilder::new(EventTypeTag::Rot)
             .with_prefix(&identifier)
-            .with_sn(state.sn + 0)
+            .with_sn(state.sn + 1)
             .with_previous_event(&state.last_event_digest)
-            .with_keys(pks)
-            .with_next_keys(npks)
+            .with_keys(current_keys)
+            .with_next_keys(new_next_keys)
             .with_witness_to_add(&witnesses_to_add)
             .with_witness_to_remove(&witnesses_to_remove)
             .with_witness_threshold(&SignatureThreshold::Simple(witness_threshold))
@@ -247,7 +289,7 @@ impl Kel {
 
     pub fn anchor(
         &self,
-        identifier: &IdentifierPrefix,
+        identifier: IdentifierPrefix,
         payload: &[SelfAddressingPrefix],
     ) -> Result<EventMessage<KeyEvent>, KelError> {
         let storage = EventStorage::new(self.db.clone());
@@ -271,7 +313,7 @@ impl Kel {
                 })
             })
             .collect();
-        let ev = EventMsgBuilder::new(EventTypeTag::Icp)
+        let ev = EventMsgBuilder::new(EventTypeTag::Ixn)
             .with_prefix(&state.prefix)
             .with_sn(state.sn + 1)
             .with_previous_event(&state.last_event_digest)
@@ -282,7 +324,7 @@ impl Kel {
 
     pub fn anchor_with_seal(
         &self,
-        identifier: &IdentifierPrefix,
+        identifier: IdentifierPrefix,
         seal_list: &[Seal],
     ) -> Result<EventMessage<KeyEvent>, KelError> {
         let storage = EventStorage::new(self.db.clone());
@@ -309,20 +351,26 @@ impl Kel {
 
     pub fn finalize_event(
         &self,
-        event: String,
-        signature: SelfSigningPrefix,
+        event: &[u8],
+        signature: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
-        let parsed_event = key_event_message(event.as_bytes())
+        let parsed_event = key_event_message(event)
             .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
         match parsed_event {
             keri::event_parsing::EventType::KeyEvent(ke) => {
                 let processor = EventProcessor::new(self.db.clone());
                 // TODO set index
-                let sigs = vec![AttachedSignaturePrefix {
-                    index: 0,
-                    signature,
-                }];
+                    let sigs = signature
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, sig)| {
+                            AttachedSignaturePrefix {
+                                index: i as u16,
+                                signature: sig,
+                    }
+                        }).collect();
+                
                 let signed_message = ke.sign(sigs, None, None);
                 let not = processor.process(Message::Event(signed_message));
                 let not = not.map_err(|e| KelError::ParseEventError(e.to_string()))?;

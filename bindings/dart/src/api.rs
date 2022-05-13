@@ -4,7 +4,7 @@ use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::Result;
 use keriox_wrapper::kel::{
-    key_prefix_from_b64, signature_prefix_from_hex, Kel, KeyDerivation, SignatureDerivation,
+    key_prefix_from_b64, signature_prefix_from_hex, Kel, Basic, SelfSigning, Prefix,
 };
 
 pub enum KeyType {
@@ -15,29 +15,29 @@ pub enum KeyType {
     X448,
 }
 
-impl Into<KeyDerivation> for KeyType {
-    fn into(self) -> KeyDerivation {
+impl Into<Basic> for KeyType {
+    fn into(self) -> Basic {
         match self {
-            KeyType::ECDSAsecp256k1 => KeyDerivation::ECDSAsecp256k1NT,
-            KeyType::Ed25519 => KeyDerivation::Ed25519NT,
-            KeyType::Ed448 => KeyDerivation::Ed448NT,
-            KeyType::X25519 => KeyDerivation::X25519,
-            KeyType::X448 => KeyDerivation::X448,
+            KeyType::ECDSAsecp256k1 => Basic::ECDSAsecp256k1NT,
+            KeyType::Ed25519 => Basic::Ed25519NT,
+            KeyType::Ed448 => Basic::Ed448NT,
+            KeyType::X25519 => Basic::X25519,
+            KeyType::X448 => Basic::X448,
         }
     }
 }
 
-impl From<KeyDerivation> for KeyType {
-    fn from(kd: KeyDerivation) -> Self {
+impl From<Basic> for KeyType {
+    fn from(kd: Basic) -> Self {
         match kd {
-            KeyDerivation::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
-            KeyDerivation::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
-            KeyDerivation::Ed25519NT => KeyType::Ed25519,
-            KeyDerivation::Ed25519 => KeyType::Ed25519,
-            KeyDerivation::Ed448NT => KeyType::Ed448,
-            KeyDerivation::Ed448 => KeyType::Ed448,
-            KeyDerivation::X25519 => KeyType::X25519,
-            KeyDerivation::X448 => KeyType::X448,
+            Basic::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
+            Basic::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
+            Basic::Ed25519NT => KeyType::Ed25519,
+            Basic::Ed25519 => KeyType::Ed25519,
+            Basic::Ed448NT => KeyType::Ed448,
+            Basic::Ed448 => KeyType::Ed448,
+            Basic::X25519 => KeyType::X25519,
+            Basic::X448 => KeyType::X448,
         }
     }
 }
@@ -48,22 +48,22 @@ pub enum SignatureType {
     Ed448,
 }
 
-impl Into<SignatureDerivation> for SignatureType {
-    fn into(self) -> SignatureDerivation {
+impl Into<SelfSigning> for SignatureType {
+    fn into(self) -> SelfSigning {
         match self {
-            SignatureType::Ed25519Sha512 => SignatureDerivation::Ed25519Sha512,
-            SignatureType::ECDSAsecp256k1Sha256 => SignatureDerivation::ECDSAsecp256k1Sha256,
-            SignatureType::Ed448 => SignatureDerivation::Ed448,
+            SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
+            SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
+            SignatureType::Ed448 => SelfSigning::Ed448,
         }
     }
 }
 
-impl From<SignatureDerivation> for SignatureType {
-    fn from(sd: SignatureDerivation) -> Self {
+impl From<SelfSigning> for SignatureType {
+    fn from(sd: SelfSigning) -> Self {
         match sd {
-            SignatureDerivation::Ed25519Sha512 => SignatureType::Ed25519Sha512,
-            SignatureDerivation::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
-            SignatureDerivation::Ed448 => SignatureType::Ed448,
+            SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
+            SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
+            SelfSigning::Ed448 => SignatureType::Ed448,
         }
     }
 }
@@ -121,7 +121,7 @@ pub fn incept(
     witnesses: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
-    let icp = (*KEL.lock().unwrap()).as_ref().unwrap().incept(
+    let icp = Kel::incept(
         public_keys
             .into_iter()
             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
@@ -142,10 +142,10 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Control
         .unwrap()
         .finalize_inception(
             event,
-            signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
+            vec![signature_prefix_from_hex(&signature.key, signature.algorithm.into())?],
         )?;
     Ok(Controller {
-        identifier: controller_id,
+        identifier: controller_id.to_str(),
     })
 }
 
@@ -157,8 +157,9 @@ pub fn rotate(
     witness_to_remove: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
+    let id = controller.identifier.parse().unwrap();
     let rot = (*KEL.lock().unwrap()).as_ref().unwrap().rotate(
-        controller.identifier,
+        id,
         current_keys
             .into_iter()
             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
@@ -176,8 +177,8 @@ pub fn rotate(
 
 pub fn finalize_event(event: String, signature: Signature) -> Result<()> {
     let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-        event,
-        signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
+        event.as_bytes(),
+        vec![signature_prefix_from_hex(&signature.key, signature.algorithm.into())?],
     )?;
     Ok(signed_event)
 }
