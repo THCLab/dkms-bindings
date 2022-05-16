@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use keriox_wrapper::kel::{IdentifierController, IdentifierPrefix, Kel, SelfAddressingPrefix};
 use napi::bindgen_prelude::Buffer;
@@ -27,7 +27,7 @@ pub enum SignatureType {
 
 #[napi]
 struct Controller {
-    kel: Arc<Kel>,
+    kel: Arc<keriox_wrapper::controller::Controller>,
 }
 
 #[napi]
@@ -36,9 +36,9 @@ impl Controller {
     pub fn init() -> Self {
         // TODO setting database path
         let proc = Kel::init("./db");
-        Controller {
-            kel: Arc::new(proc),
-        }
+        let c =
+            keriox_wrapper::controller::Controller::new(Path::new("./db"), Path::new("./oobi_db"));
+        Controller { kel: Arc::new(c) }
     }
 
     #[napi]
@@ -49,6 +49,7 @@ impl Controller {
     ) -> napi::Result<IdController> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>();
         let c = self
+            .kel
             .kel
             .finalize_inception(String::from_utf8(icp_event.to_vec()).unwrap(), ssp)
             .map_err(|e| napi::Error::from_reason(e.to_string()))?;
@@ -73,7 +74,7 @@ struct IdController {
 
 #[napi]
 impl IdController {
-    pub fn new(id: IdentifierPrefix, kel: Arc<Kel>) -> Self {
+    pub fn new(id: IdentifierPrefix, kel: Arc<keriox_wrapper::controller::Controller>) -> Self {
         Self {
             controller: IdentifierController { id, source: kel },
         }
@@ -112,7 +113,10 @@ impl IdController {
 
     #[napi]
     pub fn finalize_event(&self, event: Buffer, signatures: Vec<Signature>) -> napi::Result<()> {
-        let sigs = signatures.into_iter().map(|s| s.to_prefix()).collect::<Vec<_>>();
+        let sigs = signatures
+            .into_iter()
+            .map(|s| s.to_prefix())
+            .collect::<Vec<_>>();
         self.controller
             .finalize_event(&event.to_vec(), sigs)
             .map_err(|e| napi::Error::from_reason(e.to_string()))

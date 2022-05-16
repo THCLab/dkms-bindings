@@ -1,10 +1,10 @@
-use std::sync::Mutex;
+use std::{path::Path, sync::Mutex};
 
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::Result;
 use keriox_wrapper::kel::{
-    key_prefix_from_b64, signature_prefix_from_hex, Kel, Basic, SelfSigning, Prefix,
+    key_prefix_from_b64, signature_prefix_from_hex, Basic, Kel, Prefix, SelfSigning,
 };
 
 pub enum KeyType {
@@ -97,7 +97,7 @@ impl Signature {
 }
 
 lazy_static! {
-    static ref KEL: Mutex<Option<Kel>> = Mutex::new(None);
+    static ref KEL: Mutex<Option<keriox_wrapper::controller::Controller>> = Mutex::new(None);
 }
 
 pub struct Controller {
@@ -111,7 +111,11 @@ impl Controller {
 }
 
 pub fn init_kel(input_app_dir: String) -> Result<()> {
-    *KEL.lock().unwrap() = Some(Kel::init(&input_app_dir));
+    // *KEL.lock().unwrap() = Some(Kel::init(&input_app_dir));
+    *KEL.lock().unwrap() = Some(keriox_wrapper::controller::Controller::new(
+        Path::new(&input_app_dir),
+        Path::new(&input_app_dir),
+    ));
     Ok(())
 }
 
@@ -140,9 +144,13 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Control
     let controller_id = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
+        .kel
         .finalize_inception(
             event,
-            vec![signature_prefix_from_hex(&signature.key, signature.algorithm.into())?],
+            vec![signature_prefix_from_hex(
+                &signature.key,
+                signature.algorithm.into(),
+            )?],
         )?;
     Ok(Controller {
         identifier: controller_id.to_str(),
@@ -158,7 +166,7 @@ pub fn rotate(
     witness_threshold: u64,
 ) -> Result<String> {
     let id = controller.identifier.parse().unwrap();
-    let rot = (*KEL.lock().unwrap()).as_ref().unwrap().rotate(
+    let rot = (*KEL.lock().unwrap()).as_ref().unwrap().kel.rotate(
         id,
         current_keys
             .into_iter()
@@ -176,24 +184,26 @@ pub fn rotate(
 }
 
 pub fn finalize_event(event: String, signature: Signature) -> Result<()> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-        event.as_bytes(),
-        vec![signature_prefix_from_hex(&signature.key, signature.algorithm.into())?],
-    )?;
-    Ok(signed_event)
+    todo!()
+    // let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
+    //     event.as_bytes(),
+    //     vec![signature_prefix_from_hex(&signature.key, signature.algorithm.into())?],
+    // )?;
+    // Ok(signed_event)
 }
 
 pub fn process_stream(stream: String) -> Result<()> {
     (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
+        .kel
         .parse_and_process(stream.as_bytes())?;
 
     Ok(())
 }
 
 pub fn get_kel(id: String) -> Result<String> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().get_kel(id)?;
+    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(id)?;
     Ok(signed_event)
 }
 
@@ -207,6 +217,7 @@ pub fn parse_attachment(attachment: String) -> Result<Vec<PublicKeySignaturePair
     let attachment = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
+        .kel
         .parse_attachment(attachment)?;
     Ok(attachment
         .iter()

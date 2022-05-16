@@ -1,11 +1,17 @@
+pub use keri::derivation::{
+    basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning,
+};
+pub use keri::event::sections::threshold::SignatureThreshold;
+pub use keri::keys::PublicKey;
+pub use keri::prefix::{
+    BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix,
+};
 use keri::{
     database::sled::SledEventDatabase,
     event::{
         event_data::EventData,
         receipt::Receipt,
-        sections::{
-            seal::{DigestSeal, Seal},
-        },
+        sections::seal::{DigestSeal, Seal},
         EventMessage, SerializationFormats,
     },
     event_message::{
@@ -14,171 +20,41 @@ use keri::{
         signed_event_message::{Message, SignedNontransferableReceipt},
         EventTypeTag,
     },
-    event_parsing::{
-        attachment::attachment,
-        message::{key_event_message, signed_event_stream},
-    },
-    keys::PublicKey as KeriPK,
-    prefix::{
-        AttachedSignaturePrefix
-    },
+    event_parsing::message::{key_event_message, signed_event_stream},
+    prefix::AttachedSignaturePrefix,
     processor::{
-        escrow::default_escrow_bus, event_storage::EventStorage, notification::NotificationBus,
+        escrow::default_escrow_bus,
+        event_storage::EventStorage,
+        notification::{JustNotification, NotificationBus, Notifier},
         EventProcessor,
     },
     state::IdentifierState,
 };
 use std::{path::Path, sync::Arc};
 use thiserror::Error;
-pub use keri::prefix::{Prefix, BasicPrefix, SelfAddressingPrefix, SelfSigningPrefix, IdentifierPrefix};
-pub use keri::derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning};
-pub use keri::keys::PublicKey;
-pub use keri::event::sections::threshold::SignatureThreshold;
 
-pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, KelError> {
-    let key = KeriPK::new(base64::decode(key).unwrap());
-    Ok(derivation.derive(key))
-}
-
-pub fn signature_prefix_from_b64(
-    sig: &str,
-    derivation: SelfSigning,
-) -> Result<SelfSigningPrefix, KelError> {
-    let sig = base64::decode(sig).unwrap();
-    Ok(derivation.derive(sig))
-}
-
-pub fn signature_prefix_from_hex(
-    sig_hex: &str,
-    derivation: SelfSigning,
-) -> Result<SelfSigningPrefix, KelError> {
-    let sig = hex::decode(sig_hex)?;
-    Ok(derivation.derive(sig))
-}
-
-// helper functions for parsing attached signatures
-fn join_keys_and_signatures(
-    current_keys: Vec<BasicPrefix>,
-    signatures: &[AttachedSignaturePrefix],
-) -> Result<Vec<(BasicPrefix, SelfSigningPrefix)>, KelError> {
-    let ss: Result<Vec<(_, _)>, KelError> = signatures
-        .iter()
-        .map(|s| -> Result<_, _> {
-            Ok((
-                current_keys
-                    .get(s.index as usize)
-                    .ok_or_else(|| KelError::GeneralError("Missing signature index".into()))?
-                    .to_owned(),
-                s.signature.clone(),
-            ))
-        })
-        .collect();
-    ss
-}
-
-pub fn parse_attachment(
-    storage: EventStorage,
-    stream: &str,
-) -> Result<Vec<(BasicPrefix, SelfSigningPrefix)>, KelError> {
-    let (_rest, att1) =
-        attachment(stream.as_bytes()).map_err(|e| KelError::ParseEventError(e.to_string()))?;
-    if let keri::event_parsing::Attachment::SealSignaturesGroups(group) = att1 {
-        let r = group
-            .iter()
-            .map(|(seal, signatures)| -> Result<Vec<_>, KelError> {
-                // let event = storage
-                //     .get_event_at_sn(&seal.prefix, seal.sn)?
-                //     .ok_or_else(|| KelError::MissingEventError)?;
-                // //check digests
-                // if event.signed_event_message.event_message.event.get_digest()
-                //     != seal.event_digest
-                // {
-                //     return Err(KelError::GeneralError("Event digests doesn't match".into()));
-                // };
-                let current_keys = storage
-                    .compute_state_at_sn(&seal.prefix, seal.sn)?
-                    .ok_or_else(|| KelError::GeneralError("No state".into()))?
-                    .current
-                    .public_keys;
-                join_keys_and_signatures(current_keys, signatures)
-            })
-            .collect::<Result<Vec<_>, KelError>>();
-        Ok(r.into_iter()
-            .flatten()
-            .flatten()
-            .collect::<Vec<(BasicPrefix, SelfSigningPrefix)>>())
-
-        // r
-    } else {
-        Err(KelError::GeneralError("Wrong attachment".into()))
-    }
-}
-
-pub struct IdentifierController {
-    pub id: IdentifierPrefix,
-    pub source: Arc<Kel>,
-}
-
-impl IdentifierController {
-    pub fn new(id: IdentifierPrefix, kel: Arc<Kel>) -> Self {
-        Self {id, source: kel}
-    }
-
-    pub fn get_kel(&self) -> Result<String, KelError> {
-        let storage = EventStorage::new(self.source.db.clone());
-        String::from_utf8(
-            storage
-                .get_kel(
-                    &self.id
-                )?
-                .ok_or(KelError::UnknownIdentifierError)?,
-        )
-        .map_err(|e| KelError::ParseEventError(e.to_string()))
-    }
-
-    pub fn rotate(
-        &self,
-        current_keys: Vec<BasicPrefix>,
-        new_next_keys: Vec<BasicPrefix>,
-        witness_to_add: Vec<String>,
-        witness_to_remove: Vec<String>,
-        witness_threshold: u64,
-    ) -> Result<String, KelError> {
-        self.source.rotate(self.id.clone(), current_keys, new_next_keys, witness_to_add, witness_to_remove, witness_threshold)
-
-    }
-
-    pub fn anchor(
-        &self,
-        payload: &[SelfAddressingPrefix],
-    ) -> Result<EventMessage<KeyEvent>, KelError> {
-        self.source.anchor(self.id.clone(), payload)
-    }
-
-    pub fn anchor_with_seal(
-        &self,
-        seal_list: &[Seal],
-    ) -> Result<EventMessage<KeyEvent>, KelError> {
-        self.source.anchor_with_seal(self.id.clone(), seal_list)
-    }
-
-    pub fn finalize_event(&self, event: &[u8], sig: Vec<SelfSigningPrefix>) -> Result<(), KelError> {
-        self.source.finalize_event(event, sig)
-    }
-
-}
+use crate::utils::parse_attachment;
 
 pub struct Kel {
-    db: Arc<SledEventDatabase>,
-    notification_bus: Arc<NotificationBus>,
+    pub db: Arc<SledEventDatabase>,
+    notification_bus: NotificationBus,
 }
 impl Kel {
     pub fn init(path: &str) -> Self {
         let db = Arc::new(SledEventDatabase::new(Path::new(&path)).unwrap());
         Kel {
             db: db.clone(),
-            notification_bus: Arc::new(default_escrow_bus(db.clone())),
+            notification_bus: default_escrow_bus(db.clone()),
         }
+    }
+
+    pub fn register_observer(
+        &mut self,
+        notifier: Arc<dyn Notifier + Send + Sync>,
+        notification: Vec<JustNotification>,
+    ) {
+        self.notification_bus
+            .register_observer(notifier.clone(), notification);
     }
 
     // todo add setting signing threshold
@@ -225,13 +101,12 @@ impl Kel {
                     let sigs = signature
                         .into_iter()
                         .enumerate()
-                        .map(|(i, sig)| {
-                            AttachedSignaturePrefix {
-                                index: i as u16,
-                                signature: sig,
-                    }
-                        }).collect();
-                   
+                        .map(|(i, sig)| AttachedSignaturePrefix {
+                            index: i as u16,
+                            signature: sig,
+                        })
+                        .collect();
+
                     let signed_message = ke.sign(sigs, None, None);
                     let not = processor
                         .process(Message::Event(signed_message))
@@ -244,6 +119,8 @@ impl Kel {
                 Ok(ke.event.get_prefix())
             }
             keri::event_parsing::EventType::Receipt(_) => todo!(),
+            keri::event_parsing::EventType::Qry(_) => todo!(),
+            keri::event_parsing::EventType::Rpy(_) => todo!(),
         }
     }
 
@@ -351,35 +228,26 @@ impl Kel {
 
     pub fn finalize_event(
         &self,
-        event: &[u8],
+        event: EventMessage<KeyEvent>,
         signature: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
-        let parsed_event = key_event_message(event)
-            .map_err(|e| KelError::ParseEventError(e.to_string()))?
-            .1;
-        match parsed_event {
-            keri::event_parsing::EventType::KeyEvent(ke) => {
-                let processor = EventProcessor::new(self.db.clone());
-                // TODO set index
-                    let sigs = signature
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, sig)| {
-                            AttachedSignaturePrefix {
-                                index: i as u16,
-                                signature: sig,
-                    }
-                        }).collect();
-                
-                let signed_message = ke.sign(sigs, None, None);
-                let not = processor.process(Message::Event(signed_message));
-                let not = not.map_err(|e| KelError::ParseEventError(e.to_string()))?;
-                self.notification_bus
-                    .notify(&not)
-                    .map_err(|_e| KelError::NotificationError)
-            }
-            keri::event_parsing::EventType::Receipt(_) => todo!(),
-        }
+        let processor = EventProcessor::new(self.db.clone());
+        // TODO set index
+        let sigs = signature
+            .into_iter()
+            .enumerate()
+            .map(|(i, sig)| AttachedSignaturePrefix {
+                index: i as u16,
+                signature: sig,
+            })
+            .collect();
+
+        let signed_message = event.sign(sigs, None, None);
+        let not = processor.process(Message::Event(signed_message));
+        let not = not.map_err(|e| KelError::ParseEventError(e.to_string()))?;
+        self.notification_bus
+            .notify(&not)
+            .map_err(|_e| KelError::NotificationError)
     }
 
     pub fn get_kel(&self, id: String) -> Result<String, KelError> {
