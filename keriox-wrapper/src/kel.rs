@@ -2,6 +2,7 @@ pub use keri::derivation::{
     basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning,
 };
 pub use keri::event::sections::threshold::SignatureThreshold;
+use keri::event_message::signed_event_message::SignedEventMessage;
 pub use keri::keys::PublicKey;
 pub use keri::prefix::{
     BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix,
@@ -20,7 +21,7 @@ use keri::{
         signed_event_message::{Message, SignedNontransferableReceipt},
         EventTypeTag,
     },
-    event_parsing::message::{key_event_message, signed_event_stream},
+    event_parsing::message::{signed_event_stream},
     prefix::AttachedSignaturePrefix,
     processor::{
         escrow::default_escrow_bus,
@@ -61,19 +62,12 @@ impl Kel {
     pub fn incept(
         public_keys: Vec<BasicPrefix>,
         next_pub_keys: Vec<BasicPrefix>,
-        witnesses: Vec<String>,
+        witnesses: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-        let witnesses = witnesses
-            .iter()
-            .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_e| KelError::InceptionError)?;
-        let pks = public_keys;
-        let npks = next_pub_keys;
         let serialized_icp = EventMsgBuilder::new(EventTypeTag::Icp)
-            .with_keys(pks)
-            .with_next_keys(npks)
+            .with_keys(public_keys)
+            .with_next_keys(next_pub_keys)
             .with_witness_list(witnesses.as_slice())
             .with_witness_threshold(&SignatureThreshold::Simple(witness_threshold))
             .build()
@@ -87,41 +81,31 @@ impl Kel {
 
     pub fn finalize_inception(
         &self,
-        event: String,
+        event: EventMessage<KeyEvent>,
         signature: Vec<SelfSigningPrefix>,
     ) -> Result<IdentifierPrefix, KelError> {
-        let parsed_event = key_event_message(event.as_bytes())
-            .map_err(|e| KelError::ParseEventError(e.to_string()))?
-            .1;
-        match parsed_event {
-            keri::event_parsing::EventType::KeyEvent(ke) => {
-                if let EventData::Icp(_) = ke.event.get_event_data() {
-                    let processor = EventProcessor::new(self.db.clone());
-                    // TODO set index
-                    let sigs = signature
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, sig)| AttachedSignaturePrefix {
-                            index: i as u16,
-                            signature: sig,
-                        })
-                        .collect();
+        if let EventData::Icp(_) = event.event.get_event_data() {
+            let processor = EventProcessor::new(self.db.clone());
+            // TODO set index
+            let sigs = signature
+                .into_iter()
+                .enumerate()
+                .map(|(i, sig)| AttachedSignaturePrefix {
+                    index: i as u16,
+                    signature: sig,
+                })
+                .collect();
 
-                    let signed_message = ke.sign(sigs, None, None);
-                    let not = processor
-                        .process(Message::Event(signed_message))
-                        .map_err(|e| KelError::ParseEventError(e.to_string()))?;
-                    self.notification_bus
-                        .notify(&not)
-                        .map_err(|_e| KelError::NotificationError)?;
-                    // TODO check if id match
-                }
-                Ok(ke.event.get_prefix())
-            }
-            keri::event_parsing::EventType::Receipt(_) => todo!(),
-            keri::event_parsing::EventType::Qry(_) => todo!(),
-            keri::event_parsing::EventType::Rpy(_) => todo!(),
+            let signed_message = event.sign(sigs, None, None);
+            let not = processor
+                .process(Message::Event(signed_message))
+                .map_err(|e| KelError::ParseEventError(e.to_string()))?;
+            self.notification_bus
+                .notify(&not)
+                .map_err(|_e| KelError::NotificationError)?;
+            // TODO check if id match
         }
+        Ok(event.event.get_prefix())
     }
 
     pub fn rotate(
@@ -129,19 +113,11 @@ impl Kel {
         identifier: IdentifierPrefix,
         current_keys: Vec<BasicPrefix>,
         new_next_keys: Vec<BasicPrefix>,
-        witness_to_add: Vec<String>,
-        witness_to_remove: Vec<String>,
+        witness_to_add: Vec<BasicPrefix>,
+        witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-        let witnesses_to_add = witness_to_add
-            .iter()
-            .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_e| KelError::RotationError)?;
-        let witnesses_to_remove = witness_to_remove
-            .iter()
-            .map(|wit| wit.parse::<BasicPrefix>().unwrap())
-            .collect::<Vec<_>>();
+       
         let storage = EventStorage::new(self.db.clone());
         let state = storage
             .get_state(&identifier)
@@ -154,8 +130,8 @@ impl Kel {
             .with_previous_event(&state.last_event_digest)
             .with_keys(current_keys)
             .with_next_keys(new_next_keys)
-            .with_witness_to_add(&witnesses_to_add)
-            .with_witness_to_remove(&witnesses_to_remove)
+            .with_witness_to_add(&witness_to_add)
+            .with_witness_to_remove(&witness_to_remove)
             .with_witness_threshold(&SignatureThreshold::Simple(witness_threshold))
             .build()
             .map_err(|_e| KelError::RotationError)?
@@ -228,9 +204,9 @@ impl Kel {
 
     pub fn finalize_event(
         &self,
-        event: EventMessage<KeyEvent>,
+        event: &EventMessage<KeyEvent>,
         signature: Vec<SelfSigningPrefix>,
-    ) -> Result<(), KelError> {
+    ) -> Result<SignedEventMessage, KelError> {
         let processor = EventProcessor::new(self.db.clone());
         // TODO set index
         let sigs = signature
@@ -243,11 +219,12 @@ impl Kel {
             .collect();
 
         let signed_message = event.sign(sigs, None, None);
-        let not = processor.process(Message::Event(signed_message));
+        let not = processor.process(Message::Event(signed_message.clone()));
         let not = not.map_err(|e| KelError::ParseEventError(e.to_string()))?;
         self.notification_bus
             .notify(&not)
-            .map_err(|_e| KelError::NotificationError)
+            .map_err(|_e| KelError::NotificationError)?;
+        Ok(signed_message)
     }
 
     pub fn get_kel(&self, id: String) -> Result<String, KelError> {
@@ -328,6 +305,17 @@ impl Kel {
                 .map(|k| k.to_str())
                 .collect()
         });
+        Ok(keys)
+    }
+
+    pub fn get_current_witness_list(
+        &self,
+        prefix: &IdentifierPrefix,
+    ) -> Result<Option<Vec<BasicPrefix>>, KelError> {
+        let storage = EventStorage::new(self.db.clone());
+        let keys = storage
+            .get_state(prefix)?
+            .map(|state| state.witness_config.witnesses);
         Ok(keys)
     }
 

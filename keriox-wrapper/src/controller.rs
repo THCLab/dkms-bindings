@@ -8,17 +8,18 @@ use async_std::{
 use futures::future::join_all;
 use keri::{
     derivation::self_addressing::SelfAddressing,
-    event::SerializationFormats,
-    event_message::{signed_event_message::SignedEventMessage, Digestible},
-    event_parsing::SignedEventData,
-    keri::Responder,
+    event::{event_data::EventData, EventMessage, SerializationFormats},
+    event_message::{
+        key_event_message::KeyEvent, signed_event_message::SignedEventMessage, Digestible,
+    },
+    event_parsing::{message::key_event_message, SignedEventData},
     oobi::{EndRole, LocationScheme, OobiManager, Role, Scheme},
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix},
+    prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
     processor::{
         event_storage::EventStorage,
-        notification::{JustNotification, Notification},
+        notification::JustNotification,
     },
-    query::reply_event::{ReplyEvent, ReplyRoute},
+    query::reply_event::{ReplyEvent, ReplyRoute, SignedReply},
 };
 
 use crate::kel::Kel;
@@ -26,7 +27,6 @@ use crate::kel::Kel;
 pub struct Controller {
     pub kel: Kel,
     pub oobi_manager: Arc<OobiManager>,
-    response_queue: Arc<Responder<Notification>>,
 }
 impl Controller {
     pub fn new(event_db_path: &Path, oobi_db_path: &Path) -> Self {
@@ -34,18 +34,42 @@ impl Controller {
         let oobi_manager = Arc::new(OobiManager::new(oobi_db_path));
         keri.register_observer(oobi_manager.clone(), vec![JustNotification::GotOobi]);
 
-        let responder = Arc::new(Responder::new());
-        keri.register_observer(responder.clone(), vec![JustNotification::KeyEventAdded]);
-
         Self {
             kel: keri,
             oobi_manager: oobi_manager.clone(),
-            response_queue: responder,
         }
     }
+
+    pub async fn setup(&self) {
+        let loc_scheme = LocationScheme::new(
+            "BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"
+                .parse()
+                .unwrap(),
+            Scheme::Http,
+            "http://127.0.0.1:3235".parse().unwrap(),
+        );
+        self.resolve(loc_scheme).await.unwrap();
+        let loc_scheme = LocationScheme::new(
+            "BZFIYlHDQAHxHH3TJsjMhZFbVR_knDzSc3na_VHBZSBs"
+                .parse()
+                .unwrap(),
+            Scheme::Http,
+            "http://127.0.0.1:3234".parse().unwrap(),
+        );
+        self.resolve(loc_scheme).await.unwrap();
+        let loc_scheme = LocationScheme::new(
+            "BMOaOdnrbEP-MSQE_CaL7BhGXvqvIdoHEMYcOnUAWjOE"
+                .parse()
+                .unwrap(),
+            Scheme::Http,
+            "http://127.0.0.1:3232".parse().unwrap(),
+        );
+        self.resolve(loc_scheme).await.unwrap();
+    }
+
     pub async fn resolve(&self, lc: LocationScheme) -> Result<()> {
         let url = format!("{}oobi/{}", lc.url, lc.eid);
-        let oobis = reqwest::get(url).await.unwrap().text().await.unwrap();
+        let oobis = reqwest::get(url).await?.text().await?;
         println!("\ngot via http: {}", oobis);
 
         self.kel.parse_and_process(oobis.as_bytes()).unwrap();
@@ -187,6 +211,11 @@ impl Controller {
             [acc, res.unwrap().unwrap()].join("")
         });
 
+        println!(
+            "\n\nreceipts in publish: {}\n\n",
+            collected_receipts.clone()
+        );
+
         // Kel should be empty because event is not fully witnessed
         // assert!(self.kel.get_kel(self.kel.prefix()).unwrap().is_none());
 
@@ -205,7 +234,7 @@ impl Controller {
         let rcts_from_db = storage
             .get_nt_receipts(
                 &message.event_message.event.get_prefix(),
-                0,
+                message.event_message.event.get_sn(),
                 &message.event_message.event.get_digest(),
             )
             .unwrap()
@@ -225,6 +254,102 @@ impl Controller {
             )
         }))
         .await;
+        Ok(())
+    }
+
+    // TODO why it needs static
+    pub async fn finalize_inception(
+        &self,
+        event: &[u8],
+        sig: Vec<SelfSigningPrefix>,
+    ) -> Result<IdentifierPrefix> {
+        let parsed_event = key_event_message(&event)
+            .unwrap()
+            // .map_err(|e| KelError::ParseEventError(e.to_string()))?
+            .1;
+        match parsed_event {
+            keri::event_parsing::EventType::KeyEvent(ke) => {
+                let pref = ke.event.get_prefix().clone();
+                if let EventData::Icp(_) = ke.event.get_event_data() {
+                    self.finalize_key_event(ke, sig).await?;
+                }
+                Ok(pref)
+            }
+            keri::event_parsing::EventType::Receipt(_) => todo!(),
+            keri::event_parsing::EventType::Qry(_) => todo!(),
+            keri::event_parsing::EventType::Rpy(_) => todo!(),
+        }
+    }
+
+    pub async fn finalize_key_event(
+        &self,
+        event: EventMessage<KeyEvent>,
+        sig: Vec<SelfSigningPrefix>,
+    ) -> Result<()> {
+        let message = self.kel.finalize_event(&event, sig)?;
+
+        let wits = match event.event.get_event_data() {
+            keri::event::event_data::EventData::Icp(icp) => icp.witness_config.initial_witnesses,
+            keri::event::event_data::EventData::Rot(rot) => {
+                let wits = self
+                    .kel
+                    .get_current_witness_list(&event.event.content.prefix)?
+                    .unwrap_or_default();
+                wits.into_iter()
+                    .filter(|w| !rot.witness_config.prune.contains(w))
+                    .chain(rot.witness_config.graft.into_iter())
+                    .collect::<Vec<_>>()
+            }
+            keri::event::event_data::EventData::Ixn(_) => self
+                .kel
+                .get_current_witness_list(&event.event.content.prefix)?
+                .unwrap_or_default(),
+            keri::event::event_data::EventData::Dip(_) => todo!(),
+            keri::event::event_data::EventData::Drt(_) => todo!(),
+        };
+
+        self.publish(&wits, &message).await
+    }
+
+    pub async fn finalize_add_role(
+        &self,
+        signer_prefix: &IdentifierPrefix,
+        event: ReplyEvent,
+        sig: Vec<SelfSigningPrefix>,
+    ) -> Result<()> {
+        let sigs = sig
+            .into_iter()
+            .enumerate()
+            .map(|(i, sig)| AttachedSignaturePrefix {
+                index: i as u16,
+                signature: sig,
+            })
+            .collect();
+
+        let dest_prefix = match &event.event.content.data {
+            ReplyRoute::Ksn(_, _) => todo!(),
+            ReplyRoute::LocScheme(_) => todo!(),
+            ReplyRoute::EndRoleAdd(role) => role.eid.clone(),
+            ReplyRoute::EndRoleCut(role) => role.eid.clone(),
+        };
+        let storage = EventStorage::new(self.kel.db.clone());
+        let signed_rpy = SignedReply::new_trans(
+            event,
+            storage
+                .get_last_establishment_event_seal(signer_prefix)
+                .unwrap()
+                .unwrap(),
+            sigs,
+        );
+        self.oobi_manager.save_oobi(signed_rpy.clone()).unwrap();
+        self.send_to(
+            dest_prefix,
+            Scheme::Http,
+            SignedEventData::from(signed_rpy)
+                .to_cesr()
+                .unwrap_or_default(),
+        )
+        .await?;
         Ok(())
     }
 }

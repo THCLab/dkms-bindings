@@ -16,6 +16,7 @@ napi-derive = "2"
 simple_config_parser = "0.1.5"
 clap = "3.0.0-beta.4"
 tempfile = "3.1"
+async-std = { version = "1" , features = ["attributes", "tokio1"]}
 
 [target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
 mimalloc = {version = "0.1"}
@@ -23,8 +24,6 @@ mimalloc = {version = "0.1"}
 [build-dependencies]
 napi-build = "1"
 
-[profile.release]
-lto = true
 
 [dev-dependencies]
 ed25519-compact = "0.1"

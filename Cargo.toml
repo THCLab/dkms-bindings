@@ -5,3 +5,6 @@ members = [
     "bindings/node.js",
     "bindings/dart",
 ]
+
+[profile.release]
+lto = true

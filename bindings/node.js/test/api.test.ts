@@ -16,7 +16,12 @@ describe("Managing controller", () => {
 
   console.log(pk.getKey())
 
-  let inceptionEvent = keri.incept([pk.getKey()], [pk2.getKey()]);
+  let inceptionEvent = keri.incept(
+    [pk.getKey()], 
+    [pk2.getKey()], 
+    ["BMOaOdnrbEP-MSQE_CaL7BhGXvqvIdoHEMYcOnUAWjOE", "BZFIYlHDQAHxHH3TJsjMhZFbVR_knDzSc3na_VHBZSBs", "BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"],
+    1
+    );
   console.log(inceptionEvent.toString())
 
   let signature = currentKeyManager.sign(inceptionEvent);
@@ -31,7 +36,7 @@ describe("Managing controller", () => {
 
   console.log(inceptedController.getKel())
 
-  let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()]);
+  let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"], 2);
   console.log(rotationEvent.toString())
 
   let signature2 = nextKeyManager.sign(rotationEvent);

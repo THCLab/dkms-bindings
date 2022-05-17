@@ -21,7 +21,7 @@ export const enum SignatureType {
   ECDSAsecp256k1Sha256 = 1,
   Ed448 = 2
 }
-export function incept(pks: Array<Key>, npks: Array<Key>): Buffer
+export function incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Buffer
 export class PublicKey {
   prefix: string
   constructor(algorithm: KeyType, key: Buffer)
@@ -39,7 +39,7 @@ export class Controller {
 }
 export class IdController {
   getKel(): string
-  rotate(pks: Array<Key>, npks: Array<Key>): Buffer
+  rotate(pks: Array<Key>, npks: Array<Key>, witnessesToAdd: Array<string>, witnessesToRemove: Array<string>, witnessThreshold: number): Buffer
   interact(anchoredData: Array<string>): Buffer
   finalizeEvent(event: Buffer, signatures: Array<Signature>): void
 }

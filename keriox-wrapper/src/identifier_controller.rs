@@ -2,15 +2,15 @@ use std::sync::Arc;
 
 use keri::{
     event::{sections::seal::Seal, EventMessage},
-    event_message::{key_event_message::KeyEvent, signed_event_message::Message},
+    event_message::{key_event_message::KeyEvent},
     event_parsing::{message::key_event_message, EventType},
     oobi::Role,
     prefix::{
-        AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, SelfAddressingPrefix,
+        BasicPrefix, IdentifierPrefix, SelfAddressingPrefix,
         SelfSigningPrefix,
     },
-    processor::{event_storage::EventStorage, EventProcessor},
-    query::reply_event::{ReplyRoute, SignedReply},
+    processor::event_storage::EventStorage,
+    query::reply_event::ReplyRoute,
 };
 
 use crate::{controller::Controller, kel::KelError};
@@ -39,8 +39,8 @@ impl IdentifierController {
         &self,
         current_keys: Vec<BasicPrefix>,
         new_next_keys: Vec<BasicPrefix>,
-        witness_to_add: Vec<String>,
-        witness_to_remove: Vec<String>,
+        witness_to_add: Vec<BasicPrefix>,
+        witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
         self.source.kel.rotate(
@@ -86,7 +86,8 @@ impl IdentifierController {
         .unwrap()
     }
 
-    pub fn finalize_event(
+    /// Check signatures, updates database and send events to watcher or witnesses.
+    pub async fn finalize_event(
         &self,
         event: &[u8],
         sig: Vec<SelfSigningPrefix>,
@@ -95,38 +96,18 @@ impl IdentifierController {
             .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
         match parsed_event {
-            keri::event_parsing::EventType::KeyEvent(ke) => {
-				self.source.kel.finalize_event(ke, sig)
-			},
+            EventType::KeyEvent(ke) => Ok(self
+                .source
+                .finalize_key_event(ke, sig)
+                .await
+                .unwrap_or_default()),
             EventType::Receipt(_) => todo!(),
             EventType::Qry(_) => todo!(),
             EventType::Rpy(rpy) => match rpy.get_route() {
                 ReplyRoute::Ksn(_, _) => todo!(),
                 ReplyRoute::LocScheme(_) => todo!(),
                 ReplyRoute::EndRoleAdd(_) => {
-                    let sigs = sig
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, sig)| AttachedSignaturePrefix {
-                            index: i as u16,
-                            signature: sig,
-                        })
-                        .collect();
-
-                    let storage = EventStorage::new(self.source.kel.db.clone());
-                    let signed_rpy = SignedReply::new_trans(
-                        rpy,
-                        storage
-                            .get_last_establishment_event_seal(&self.id)
-                            .unwrap()
-                            .unwrap(),
-                        sigs,
-                    );
-                    Ok(self
-                        .source
-                        .oobi_manager
-                        .save_oobi(signed_rpy.clone())
-                        .unwrap())
+                    Ok(self.source.finalize_add_role(&self.id, rpy, sig).await.unwrap())
                 }
                 ReplyRoute::EndRoleCut(_) => todo!(),
             },

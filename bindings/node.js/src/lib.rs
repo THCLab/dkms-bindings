@@ -1,6 +1,10 @@
 use std::{path::Path, sync::Arc};
 
-use keriox_wrapper::kel::{IdentifierController, IdentifierPrefix, Kel, SelfAddressingPrefix};
+use async_std::task::block_on;
+use keriox_wrapper::{
+    identifier_controller::IdentifierController,
+    kel::{IdentifierPrefix, Kel, SelfAddressingPrefix, BasicPrefix},
+};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 use utils::{key_config::Key, signature_config::Signature};
@@ -27,7 +31,7 @@ pub enum SignatureType {
 
 #[napi]
 struct Controller {
-    kel: Arc<keriox_wrapper::controller::Controller>,
+    kel_data: Arc<keriox_wrapper::controller::Controller>,
 }
 
 #[napi]
@@ -35,10 +39,11 @@ impl Controller {
     #[napi(factory)]
     pub fn init() -> Self {
         // TODO setting database path
-        let proc = Kel::init("./db");
         let c =
             keriox_wrapper::controller::Controller::new(Path::new("./db"), Path::new("./oobi_db"));
-        Controller { kel: Arc::new(c) }
+        // Resolves witness oobis.
+        block_on(c.setup());
+        Controller { kel_data: Arc::new(c) }
     }
 
     #[napi]
@@ -48,22 +53,19 @@ impl Controller {
         signatures: Vec<Signature>,
     ) -> napi::Result<IdController> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>();
-        let c = self
-            .kel
-            .kel
-            .finalize_inception(String::from_utf8(icp_event.to_vec()).unwrap(), ssp)
+        let incepted_identifier = block_on(self.kel_data.finalize_inception(&icp_event.to_vec(), ssp))
             .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(IdController {
             controller: IdentifierController {
-                id: c,
-                source: self.kel.clone(),
+                id: incepted_identifier,
+                source: self.kel_data.clone(),
             },
         })
     }
 
     #[napi]
     pub fn get_by_identifier(&self, id: String) -> napi::Result<IdController> {
-        Ok(IdController::new(id.parse().unwrap(), self.kel.clone()))
+        Ok(IdController::new(id.parse().unwrap(), self.kel_data.clone()))
     }
 }
 
@@ -85,12 +87,22 @@ impl IdController {
     }
 
     #[napi]
-    pub fn rotate(&self, pks: Vec<Key>, npks: Vec<Key>) -> napi::Result<Buffer> {
+    pub fn rotate(&self, pks: Vec<Key>, npks: Vec<Key>, witnesses_to_add: Vec<String>, witnesses_to_remove: Vec<String>, witness_threshold: u32) -> napi::Result<Buffer> {
         let curr_keys = pks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
         let next_keys = npks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
+         let witnesses_to_add = witnesses_to_add
+            .iter()
+            .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let witnesses_to_remove = witnesses_to_remove
+            .iter()
+            .map(|wit| wit.parse::<BasicPrefix>())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(self
             .controller
-            .rotate(curr_keys, next_keys, vec![], vec![], 0)
+            .rotate(curr_keys, next_keys, witnesses_to_add, witnesses_to_remove, witness_threshold as u64)
             .unwrap()
             .as_bytes()
             .into())
@@ -117,18 +129,27 @@ impl IdController {
             .into_iter()
             .map(|s| s.to_prefix())
             .collect::<Vec<_>>();
-        self.controller
-            .finalize_event(&event.to_vec(), sigs)
+        block_on(self.controller.finalize_event(&event.to_vec(), sigs))
             .map_err(|e| napi::Error::from_reason(e.to_string()))
     }
 }
 
 #[napi]
-pub fn incept(pks: Vec<Key>, npks: Vec<Key>) -> Buffer {
+pub fn incept(
+    pks: Vec<Key>,
+    npks: Vec<Key>,
+    witnesses: Vec<String>,
+    witness_threshold: u32,
+) -> napi::Result<Buffer> {
     let curr_keys = pks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
     let next_keys = npks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
-    let icp = Kel::incept(curr_keys, next_keys, vec![], 0)
+    let witnesses = witnesses
+        .iter()
+        .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let icp = Kel::incept(curr_keys, next_keys, witnesses, witness_threshold as u64)
         .map_err(|e| napi::Error::from_reason(e.to_string()))
         .unwrap();
-    icp.as_bytes().into()
+    Ok(icp.as_bytes().into())
 }
