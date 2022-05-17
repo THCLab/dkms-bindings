@@ -2,15 +2,10 @@ use std::sync::Arc;
 
 use keri::{
     event::{sections::seal::Seal, EventMessage},
-    event_message::{key_event_message::KeyEvent},
-    event_parsing::{message::key_event_message, EventType},
+    event_message::key_event_message::KeyEvent,
     oobi::Role,
-    prefix::{
-        BasicPrefix, IdentifierPrefix, SelfAddressingPrefix,
-        SelfSigningPrefix,
-    },
+    prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
     processor::event_storage::EventStorage,
-    query::reply_event::ReplyRoute,
 };
 
 use crate::{controller::Controller, kel::KelError};
@@ -92,25 +87,10 @@ impl IdentifierController {
         event: &[u8],
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
-        let parsed_event = key_event_message(event)
-            .map_err(|e| KelError::ParseEventError(e.to_string()))?
-            .1;
-        match parsed_event {
-            EventType::KeyEvent(ke) => Ok(self
-                .source
-                .finalize_key_event(ke, sig)
-                .await
-                .unwrap_or_default()),
-            EventType::Receipt(_) => todo!(),
-            EventType::Qry(_) => todo!(),
-            EventType::Rpy(rpy) => match rpy.get_route() {
-                ReplyRoute::Ksn(_, _) => todo!(),
-                ReplyRoute::LocScheme(_) => todo!(),
-                ReplyRoute::EndRoleAdd(_) => {
-                    Ok(self.source.finalize_add_role(&self.id, rpy, sig).await.unwrap())
-                }
-                ReplyRoute::EndRoleCut(_) => todo!(),
-            },
-        }
+        Ok(self
+            .source
+            .finalize_event(&self.id, event, sig)
+            .await
+            .unwrap())
     }
 }

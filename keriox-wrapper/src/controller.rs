@@ -12,13 +12,13 @@ use keri::{
     event_message::{
         key_event_message::KeyEvent, signed_event_message::SignedEventMessage, Digestible,
     },
-    event_parsing::{message::key_event_message, SignedEventData},
+    event_parsing::{
+        message::{event_message, key_event_message},
+        EventType, SignedEventData,
+    },
     oobi::{EndRole, LocationScheme, OobiManager, Role, Scheme},
     prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
-    processor::{
-        event_storage::EventStorage,
-        notification::JustNotification,
-    },
+    processor::{event_storage::EventStorage, notification::JustNotification},
     query::reply_event::{ReplyEvent, ReplyRoute, SignedReply},
 };
 
@@ -211,11 +211,6 @@ impl Controller {
             [acc, res.unwrap().unwrap()].join("")
         });
 
-        println!(
-            "\n\nreceipts in publish: {}\n\n",
-            collected_receipts.clone()
-        );
-
         // Kel should be empty because event is not fully witnessed
         // assert!(self.kel.get_kel(self.kel.prefix()).unwrap().is_none());
 
@@ -239,7 +234,7 @@ impl Controller {
             )
             .unwrap()
             .map(|rct| SignedEventData::from(rct).to_cesr().unwrap())
-            .unwrap();
+            .unwrap_or_default();
         println!(
             "\nreceipts: {}",
             String::from_utf8(rcts_from_db.clone()).unwrap()
@@ -281,7 +276,32 @@ impl Controller {
         }
     }
 
-    pub async fn finalize_key_event(
+    /// Check signatures, updates database and send events to watcher or witnesses.
+    pub async fn finalize_event(
+        &self,
+        id: &IdentifierPrefix,
+        event: &[u8],
+        sig: Vec<SelfSigningPrefix>,
+    ) -> Result<()> {
+        let parsed_event = event_message(event).map_err(|e| anyhow!(e.to_string()))?.1;
+        match parsed_event {
+            EventType::KeyEvent(ke) => {
+                Ok(self.finalize_key_event(ke, sig).await.unwrap_or_default())
+            }
+            EventType::Receipt(_) => todo!(),
+            EventType::Qry(_) => todo!(),
+            EventType::Rpy(rpy) => match rpy.get_route() {
+                ReplyRoute::Ksn(_, _) => todo!(),
+                ReplyRoute::LocScheme(_) => todo!(),
+                ReplyRoute::EndRoleAdd(_) => {
+                    Ok(self.finalize_add_role(id, rpy, sig).await.unwrap())
+                }
+                ReplyRoute::EndRoleCut(_) => todo!(),
+            },
+        }
+    }
+
+    async fn finalize_key_event(
         &self,
         event: EventMessage<KeyEvent>,
         sig: Vec<SelfSigningPrefix>,
@@ -311,7 +331,7 @@ impl Controller {
         self.publish(&wits, &message).await
     }
 
-    pub async fn finalize_add_role(
+    async fn finalize_add_role(
         &self,
         signer_prefix: &IdentifierPrefix,
         event: ReplyEvent,

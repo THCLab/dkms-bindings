@@ -1,10 +1,13 @@
 use std::{path::Path, sync::Mutex};
 
+use async_std::task::block_on;
 use flutter_rust_bridge::support::lazy_static;
 
-use anyhow::Result;
-use keriox_wrapper::kel::{
-    key_prefix_from_b64, signature_prefix_from_hex, Basic, Kel, Prefix, SelfSigning,
+use anyhow::{anyhow, Result};
+use keriox_wrapper::{
+    identifier_controller::IdentifierController,
+    kel::{Basic, BasicPrefix, Kel, Prefix, SelfSigning},
+    utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
 
 pub enum KeyType {
@@ -111,11 +114,15 @@ impl Controller {
 }
 
 pub fn init_kel(input_app_dir: String) -> Result<()> {
-    // *KEL.lock().unwrap() = Some(Kel::init(&input_app_dir));
-    *KEL.lock().unwrap() = Some(keriox_wrapper::controller::Controller::new(
-        Path::new(&input_app_dir),
-        Path::new(&input_app_dir),
-    ));
+    let event_db_path = vec![input_app_dir.clone(), "db".into()].join("");
+    let oobi_db_path = vec![input_app_dir, "oobi_db".into()].join("");
+    let controller = keriox_wrapper::controller::Controller::new(
+        Path::new(&event_db_path),
+        Path::new(&oobi_db_path),
+    );
+    block_on(controller.setup());
+    *KEL.lock().unwrap() = Some(controller);
+
     Ok(())
 }
 
@@ -125,6 +132,11 @@ pub fn incept(
     witnesses: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
+    let witnesses = witnesses
+        .iter()
+        .map(|wit| wit.parse::<BasicPrefix>())
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| anyhow!(e.to_string()))?;
     let icp = Kel::incept(
         public_keys
             .into_iter()
@@ -141,17 +153,18 @@ pub fn incept(
 }
 
 pub fn finalize_inception(event: String, signature: Signature) -> Result<Controller> {
-    let controller_id = (*KEL.lock().unwrap())
-        .as_ref()
-        .unwrap()
-        .kel
-        .finalize_inception(
-            event,
-            vec![signature_prefix_from_hex(
-                &signature.key,
-                signature.algorithm.into(),
-            )?],
-        )?;
+    let controller_id = block_on(
+        (*KEL.lock().unwrap())
+            .as_ref()
+            .ok_or(anyhow!("There is no controller"))?
+            .finalize_inception(
+                event.as_bytes(),
+                vec![signature_prefix_from_hex(
+                    &signature.key,
+                    signature.algorithm.into(),
+                )?],
+            ),
+    )?;
     Ok(Controller {
         identifier: controller_id.to_str(),
     })
@@ -166,6 +179,16 @@ pub fn rotate(
     witness_threshold: u64,
 ) -> Result<String> {
     let id = controller.identifier.parse().unwrap();
+    let witnesses_to_add = witness_to_add
+        .iter()
+        .map(|wit| wit.parse::<BasicPrefix>())
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| anyhow!(e.to_string()))?;
+    let witnesses_to_remove = witness_to_remove
+        .iter()
+        .map(|wit| wit.parse::<BasicPrefix>())
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| anyhow!(e.to_string()))?;
     let rot = (*KEL.lock().unwrap()).as_ref().unwrap().kel.rotate(
         id,
         current_keys
@@ -176,20 +199,27 @@ pub fn rotate(
             .into_iter()
             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
             .collect(),
-        witness_to_add,
-        witness_to_remove,
+        witnesses_to_add,
+        witnesses_to_remove,
         witness_threshold,
     )?;
     Ok(rot)
 }
 
-pub fn finalize_event(event: String, signature: Signature) -> Result<()> {
-    todo!()
-    // let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-    //     event.as_bytes(),
-    //     vec![signature_prefix_from_hex(&signature.key, signature.algorithm.into())?],
-    // )?;
-    // Ok(signed_event)
+pub fn finalize_event(
+    identifier: IdentifierController,
+    event: String,
+    signature: Signature,
+) -> Result<()> {
+    let signed_event = block_on((*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
+        &identifier.id,
+        event.as_bytes(),
+        vec![signature_prefix_from_hex(
+            &signature.key,
+            signature.algorithm.into(),
+        )?],
+    ))?;
+    Ok(signed_event)
 }
 
 pub fn process_stream(stream: String) -> Result<()> {

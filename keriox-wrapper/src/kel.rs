@@ -21,7 +21,7 @@ use keri::{
         signed_event_message::{Message, SignedNontransferableReceipt},
         EventTypeTag,
     },
-    event_parsing::message::{signed_event_stream},
+    event_parsing::message::signed_event_stream,
     prefix::AttachedSignaturePrefix,
     processor::{
         escrow::default_escrow_bus,
@@ -117,7 +117,6 @@ impl Kel {
         witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-       
         let storage = EventStorage::new(self.db.clone());
         let state = storage
             .get_state(&identifier)

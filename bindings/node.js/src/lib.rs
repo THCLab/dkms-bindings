@@ -3,7 +3,7 @@ use std::{path::Path, sync::Arc};
 use async_std::task::block_on;
 use keriox_wrapper::{
     identifier_controller::IdentifierController,
-    kel::{IdentifierPrefix, Kel, SelfAddressingPrefix, BasicPrefix},
+    kel::{BasicPrefix, IdentifierPrefix, Kel, SelfAddressingPrefix},
 };
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
@@ -43,7 +43,9 @@ impl Controller {
             keriox_wrapper::controller::Controller::new(Path::new("./db"), Path::new("./oobi_db"));
         // Resolves witness oobis.
         block_on(c.setup());
-        Controller { kel_data: Arc::new(c) }
+        Controller {
+            kel_data: Arc::new(c),
+        }
     }
 
     #[napi]
@@ -53,8 +55,9 @@ impl Controller {
         signatures: Vec<Signature>,
     ) -> napi::Result<IdController> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>();
-        let incepted_identifier = block_on(self.kel_data.finalize_inception(&icp_event.to_vec(), ssp))
-            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let incepted_identifier =
+            block_on(self.kel_data.finalize_inception(&icp_event.to_vec(), ssp))
+                .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(IdController {
             controller: IdentifierController {
                 id: incepted_identifier,
@@ -65,7 +68,10 @@ impl Controller {
 
     #[napi]
     pub fn get_by_identifier(&self, id: String) -> napi::Result<IdController> {
-        Ok(IdController::new(id.parse().unwrap(), self.kel_data.clone()))
+        Ok(IdController::new(
+            id.parse().unwrap(),
+            self.kel_data.clone(),
+        ))
     }
 }
 
@@ -87,10 +93,17 @@ impl IdController {
     }
 
     #[napi]
-    pub fn rotate(&self, pks: Vec<Key>, npks: Vec<Key>, witnesses_to_add: Vec<String>, witnesses_to_remove: Vec<String>, witness_threshold: u32) -> napi::Result<Buffer> {
+    pub fn rotate(
+        &self,
+        pks: Vec<Key>,
+        npks: Vec<Key>,
+        witnesses_to_add: Vec<String>,
+        witnesses_to_remove: Vec<String>,
+        witness_threshold: u32,
+    ) -> napi::Result<Buffer> {
         let curr_keys = pks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
         let next_keys = npks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
-         let witnesses_to_add = witnesses_to_add
+        let witnesses_to_add = witnesses_to_add
             .iter()
             .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
             .collect::<Result<Vec<_>, _>>()
@@ -102,7 +115,13 @@ impl IdController {
             .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(self
             .controller
-            .rotate(curr_keys, next_keys, witnesses_to_add, witnesses_to_remove, witness_threshold as u64)
+            .rotate(
+                curr_keys,
+                next_keys,
+                witnesses_to_add,
+                witnesses_to_remove,
+                witness_threshold as u64,
+            )
             .unwrap()
             .as_bytes()
             .into())
