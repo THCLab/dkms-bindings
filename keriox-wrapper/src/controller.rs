@@ -1,10 +1,7 @@
 use std::{path::Path, sync::Arc};
 
 use anyhow::{anyhow, Result};
-use async_std::{
-    io::{ReadExt, WriteExt},
-    net::TcpStream,
-};
+
 use futures::future::join_all;
 use keri::{
     derivation::self_addressing::SelfAddressing,
@@ -48,7 +45,7 @@ impl Controller {
             Scheme::Http,
             "http://127.0.0.1:3235".parse().unwrap(),
         );
-        self.resolve(loc_scheme).await.unwrap();
+        self.resolve(loc_scheme).unwrap();
         let loc_scheme = LocationScheme::new(
             "BZFIYlHDQAHxHH3TJsjMhZFbVR_knDzSc3na_VHBZSBs"
                 .parse()
@@ -56,7 +53,7 @@ impl Controller {
             Scheme::Http,
             "http://127.0.0.1:3234".parse().unwrap(),
         );
-        self.resolve(loc_scheme).await.unwrap();
+        self.resolve(loc_scheme).unwrap();
         let loc_scheme = LocationScheme::new(
             "BMOaOdnrbEP-MSQE_CaL7BhGXvqvIdoHEMYcOnUAWjOE"
                 .parse()
@@ -64,12 +61,13 @@ impl Controller {
             Scheme::Http,
             "http://127.0.0.1:3232".parse().unwrap(),
         );
-        self.resolve(loc_scheme).await.unwrap();
+        self.resolve(loc_scheme).unwrap();
     }
 
-    pub async fn resolve(&self, lc: LocationScheme) -> Result<()> {
+    pub fn resolve(&self, lc: LocationScheme) -> Result<()> {
         let url = format!("{}oobi/{}", lc.url, lc.eid);
-        let oobis = reqwest::get(url).await?.text().await?;
+        println!("\nurl: {}\n", url);
+        let oobis = reqwest::blocking::get(url)?.text()?;
         println!("\ngot via http: {}", oobis);
 
         self.kel.parse_and_process(oobis.as_bytes()).unwrap();
@@ -122,22 +120,23 @@ impl Controller {
                     Ok(Some(response))
                 }
                 Scheme::Tcp => {
-                    let mut stream = TcpStream::connect(format!(
-                        "{}:{}",
-                        address
-                            .host()
-                            .ok_or(anyhow!("Wrong url, missing host {:?}", schema))?,
-                        address
-                            .port()
-                            .ok_or(anyhow!("Wrong url, missing port {:?}", schema))?
-                    ))
-                    .await?;
-                    stream.write(&msg).await?;
-                    println!("Sending message to witness {}", wit_id.to_str());
-                    let mut buf = vec![];
-                    stream.read(&mut buf).await?;
-                    println!("Got response: {}", String::from_utf8(buf).unwrap());
-                    Ok(None)
+                    // let mut stream = TcpStream::connect(format!(
+                    //     "{}:{}",
+                    //     address
+                    //         .host()
+                    //         .ok_or(anyhow!("Wrong url, missing host {:?}", schema))?,
+                    //     address
+                    //         .port()
+                    //         .ok_or(anyhow!("Wrong url, missing port {:?}", schema))?
+                    // ))
+                    // .await?;
+                    // stream.write(&msg).await?;
+                    // println!("Sending message to witness {}", wit_id.to_str());
+                    // let mut buf = vec![];
+                    // stream.read(&mut buf).await?;
+                    // println!("Got response: {}", String::from_utf8(buf).unwrap());
+                    // Ok(None)
+                    todo!()
                 }
             },
             _ => Err(anyhow!("No address for scheme {:?}", schema)),

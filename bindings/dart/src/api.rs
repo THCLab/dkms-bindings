@@ -1,12 +1,11 @@
 use std::{path::Path, sync::Mutex};
 
-use async_std::task::block_on;
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
+use futures::executor::block_on;
 use keriox_wrapper::{
-    identifier_controller::IdentifierController,
-    kel::{Basic, BasicPrefix, Kel, Prefix, SelfSigning},
+    kel::{Basic, BasicPrefix, IdentifierPrefix, Kel, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
 
@@ -111,6 +110,58 @@ impl Controller {
     pub fn get_id(&self) -> String {
         self.identifier.clone()
     }
+
+    //     pub fn rotate(
+    //     &self,
+    //     current_keys: Vec<PublicKey>,
+    //     new_next_keys: Vec<PublicKey>,
+    //     witness_to_add: Vec<String>,
+    //     witness_to_remove: Vec<String>,
+    //     witness_threshold: u64,
+    // ) -> Result<String> {
+    //     let id = self.identifier.parse().unwrap();
+    //     let witnesses_to_add = witness_to_add
+    //         .iter()
+    //         .map(|wit| wit.parse::<BasicPrefix>())
+    //         .collect::<Result<Vec<_>, _>>()
+    //         .map_err(|e| anyhow!(e.to_string()))?;
+    //     let witnesses_to_remove = witness_to_remove
+    //         .iter()
+    //         .map(|wit| wit.parse::<BasicPrefix>())
+    //         .collect::<Result<Vec<_>, _>>()
+    //         .map_err(|e| anyhow!(e.to_string()))?;
+    //     let rot = (*KEL.lock().unwrap()).as_ref().unwrap().kel.rotate(
+    //         id,
+    //         current_keys
+    //             .into_iter()
+    //             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+    //             .collect(),
+    //         new_next_keys
+    //             .into_iter()
+    //             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+    //             .collect(),
+    //         witnesses_to_add,
+    //         witnesses_to_remove,
+    //         witness_threshold,
+    //     )?;
+    //     Ok(rot)
+    // }
+
+    // pub fn finalize_event(
+    //     &self,
+    //     event: String,
+    //     signature: Signature,
+    // ) -> Result<()> {
+    //     let signed_event = block_on((*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
+    //         &self.identifier.parse().unwrap(),
+    //         event.as_bytes(),
+    //         vec![signature_prefix_from_hex(
+    //             &signature.key,
+    //             signature.algorithm.into(),
+    //         )?],
+    //     ))?;
+    //     Ok(signed_event)
+    // }
 }
 
 pub fn init_kel(input_app_dir: String) -> Result<()> {
@@ -120,7 +171,7 @@ pub fn init_kel(input_app_dir: String) -> Result<()> {
         Path::new(&event_db_path),
         Path::new(&oobi_db_path),
     );
-    block_on(controller.setup());
+    // block_on(controller.setup());
     *KEL.lock().unwrap() = Some(controller);
 
     Ok(())
@@ -206,13 +257,29 @@ pub fn rotate(
     Ok(rot)
 }
 
-pub fn finalize_event(
-    identifier: IdentifierController,
-    event: String,
-    signature: Signature,
-) -> Result<()> {
+pub fn resolve_oobi(loc_scheme: String) -> Result<()> {
+    let lc: LocationScheme = serde_json::from_str(&loc_scheme).unwrap();
+    println!("\nlocation scheme: {}\n", loc_scheme);
+    // block_on(
+    (*KEL.lock().unwrap()).as_ref().unwrap().resolve(lc)?;
+    // )?;
+    Ok(())
+}
+
+pub fn add_watcher(controller: Controller, watcher_id: &IdentifierPrefix) -> Result<String> {
+    let id = &controller.identifier.parse().unwrap();
+    let add_watcher = (*KEL.lock().unwrap()).as_ref().unwrap().generate_end_role(
+        id,
+        watcher_id,
+        Role::Watcher,
+        true,
+    )?;
+    Ok(String::from_utf8(add_watcher.serialize().unwrap()).unwrap())
+}
+
+pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<()> {
     let signed_event = block_on((*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-        &identifier.id,
+        &identifier.identifier.parse().unwrap(),
         event.as_bytes(),
         vec![signature_prefix_from_hex(
             &signature.key,

@@ -4,6 +4,7 @@ pub use keri::derivation::{
 pub use keri::event::sections::threshold::SignatureThreshold;
 use keri::event_message::signed_event_message::SignedEventMessage;
 pub use keri::keys::PublicKey;
+pub use keri::oobi::{LocationScheme, Role};
 pub use keri::prefix::{
     BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix,
 };
