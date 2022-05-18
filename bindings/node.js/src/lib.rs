@@ -42,7 +42,7 @@ impl Controller {
         let c =
             keriox_wrapper::controller::Controller::new(Path::new("./db"), Path::new("./oobi_db"));
         // Resolves witness oobis.
-        block_on(c.setup());
+        block_on(c.setup_witnesses());
         Controller {
             kel_data: Arc::new(c),
         }

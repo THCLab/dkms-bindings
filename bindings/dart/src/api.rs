@@ -3,7 +3,6 @@ use std::{path::Path, sync::Mutex};
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
-use futures::executor::block_on;
 use keriox_wrapper::{
     kel::{Basic, BasicPrefix, IdentifierPrefix, Kel, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
@@ -110,58 +109,6 @@ impl Controller {
     pub fn get_id(&self) -> String {
         self.identifier.clone()
     }
-
-    //     pub fn rotate(
-    //     &self,
-    //     current_keys: Vec<PublicKey>,
-    //     new_next_keys: Vec<PublicKey>,
-    //     witness_to_add: Vec<String>,
-    //     witness_to_remove: Vec<String>,
-    //     witness_threshold: u64,
-    // ) -> Result<String> {
-    //     let id = self.identifier.parse().unwrap();
-    //     let witnesses_to_add = witness_to_add
-    //         .iter()
-    //         .map(|wit| wit.parse::<BasicPrefix>())
-    //         .collect::<Result<Vec<_>, _>>()
-    //         .map_err(|e| anyhow!(e.to_string()))?;
-    //     let witnesses_to_remove = witness_to_remove
-    //         .iter()
-    //         .map(|wit| wit.parse::<BasicPrefix>())
-    //         .collect::<Result<Vec<_>, _>>()
-    //         .map_err(|e| anyhow!(e.to_string()))?;
-    //     let rot = (*KEL.lock().unwrap()).as_ref().unwrap().kel.rotate(
-    //         id,
-    //         current_keys
-    //             .into_iter()
-    //             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-    //             .collect(),
-    //         new_next_keys
-    //             .into_iter()
-    //             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-    //             .collect(),
-    //         witnesses_to_add,
-    //         witnesses_to_remove,
-    //         witness_threshold,
-    //     )?;
-    //     Ok(rot)
-    // }
-
-    // pub fn finalize_event(
-    //     &self,
-    //     event: String,
-    //     signature: Signature,
-    // ) -> Result<()> {
-    //     let signed_event = block_on((*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-    //         &self.identifier.parse().unwrap(),
-    //         event.as_bytes(),
-    //         vec![signature_prefix_from_hex(
-    //             &signature.key,
-    //             signature.algorithm.into(),
-    //         )?],
-    //     ))?;
-    //     Ok(signed_event)
-    // }
 }
 
 pub fn init_kel(input_app_dir: String) -> Result<()> {
@@ -171,7 +118,7 @@ pub fn init_kel(input_app_dir: String) -> Result<()> {
         Path::new(&event_db_path),
         Path::new(&oobi_db_path),
     );
-    // block_on(controller.setup());
+    controller.setup_witnesses()?;
     *KEL.lock().unwrap() = Some(controller);
 
     Ok(())
@@ -204,18 +151,16 @@ pub fn incept(
 }
 
 pub fn finalize_inception(event: String, signature: Signature) -> Result<Controller> {
-    let controller_id = block_on(
-        (*KEL.lock().unwrap())
-            .as_ref()
-            .ok_or(anyhow!("There is no controller"))?
-            .finalize_inception(
-                event.as_bytes(),
-                vec![signature_prefix_from_hex(
-                    &signature.key,
-                    signature.algorithm.into(),
-                )?],
-            ),
-    )?;
+    let controller_id = (*KEL.lock().unwrap())
+        .as_ref()
+        .ok_or(anyhow!("There is no controller"))?
+        .finalize_inception(
+            event.as_bytes(),
+            vec![signature_prefix_from_hex(
+                &signature.key,
+                signature.algorithm.into(),
+            )?],
+        )?;
     Ok(Controller {
         identifier: controller_id.to_str(),
     })
@@ -257,36 +202,51 @@ pub fn rotate(
     Ok(rot)
 }
 
-pub fn resolve_oobi(loc_scheme: String) -> Result<()> {
-    let lc: LocationScheme = serde_json::from_str(&loc_scheme).unwrap();
-    println!("\nlocation scheme: {}\n", loc_scheme);
-    // block_on(
-    (*KEL.lock().unwrap()).as_ref().unwrap().resolve(lc)?;
-    // )?;
-    Ok(())
-}
-
-pub fn add_watcher(controller: Controller, watcher_id: &IdentifierPrefix) -> Result<String> {
-    let id = &controller.identifier.parse().unwrap();
+pub fn add_watcher(controller: &Controller, watcher_id: &IdentifierPrefix) -> Result<String> {
+    let id = &controller.identifier.parse()?;
     let add_watcher = (*KEL.lock().unwrap()).as_ref().unwrap().generate_end_role(
         id,
         watcher_id,
         Role::Watcher,
         true,
     )?;
-    Ok(String::from_utf8(add_watcher.serialize().unwrap()).unwrap())
+    String::from_utf8(add_watcher.serialize()?).map_err(|e| anyhow!(e.to_string()))
 }
 
-pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<()> {
-    let signed_event = block_on((*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-        &identifier.identifier.parse().unwrap(),
+pub fn finalize_event(identifier: &Controller, event: String, signature: Signature) -> Result<()> {
+    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
+        &identifier.identifier.parse()?,
         event.as_bytes(),
         vec![signature_prefix_from_hex(
             &signature.key,
             signature.algorithm.into(),
         )?],
-    ))?;
+    )?;
     Ok(signed_event)
+}
+
+pub fn resolve_oobi(oobi_json: String) -> Result<()> {
+    let lc: LocationScheme = serde_json::from_str(&oobi_json)?;
+    (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .resolve_loc_schema(lc)?;
+    Ok(())
+}
+
+pub fn propagate_oobi(controller: &Controller, oobi_json: String) -> Result<()> {
+    (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .resolve_end_role(&controller.identifier.parse().unwrap(), &oobi_json)
+}
+
+pub fn query(controller: &Controller, query_id: &str) -> Result<()> {
+    (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .query(&controller.identifier.parse().unwrap(), query_id)?;
+    Ok(())
 }
 
 pub fn process_stream(stream: String) -> Result<()> {
@@ -295,11 +255,10 @@ pub fn process_stream(stream: String) -> Result<()> {
         .unwrap()
         .kel
         .parse_and_process(stream.as_bytes())?;
-
     Ok(())
 }
 
-pub fn get_kel(id: String) -> Result<String> {
+pub fn get_kel(id: &str) -> Result<String> {
     let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(id)?;
     Ok(signed_event)
 }

@@ -2,7 +2,6 @@ use std::{path::Path, sync::Arc};
 
 use anyhow::{anyhow, Result};
 
-use futures::future::join_all;
 use keri::{
     derivation::self_addressing::SelfAddressing,
     event::{event_data::EventData, EventMessage, SerializationFormats},
@@ -21,6 +20,12 @@ use keri::{
 
 use crate::kel::Kel;
 
+pub enum Topic {
+    Oobi(Vec<u8>),
+    Query(String),
+    Process(Vec<u8>),
+}
+
 pub struct Controller {
     pub kel: Kel,
     pub oobi_manager: Arc<OobiManager>,
@@ -37,49 +42,94 @@ impl Controller {
         }
     }
 
-    pub async fn setup(&self) {
+    pub fn setup_witnesses(&self) -> Result<()> {
         let loc_scheme = LocationScheme::new(
             "BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"
                 .parse()
                 .unwrap(),
             Scheme::Http,
-            "http://127.0.0.1:3235".parse().unwrap(),
+            "http://127.0.0.1:3235".parse()?,
         );
-        self.resolve(loc_scheme).unwrap();
+        self.resolve_loc_schema(loc_scheme)?;
         let loc_scheme = LocationScheme::new(
             "BZFIYlHDQAHxHH3TJsjMhZFbVR_knDzSc3na_VHBZSBs"
                 .parse()
                 .unwrap(),
             Scheme::Http,
-            "http://127.0.0.1:3234".parse().unwrap(),
+            "http://127.0.0.1:3234".parse()?,
         );
-        self.resolve(loc_scheme).unwrap();
+        self.resolve_loc_schema(loc_scheme)?;
         let loc_scheme = LocationScheme::new(
             "BMOaOdnrbEP-MSQE_CaL7BhGXvqvIdoHEMYcOnUAWjOE"
                 .parse()
                 .unwrap(),
             Scheme::Http,
-            "http://127.0.0.1:3232".parse().unwrap(),
+            "http://127.0.0.1:3232".parse()?,
         );
-        self.resolve(loc_scheme).unwrap();
+        self.resolve_loc_schema(loc_scheme)?;
+        Ok(())
     }
 
-    pub fn resolve(&self, lc: LocationScheme) -> Result<()> {
+    /// Make http request to get identifier's endpoints information.
+    pub fn resolve_loc_schema(&self, lc: LocationScheme) -> Result<()> {
         let url = format!("{}oobi/{}", lc.url, lc.eid);
-        println!("\nurl: {}\n", url);
         let oobis = reqwest::blocking::get(url)?.text()?;
-        println!("\ngot via http: {}", oobis);
 
         self.kel.parse_and_process(oobis.as_bytes()).unwrap();
 
         Ok(())
     }
 
+    fn get_watchers(&self, id: &IdentifierPrefix) -> Result<Vec<IdentifierPrefix>> {
+        Ok(self
+            .oobi_manager
+            .get_end_role(id, Role::Watcher)?
+            .unwrap()
+            .into_iter()
+            .filter_map(|r| {
+                if let ReplyRoute::EndRoleAdd(adds) = r.reply.get_route() {
+                    Some(adds.eid)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>())
+    }
+
+    /// Sends identifier's endpoint information to id's watchers.
+    pub fn resolve_end_role(&self, id: &IdentifierPrefix, end_role_json: &str) -> Result<()> {
+        self.get_watchers(id)?.iter().for_each(|watcher| {
+            self.send_to(
+                &watcher,
+                Scheme::Http,
+                Topic::Oobi(end_role_json.as_bytes().to_vec()),
+            )
+            .unwrap();
+        });
+
+        Ok(())
+    }
+
+    /// Query watcher (TODO randomly chosen, for now asks first found watcher)
+    /// about id kel and updates local kel.
+    pub fn query(&self, id: &IdentifierPrefix, query_id: &str) -> Result<()> {
+        let watchers = self.get_watchers(id)?;
+        // TODO choose random watcher id?
+        let kel = self.send_to(&watchers[0], Scheme::Http, Topic::Query(query_id.into()))?;
+        match kel {
+            Some(kel) => {
+                self.kel.parse_and_process(kel.as_bytes())?;
+                Ok(())
+            }
+            None => Err(anyhow!("Can't find kel of identifier {}", id.to_str())),
+        }
+    }
+
+    /// Returns identifier contact information.
     pub fn get_loc_schemas(&self, id: &IdentifierPrefix) -> Result<Vec<LocationScheme>> {
         Ok(self
             .oobi_manager
-            .get_loc_scheme(id)
-            .unwrap()
+            .get_loc_scheme(id)?
             .unwrap()
             .iter()
             .filter_map(|lc| {
@@ -93,13 +143,13 @@ impl Controller {
             .collect())
     }
 
-    pub async fn send_to(
+    pub fn send_to(
         &self,
-        wit_id: IdentifierPrefix,
+        watcher_id: &IdentifierPrefix,
         schema: Scheme,
-        msg: Vec<u8>,
+        topic: Topic,
     ) -> Result<Option<String>> {
-        let addresses = self.get_loc_schemas(&wit_id)?;
+        let addresses = self.get_loc_schemas(&watcher_id)?;
         match addresses
             .iter()
             .find(|loc| loc.scheme == schema)
@@ -107,16 +157,30 @@ impl Controller {
         {
             Some(address) => match schema {
                 Scheme::Http => {
-                    let client = reqwest::Client::new();
-                    let response = client
-                        .post(format!("{}process", address))
-                        .body(msg)
-                        .send()
-                        .await?
-                        .text()
-                        .await?;
+                    let client = reqwest::blocking::Client::new();
+                    let response = match topic {
+                        Topic::Oobi(oobi_json) => client
+                            .post(format!("{}resolve", address))
+                            .body(oobi_json)
+                            .send()
+                            .unwrap()
+                            .text()
+                            .unwrap(),
+                        Topic::Query(id) => client
+                            .get(format!("{}query/{}", address, id))
+                            .send()
+                            .unwrap()
+                            .text()
+                            .unwrap(),
+                        Topic::Process(to_process) => client
+                            .post(format!("{}process", address))
+                            .body(to_process)
+                            .send()
+                            .unwrap()
+                            .text()
+                            .unwrap(),
+                    };
 
-                    println!("\ngot response: {}", response);
                     Ok(Some(response))
                 }
                 Scheme::Tcp => {
@@ -143,6 +207,7 @@ impl Controller {
         }
     }
 
+    /// Generate reply event used to add role to given identifier.
     pub fn generate_end_role(
         &self,
         controller_id: &IdentifierPrefix,
@@ -168,47 +233,30 @@ impl Controller {
         .map_err(|e| anyhow!(e.to_string()))
     }
 
-    // async fn add_watcher(&self, watcher_id: &IdentifierPrefix) -> Result<()> {
-    //     let rep: SignedEventData = self
-    //         .generate_end_role(watcher_id, Role::Watcher, true)?
-    //         .into();
-    //     self.send_to(watcher_id.clone(), Scheme::Tcp, rep.to_cesr().unwrap())
-    //         .await?;
-    //     Ok(())
-    // }
-
-    // async fn remove_watcher(&self, watcher_id: &IdentifierPrefix) -> Result<()> {
-    //     let rep: SignedEventData = self
-    //         .generate_end_role(watcher_id, Role::Watcher, false)?
-    //         .into();
-    //     self.send_to(watcher_id.clone(), Scheme::Tcp, rep.to_cesr().unwrap())
-    //         .await?;
-    //     Ok(())
-    // }
-
     /// Publish key event to witnesses
     ///
     ///  1. send it to all witnesses
     ///  2. collect witness receipts and process them
     ///  3. get processed receipts from db and send it to all witnesses
-    pub async fn publish(
+    pub fn publish(
         &self,
         witness_prefixes: &[BasicPrefix],
         message: &SignedEventMessage,
     ) -> Result<()> {
-        let msg = SignedEventData::from(message).to_cesr().unwrap();
-        let collected_receipts = join_all(witness_prefixes.iter().map(|prefix| {
-            self.send_to(
-                IdentifierPrefix::Basic(prefix.clone()),
-                Scheme::Http,
-                msg.clone(),
-            )
-        }))
-        .await
-        .into_iter()
-        .fold(String::default(), |acc, res| {
-            [acc, res.unwrap().unwrap()].join("")
-        });
+        let msg = SignedEventData::from(message).to_cesr()?;
+        let collected_receipts = witness_prefixes
+            .iter()
+            .map(|prefix| {
+                self.send_to(
+                    &IdentifierPrefix::Basic(prefix.clone()),
+                    Scheme::Http,
+                    Topic::Process(msg.clone()),
+                )
+            })
+            .into_iter()
+            .fold(String::default(), |acc, res| {
+                [acc, res.unwrap().unwrap()].join("")
+            });
 
         // Kel should be empty because event is not fully witnessed
         // assert!(self.kel.get_kel(self.kel.prefix()).unwrap().is_none());
@@ -230,29 +278,23 @@ impl Controller {
                 &message.event_message.event.get_prefix(),
                 message.event_message.event.get_sn(),
                 &message.event_message.event.get_digest(),
-            )
-            .unwrap()
+            )?
             .map(|rct| SignedEventData::from(rct).to_cesr().unwrap())
             .unwrap_or_default();
-        println!(
-            "\nreceipts: {}",
-            String::from_utf8(rcts_from_db.clone()).unwrap()
-        );
 
         // send receipts to all witnesses
-        join_all(witness_prefixes.iter().map(|prefix| {
+        witness_prefixes.iter().for_each(|prefix| {
             self.send_to(
-                IdentifierPrefix::Basic(prefix.clone()),
+                &IdentifierPrefix::Basic(prefix.clone()),
                 Scheme::Http,
-                rcts_from_db.clone(),
+                Topic::Process(rcts_from_db.clone()),
             )
-        }))
-        .await;
+            .unwrap();
+        });
         Ok(())
     }
 
-    // TODO why it needs static
-    pub async fn finalize_inception(
+    pub fn finalize_inception(
         &self,
         event: &[u8],
         sig: Vec<SelfSigningPrefix>,
@@ -265,18 +307,16 @@ impl Controller {
             keri::event_parsing::EventType::KeyEvent(ke) => {
                 let pref = ke.event.get_prefix().clone();
                 if let EventData::Icp(_) = ke.event.get_event_data() {
-                    self.finalize_key_event(ke, sig).await?;
+                    self.finalize_key_event(ke, sig)?;
                 }
                 Ok(pref)
             }
-            keri::event_parsing::EventType::Receipt(_) => todo!(),
-            keri::event_parsing::EventType::Qry(_) => todo!(),
-            keri::event_parsing::EventType::Rpy(_) => todo!(),
+            _ => Err(anyhow!("Wrong event type")),
         }
     }
 
     /// Check signatures, updates database and send events to watcher or witnesses.
-    pub async fn finalize_event(
+    pub fn finalize_event(
         &self,
         id: &IdentifierPrefix,
         event: &[u8],
@@ -284,23 +324,18 @@ impl Controller {
     ) -> Result<()> {
         let parsed_event = event_message(event).map_err(|e| anyhow!(e.to_string()))?.1;
         match parsed_event {
-            EventType::KeyEvent(ke) => {
-                Ok(self.finalize_key_event(ke, sig).await.unwrap_or_default())
-            }
+            EventType::KeyEvent(ke) => Ok(self.finalize_key_event(ke, sig).unwrap_or_default()),
             EventType::Receipt(_) => todo!(),
             EventType::Qry(_) => todo!(),
             EventType::Rpy(rpy) => match rpy.get_route() {
-                ReplyRoute::Ksn(_, _) => todo!(),
-                ReplyRoute::LocScheme(_) => todo!(),
-                ReplyRoute::EndRoleAdd(_) => {
-                    Ok(self.finalize_add_role(id, rpy, sig).await.unwrap())
-                }
+                ReplyRoute::EndRoleAdd(_) => Ok(self.finalize_add_role(id, rpy, sig).unwrap()),
                 ReplyRoute::EndRoleCut(_) => todo!(),
+                _ => Err(anyhow!("Wrong event type")),
             },
         }
     }
 
-    async fn finalize_key_event(
+    fn finalize_key_event(
         &self,
         event: EventMessage<KeyEvent>,
         sig: Vec<SelfSigningPrefix>,
@@ -327,10 +362,10 @@ impl Controller {
             keri::event::event_data::EventData::Drt(_) => todo!(),
         };
 
-        self.publish(&wits, &message).await
+        self.publish(&wits, &message)
     }
 
-    async fn finalize_add_role(
+    fn finalize_add_role(
         &self,
         signer_prefix: &IdentifierPrefix,
         event: ReplyEvent,
@@ -361,14 +396,17 @@ impl Controller {
             sigs,
         );
         self.oobi_manager.save_oobi(signed_rpy.clone()).unwrap();
-        self.send_to(
-            dest_prefix,
-            Scheme::Http,
-            SignedEventData::from(signed_rpy)
-                .to_cesr()
-                .unwrap_or_default(),
-        )
-        .await?;
+        let mut kel = self
+            .kel
+            .get_kel(&signer_prefix.to_str())?
+            .as_bytes()
+            .to_vec();
+        let end_role = SignedEventData::from(signed_rpy)
+            .to_cesr()
+            .unwrap_or_default();
+        kel.extend(end_role.iter());
+
+        self.send_to(&dest_prefix, Scheme::Http, Topic::Process(kel))?;
         Ok(())
     }
 }

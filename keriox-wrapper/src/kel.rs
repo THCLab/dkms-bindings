@@ -4,10 +4,11 @@ pub use keri::derivation::{
 pub use keri::event::sections::threshold::SignatureThreshold;
 use keri::event_message::signed_event_message::SignedEventMessage;
 pub use keri::keys::PublicKey;
-pub use keri::oobi::{LocationScheme, Role};
+pub use keri::oobi::{EndRole, LocationScheme, Role};
 pub use keri::prefix::{
     BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix,
 };
+pub use keri::signer::{CryptoBox, KeyManager};
 use keri::{
     database::sled::SledEventDatabase,
     event::{
@@ -227,7 +228,7 @@ impl Kel {
         Ok(signed_message)
     }
 
-    pub fn get_kel(&self, id: String) -> Result<String, KelError> {
+    pub fn get_kel(&self, id: &str) -> Result<String, KelError> {
         let storage = EventStorage::new(self.db.clone());
         String::from_utf8(
             storage

@@ -82,7 +82,7 @@ impl IdentifierController {
     }
 
     /// Check signatures, updates database and send events to watcher or witnesses.
-    pub async fn finalize_event(
+    pub fn finalize_event(
         &self,
         event: &[u8],
         sig: Vec<SelfSigningPrefix>,
@@ -90,7 +90,6 @@ impl IdentifierController {
         Ok(self
             .source
             .finalize_event(&self.id, event, sig)
-            .await
             .unwrap())
     }
 }
