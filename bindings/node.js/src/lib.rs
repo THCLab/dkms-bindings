@@ -1,6 +1,5 @@
 use std::{path::Path, sync::Arc};
 
-use async_std::task::block_on;
 use keriox_wrapper::{
     identifier_controller::IdentifierController,
     kel::{BasicPrefix, IdentifierPrefix, Kel, SelfAddressingPrefix},
@@ -42,7 +41,7 @@ impl Controller {
         let c =
             keriox_wrapper::controller::Controller::new(Path::new("./db"), Path::new("./oobi_db"));
         // Resolves witness oobis.
-        block_on(c.setup_witnesses());
+        c.setup_witnesses();
         Controller {
             kel_data: Arc::new(c),
         }
@@ -56,7 +55,7 @@ impl Controller {
     ) -> napi::Result<IdController> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>();
         let incepted_identifier =
-            block_on(self.kel_data.finalize_inception(&icp_event.to_vec(), ssp))
+            self.kel_data.finalize_inception(&icp_event.to_vec(), ssp)
                 .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(IdController {
             controller: IdentifierController {
@@ -148,7 +147,7 @@ impl IdController {
             .into_iter()
             .map(|s| s.to_prefix())
             .collect::<Vec<_>>();
-        block_on(self.controller.finalize_event(&event.to_vec(), sigs))
+        self.controller.finalize_event(&event.to_vec(), sigs)
             .map_err(|e| napi::Error::from_reason(e.to_string()))
     }
 }
