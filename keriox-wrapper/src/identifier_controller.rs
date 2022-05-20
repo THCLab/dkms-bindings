@@ -87,9 +87,6 @@ impl IdentifierController {
         event: &[u8],
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
-        Ok(self
-            .source
-            .finalize_event(&self.id, event, sig)
-            .unwrap())
+        Ok(self.source.finalize_event(&self.id, event, sig).unwrap())
     }
 }

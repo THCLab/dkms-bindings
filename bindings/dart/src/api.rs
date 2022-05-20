@@ -1,9 +1,10 @@
 use std::{path::Path, sync::Mutex};
 
-use flutter_rust_bridge::support::lazy_static;
+use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
+    controller::OptionalConfig,
     kel::{Basic, BasicPrefix, IdentifierPrefix, Kel, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
@@ -75,7 +76,7 @@ pub struct PublicKey {
     pub(crate) key: String,
 }
 impl PublicKey {
-    pub fn new(algorithm: KeyType, key: &str) -> Self {
+    pub fn new(algorithm: KeyType, key: String) -> Self {
         Self {
             algorithm,
             key: key.to_string(),
@@ -97,10 +98,20 @@ impl Signature {
     }
 }
 
+#[frb(mirror(OptionalConfig))]
+pub struct _OptionalConfig {
+    pub initial_oobis: String,
+}
+
+pub fn initial_oobis(oobis_json: String) -> Result<OptionalConfig> {
+    OptionalConfig::init().set_initial_oobis(&oobis_json)
+}
+
 lazy_static! {
     static ref KEL: Mutex<Option<keriox_wrapper::controller::Controller>> = Mutex::new(None);
 }
 
+#[derive(Clone)]
 pub struct Controller {
     pub identifier: String,
 }
@@ -111,14 +122,15 @@ impl Controller {
     }
 }
 
-pub fn init_kel(input_app_dir: String) -> Result<()> {
+pub fn init_kel(input_app_dir: String, known_oobis: Option<OptionalConfig>) -> Result<()> {
     let event_db_path = vec![input_app_dir.clone(), "db".into()].join("");
     let oobi_db_path = vec![input_app_dir, "oobi_db".into()].join("");
     let controller = keriox_wrapper::controller::Controller::new(
         Path::new(&event_db_path),
         Path::new(&oobi_db_path),
-    );
-    controller.setup_witnesses()?;
+        known_oobis.map(|config| config),
+    )?;
+
     *KEL.lock().unwrap() = Some(controller);
 
     Ok(())
@@ -202,18 +214,18 @@ pub fn rotate(
     Ok(rot)
 }
 
-pub fn add_watcher(controller: &Controller, watcher_id: &IdentifierPrefix) -> Result<String> {
+pub fn add_watcher(controller: Controller, watcher_id: String) -> Result<String> {
     let id = &controller.identifier.parse()?;
     let add_watcher = (*KEL.lock().unwrap()).as_ref().unwrap().generate_end_role(
         id,
-        watcher_id,
+        &watcher_id.parse().unwrap(),
         Role::Watcher,
         true,
     )?;
     String::from_utf8(add_watcher.serialize()?).map_err(|e| anyhow!(e.to_string()))
 }
 
-pub fn finalize_event(identifier: &Controller, event: String, signature: Signature) -> Result<()> {
+pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<()> {
     let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
         &identifier.identifier.parse()?,
         event.as_bytes(),
@@ -230,22 +242,22 @@ pub fn resolve_oobi(oobi_json: String) -> Result<()> {
     (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .resolve_loc_schema(lc)?;
+        .resolve_loc_schema(&lc)?;
     Ok(())
 }
 
-pub fn propagate_oobi(controller: &Controller, oobi_json: String) -> Result<()> {
+pub fn propagate_oobi(controller: Controller, oobi_json: String) -> Result<()> {
     (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
         .resolve_end_role(&controller.identifier.parse().unwrap(), &oobi_json)
 }
 
-pub fn query(controller: &Controller, query_id: &str) -> Result<()> {
+pub fn query(controller: Controller, query_id: String) -> Result<()> {
     (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .query(&controller.identifier.parse().unwrap(), query_id)?;
+        .query(&controller.identifier.parse().unwrap(), &query_id)?;
     Ok(())
 }
 
@@ -258,8 +270,8 @@ pub fn process_stream(stream: String) -> Result<()> {
     Ok(())
 }
 
-pub fn get_kel(id: &str) -> Result<String> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(id)?;
+pub fn get_kel(id: String) -> Result<String> {
+    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(&id)?;
     Ok(signed_event)
 }
 
@@ -278,7 +290,7 @@ pub fn parse_attachment(attachment: String) -> Result<Vec<PublicKeySignaturePair
     Ok(attachment
         .iter()
         .map(|(bp, sp)| PublicKeySignaturePair {
-            key: PublicKey::new(bp.derivation.into(), &base64::encode(bp.public_key.key())),
+            key: PublicKey::new(bp.derivation.into(), base64::encode(bp.public_key.key())),
             signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone())),
         })
         .collect::<Vec<_>>())

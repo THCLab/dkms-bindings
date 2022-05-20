@@ -1,8 +1,9 @@
 use std::{path::Path, sync::Arc};
 
 use keriox_wrapper::{
+    controller::OptionalConfig,
     identifier_controller::IdentifierController,
-    kel::{BasicPrefix, IdentifierPrefix, Kel, SelfAddressingPrefix},
+    kel::{BasicPrefix, IdentifierPrefix, Kel, Prefix, SelfAddressingPrefix},
 };
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
@@ -36,15 +37,20 @@ struct Controller {
 #[napi]
 impl Controller {
     #[napi(factory)]
-    pub fn init() -> Self {
+    pub fn init(witnesses_oobi: String) -> napi::Result<Self> {
+        let optional_configs = OptionalConfig::init()
+            .set_initial_oobis(&witnesses_oobi)
+            .ok();
         // TODO setting database path
-        let c =
-            keriox_wrapper::controller::Controller::new(Path::new("./db"), Path::new("./oobi_db"));
-        // Resolves witness oobis.
-        c.setup_witnesses();
-        Controller {
+        let c = keriox_wrapper::controller::Controller::new(
+            Path::new("./db"),
+            Path::new("./oobi_db"),
+            optional_configs,
+        )
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok(Controller {
             kel_data: Arc::new(c),
-        }
+        })
     }
 
     #[napi]
@@ -54,9 +60,10 @@ impl Controller {
         signatures: Vec<Signature>,
     ) -> napi::Result<IdController> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>();
-        let incepted_identifier =
-            self.kel_data.finalize_inception(&icp_event.to_vec(), ssp)
-                .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let incepted_identifier = self
+            .kel_data
+            .finalize_inception(&icp_event.to_vec(), ssp)
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(IdController {
             controller: IdentifierController {
                 id: incepted_identifier,
@@ -89,6 +96,11 @@ impl IdController {
     #[napi]
     pub fn get_kel(&self) -> napi::Result<String> {
         Ok(self.controller.get_kel().unwrap())
+    }
+
+    #[napi]
+    pub fn get_id(&self) -> napi::Result<String> {
+        Ok(self.controller.id.to_str())
     }
 
     #[napi]
@@ -147,7 +159,8 @@ impl IdController {
             .into_iter()
             .map(|s| s.to_prefix())
             .collect::<Vec<_>>();
-        self.controller.finalize_event(&event.to_vec(), sigs)
+        self.controller
+            .finalize_event(&event.to_vec(), sigs)
             .map_err(|e| napi::Error::from_reason(e.to_string()))
     }
 }

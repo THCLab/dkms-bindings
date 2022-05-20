@@ -1,7 +1,11 @@
-use std::{path::Path, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::{anyhow, Result};
 
+use crate::kel::Kel;
 use keri::{
     derivation::self_addressing::SelfAddressing,
     event::{event_data::EventData, EventMessage, SerializationFormats},
@@ -18,12 +22,28 @@ use keri::{
     query::reply_event::{ReplyEvent, ReplyRoute, SignedReply},
 };
 
-use crate::kel::Kel;
-
 pub enum Topic {
     Oobi(Vec<u8>),
     Query(String),
     Process(Vec<u8>),
+}
+
+pub struct OptionalConfig {
+    pub initial_oobis: Option<String>,
+}
+
+impl OptionalConfig {
+    pub fn init() -> Self {
+        Self {
+            initial_oobis: None,
+        }
+    }
+
+    pub fn set_initial_oobis(&self, oobis_json: &str) -> Result<Self> {
+        Ok(Self {
+            initial_oobis: Some(oobis_json.into()),
+        })
+    }
 }
 
 pub struct Controller {
@@ -31,47 +51,38 @@ pub struct Controller {
     pub oobi_manager: Arc<OobiManager>,
 }
 impl Controller {
-    pub fn new(event_db_path: &Path, oobi_db_path: &Path) -> Self {
+    pub fn new(
+        event_db_path: &Path,
+        oobi_db_path: &Path,
+        configs: Option<OptionalConfig>,
+    ) -> Result<Self> {
         let mut keri = Kel::init(event_db_path.to_str().unwrap());
         let oobi_manager = Arc::new(OobiManager::new(oobi_db_path));
         keri.register_observer(oobi_manager.clone(), vec![JustNotification::GotOobi]);
 
-        Self {
+        let controller = Self {
             kel: keri,
             oobi_manager: oobi_manager.clone(),
-        }
+        };
+        if let Some(config) = configs {
+            if let Some(initial_oobis) = config.initial_oobis {
+                controller.setup_witnesses(&initial_oobis)?;
+            }
+        };
+
+        Ok(controller)
     }
 
-    pub fn setup_witnesses(&self) -> Result<()> {
-        let loc_scheme = LocationScheme::new(
-            "BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"
-                .parse()
-                .unwrap(),
-            Scheme::Http,
-            "http://127.0.0.1:3235".parse()?,
-        );
-        self.resolve_loc_schema(loc_scheme)?;
-        let loc_scheme = LocationScheme::new(
-            "BZFIYlHDQAHxHH3TJsjMhZFbVR_knDzSc3na_VHBZSBs"
-                .parse()
-                .unwrap(),
-            Scheme::Http,
-            "http://127.0.0.1:3234".parse()?,
-        );
-        self.resolve_loc_schema(loc_scheme)?;
-        let loc_scheme = LocationScheme::new(
-            "BMOaOdnrbEP-MSQE_CaL7BhGXvqvIdoHEMYcOnUAWjOE"
-                .parse()
-                .unwrap(),
-            Scheme::Http,
-            "http://127.0.0.1:3232".parse()?,
-        );
-        self.resolve_loc_schema(loc_scheme)?;
+    pub fn setup_witnesses(&self, oobis_json: &str) -> Result<()> {
+        let oobis: Vec<LocationScheme> = serde_json::from_str(oobis_json)?;
+        oobis
+            .iter()
+            .try_for_each(|lc| self.resolve_loc_schema(lc))?;
         Ok(())
     }
 
     /// Make http request to get identifier's endpoints information.
-    pub fn resolve_loc_schema(&self, lc: LocationScheme) -> Result<()> {
+    pub fn resolve_loc_schema(&self, lc: &LocationScheme) -> Result<()> {
         let url = format!("{}oobi/{}", lc.url, lc.eid);
         let oobis = reqwest::blocking::get(url)?.text()?;
 

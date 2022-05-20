@@ -7,7 +7,24 @@ describe("Managing controller", () => {
   const nextKeyManager = new Tpm();
   const nextNextKeyManager = new Tpm();
 
-  let controller = keri.Controller.init();
+  const known_oobis = `[
+		{
+			"eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
+			"scheme": "http",
+			"url": "http://localhost:3232/"
+		},
+		{
+			"eid": "BVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI",
+			"scheme": "http",
+			"url": "http://localhost:3234/"
+		},
+		{
+			"eid": "BT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8",
+			"scheme": "http",
+			"url": "http://localhost:3235/"
+		}
+	]`;
+  let controller = keri.Controller.init(known_oobis);
 
   let key_type = keri.KeyType.Ed25519;
   let pk = new keri.PublicKey(key_type, Buffer.from(currentKeyManager.pubKey));
@@ -19,7 +36,7 @@ describe("Managing controller", () => {
   let inceptionEvent = keri.incept(
     [pk.getKey()], 
     [pk2.getKey()], 
-    ["BMOaOdnrbEP-MSQE_CaL7BhGXvqvIdoHEMYcOnUAWjOE", "BZFIYlHDQAHxHH3TJsjMhZFbVR_knDzSc3na_VHBZSBs", "BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"],
+    ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA", "BVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI", "BT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8"],
     1
     );
   console.log(inceptionEvent.toString())
@@ -52,6 +69,7 @@ describe("Managing controller", () => {
   inceptedController.finalizeEvent(interactionEvent, [signaturePrefix3.getSignature()])
   console.log(inceptedController.getKel())
 
+  console.log(inceptedController.getId())
   // let id_cont = cont.getByIdentifier(controller)
   // console.log(cont)
 

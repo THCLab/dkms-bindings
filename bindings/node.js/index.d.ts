@@ -33,12 +33,13 @@ export class SignatureBuilder {
   getSignature(): Signature
 }
 export class Controller {
-  static init(): Controller
+  static init(witnessesOobi: string): Controller
   finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): IdController
   getByIdentifier(id: string): IdController
 }
 export class IdController {
   getKel(): string
+  getId(): string
   rotate(pks: Array<Key>, npks: Array<Key>, witnessesToAdd: Array<string>, witnessesToRemove: Array<string>, witnessThreshold: number): Buffer
   interact(anchoredData: Array<string>): Buffer
   finalizeEvent(event: Buffer, signatures: Array<Signature>): void
