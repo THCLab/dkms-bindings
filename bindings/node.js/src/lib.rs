@@ -3,7 +3,7 @@ use std::{path::Path, sync::Arc};
 use keriox_wrapper::{
     controller::OptionalConfig,
     identifier_controller::IdentifierController,
-    kel::{BasicPrefix, IdentifierPrefix, Kel, Prefix, SelfAddressingPrefix},
+    kel::{BasicPrefix, IdentifierPrefix, Kel, Prefix, SelfAddressingPrefix, Attachment, AttachedSignaturePrefix},
 };
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
@@ -162,6 +162,15 @@ impl IdController {
         self.controller
             .finalize_event(&event.to_vec(), sigs)
             .map_err(|e| napi::Error::from_reason(e.to_string()))
+    }
+
+    #[napi]
+    pub fn sign_data(&self, signature: Signature) -> napi::Result<String> {
+        let attached_signature = AttachedSignaturePrefix { index: 0, signature: signature.to_prefix() };
+
+        let event_seal = self.controller.get_last_establishment_event_seal().map_err(|e| napi::Error::from_reason(e.to_string()))?.unwrap();
+        let att = Attachment::SealSignaturesGroups(vec![(event_seal, vec![attached_signature])]);
+        Ok(att.to_cesr())
     }
 }
 

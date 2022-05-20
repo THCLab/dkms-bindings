@@ -43,4 +43,5 @@ export class IdController {
   rotate(pks: Array<Key>, npks: Array<Key>, witnessesToAdd: Array<string>, witnessesToRemove: Array<string>, witnessThreshold: number): Buffer
   interact(anchoredData: Array<string>): Buffer
   finalizeEvent(event: Buffer, signatures: Array<Signature>): void
+  signData(signature: Signature): string
 }

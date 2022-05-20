@@ -12,16 +12,6 @@ describe("Managing controller", () => {
 			"eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
 			"scheme": "http",
 			"url": "http://localhost:3232/"
-		},
-		{
-			"eid": "BVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI",
-			"scheme": "http",
-			"url": "http://localhost:3234/"
-		},
-		{
-			"eid": "BT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8",
-			"scheme": "http",
-			"url": "http://localhost:3235/"
 		}
 	]`;
   let controller = keri.Controller.init(known_oobis);
@@ -36,7 +26,7 @@ describe("Managing controller", () => {
   let inceptionEvent = keri.incept(
     [pk.getKey()], 
     [pk2.getKey()], 
-    ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA", "BVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI", "BT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8"],
+    ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"],
     1
     );
   console.log(inceptionEvent.toString())
@@ -72,6 +62,13 @@ describe("Managing controller", () => {
   console.log(inceptedController.getId())
   // let id_cont = cont.getByIdentifier(controller)
   // console.log(cont)
+  let stringData = `{"data":"important data"}`
+  let dataToSign = Buffer.from(stringData)
+  let dataSignature = nextKeyManager.sign(dataToSign);
+  let dataSignaturePrefix = new keri.SignatureBuilder(sigType, Buffer.from(dataSignature));
+  let attachedSignature = inceptedController.signData(dataSignaturePrefix.getSignature());
 
+  let signedACDC = stringData.concat(attachedSignature);
+  console.log(signedACDC)
   });
 });

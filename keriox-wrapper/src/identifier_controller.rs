@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use keri::{
-    event::{sections::seal::Seal, EventMessage},
+    event::{sections::seal::{Seal, EventSeal}, EventMessage},
     event_message::key_event_message::KeyEvent,
     oobi::Role,
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
@@ -88,5 +88,9 @@ impl IdentifierController {
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
         Ok(self.source.finalize_event(&self.id, event, sig).unwrap())
+    }
+
+    pub fn get_last_establishment_event_seal(&self) -> Result<Option<EventSeal>, KelError> {
+        self.source.kel.get_last_establishment_event_seal(&self.id)
     }
 }
