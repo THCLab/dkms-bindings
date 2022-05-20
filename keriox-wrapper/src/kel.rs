@@ -36,7 +36,7 @@ use keri::{
 use std::{path::Path, sync::Arc};
 use thiserror::Error;
 
-use crate::utils::parse_attachment;
+use crate::utils::get_current_public_key;
 
 pub struct Kel {
     pub db: Arc<SledEventDatabase>,
@@ -320,12 +320,12 @@ impl Kel {
         Ok(keys)
     }
 
-    pub fn parse_attachment(
+    pub fn get_current_public_key(
         &self,
         att_str: String,
     ) -> Result<Vec<(BasicPrefix, SelfSigningPrefix)>, KelError> {
         let storage = EventStorage::new(self.db.clone());
-        parse_attachment(storage, &att_str)
+        get_current_public_key(storage, &att_str)
     }
 }
 
@@ -380,7 +380,7 @@ pub fn test_parse_attachment() {
 
     let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";
 
-    let a = kel.parse_attachment(attachment_stream.into());
+    let a = kel.get_current_public_key(attachment_stream.into());
     let public_key_signature_pair = a
         .unwrap()
         .iter()

@@ -49,7 +49,7 @@ fn join_keys_and_signatures(
     ss
 }
 
-pub fn parse_attachment(
+pub fn get_current_public_key(
     storage: EventStorage,
     stream: &str,
 ) -> Result<Vec<(BasicPrefix, SelfSigningPrefix)>, KelError> {

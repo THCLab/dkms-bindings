@@ -310,12 +310,12 @@ pub struct PublicKeySignaturePair {
 }
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex
-pub fn parse_attachment(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
+pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
     let attachment = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
         .kel
-        .parse_attachment(attachment)?;
+        .get_current_public_key(attachment)?;
     Ok(attachment
         .iter()
         .map(|(bp, sp)| PublicKeySignaturePair {
