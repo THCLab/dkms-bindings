@@ -5,9 +5,10 @@ use flutter_rust_bridge::support::lazy_static;
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
     controller::OptionalConfig,
-    kel::{Basic, BasicPrefix, IdentifierPrefix, Kel, LocationScheme, Prefix, Role, SelfSigning},
+    kel::{Basic, BasicPrefix, IdentifierPrefix, Kel, LocationScheme, Prefix, Role, SelfSigning, EndRole},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
+use serde::{Deserialize, Serialize};
 
 pub enum KeyType {
     ECDSAsecp256k1,
@@ -220,11 +221,13 @@ pub fn rotate(
     Ok(rot)
 }
 
-pub fn add_watcher(controller: Controller, watcher_id: String) -> Result<String> {
+pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
+    resolve_oobi(watcher_oobi.clone())?;
+    let watcher_id = serde_json::from_str::<LocationScheme>(&watcher_oobi)?.eid;
     let id = &controller.identifier.parse()?;
     let add_watcher = (*KEL.lock().unwrap()).as_ref().unwrap().generate_end_role(
         id,
-        &watcher_id.parse().unwrap(),
+        &watcher_id,
         Role::Watcher,
         true,
     )?;
@@ -252,11 +255,26 @@ pub fn resolve_oobi(oobi_json: String) -> Result<()> {
     Ok(())
 }
 
-pub fn propagate_oobi(controller: Controller, oobi_json: String) -> Result<()> {
-    (*KEL.lock().unwrap())
-        .as_ref()
-        .unwrap()
-        .resolve_end_role(&controller.identifier.parse().unwrap(), &oobi_json)
+pub fn propagate_oobi(controller: Controller, oobis_json: String) -> Result<()> {
+    #[derive(Serialize, Deserialize)]
+    #[serde(untagged)]
+    enum Oobis {
+        LocScheme(LocationScheme),
+        EndRole(EndRole),
+    }
+    match serde_json::from_str::<Vec<Oobis>>(&oobis_json) {
+        Ok(oobis) => {
+            for oobi in oobis {
+                (*KEL.lock().unwrap())
+                    .as_ref()
+                    .unwrap()
+                    .send_oobi_to_watcher(&controller.identifier.parse().unwrap(), &serde_json::to_string(&oobi)?)?;
+            };
+                Ok(())
+        },
+        Err(_) => Err(anyhow!("Wrong oobis format")),
+    }
+
 }
 
 pub fn query(controller: Controller, query_id: String) -> Result<()> {
@@ -276,8 +294,13 @@ pub fn process_stream(stream: String) -> Result<()> {
     Ok(())
 }
 
-pub fn get_kel(id: String) -> Result<String> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(&id)?;
+pub fn get_kel(cont: Controller) -> Result<String> {
+    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(&cont.identifier)?;
+    Ok(signed_event)
+}
+
+pub fn get_kel_by_str(cont_id: String) -> Result<String> {
+    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(&cont_id)?;
     Ok(signed_event)
 }
 

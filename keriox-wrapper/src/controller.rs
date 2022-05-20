@@ -108,7 +108,7 @@ impl Controller {
     }
 
     /// Sends identifier's endpoint information to id's watchers.
-    pub fn resolve_end_role(&self, id: &IdentifierPrefix, end_role_json: &str) -> Result<()> {
+    pub fn send_oobi_to_watcher(&self, id: &IdentifierPrefix, end_role_json: &str) -> Result<()> {
         self.get_watchers(id)?.iter().for_each(|watcher| {
             self.send_to(
                 &watcher,

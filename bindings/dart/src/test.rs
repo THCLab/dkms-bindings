@@ -2,7 +2,7 @@ use anyhow::Result;
 use keriox_wrapper::kel::{CryptoBox, KeyManager};
 
 use crate::api::{
-    add_watcher, finalize_event, initial_oobis, propagate_oobi, query, resolve_oobi, Config,
+    add_watcher, finalize_event, initial_oobis, propagate_oobi, query, resolve_oobi, Config, get_kel_by_str,
 };
 
 #[test]
@@ -28,7 +28,7 @@ pub fn test_api() -> Result<()> {
     let signature = Signature::new(SignatureType::Ed25519Sha512, signature);
 
     let controller = finalize_inception(icp_event, signature)?;
-    let kel = get_kel(controller.get_id())?;
+    let kel = get_kel(controller)?;
     println!("kel: {}", kel);
     Ok(())
 }
@@ -46,7 +46,7 @@ pub fn test_process() -> Result<()> {
     let test_kel = r#"{"v":"KERI10JSON0001e7_","t":"icp","d":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","i":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","s":"0","kt":"2","k":["DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","DVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI","DT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8"],"nt":"2","n":["E_IkdcjsIFrFba-LS1sJDjpec_4vM3XtIPa6D51GcUIw","EU28GjHFKeXzncPxgwlHQZ0iO7f09Y89vy-3VkZ23bBI","E2PRzip7UZ5UTA_1ucb5eoAzxeRS3sIThrSbZhdRaZY8"],"bt":"0","b":[],"c":[],"a":[]}-AADAAzclB26m4VWp5R8ANlTU2qhqE6GA9siAK_vhtqtNNR6qhVed-xEoXRadnL5Jc0kxPZi8XUqSk5KSaOnke_SxXDAABX--x4JGI0Dp0Ran-t1LMg3NEgizu1Jb85LTImofYqD6jz9w5TTPNAmj7rfIFvd4mfJ_ioH0Z0mzLWuIvTIFCBAACQTiHacY3flY9y_Wup66bNzcyQvJUT-WGkv4CPgqkMwq5mOEFf2ps74bur1AE9OSGgrEBlcOQ9HWuTcr80FMKCg{"v":"KERI10JSON00021c_","t":"rot","d":"EcR5L1yzQeSOFBdFwmWouiEMzCFC6GhJ28Q2RWta4GxQ","i":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","s":"1","p":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","kt":"2","k":["DKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","D1kcBE7h0ImWW6_Sp7MQxGYSshZZz6XM7OiUE5DXm0dU","D4JDgo3WNSUpt-NG14Ni31_GCmrU0r38yo7kgDuyGkQM"],"nt":"2","n":["E2PRzip7UZ5UTA_1ucb5eoAzxeRS3sIThrSbZhdRaZY8","Ea450np2ffBYk-mkVaxPk9h17OykLKqEkGrBFKomwe1A","EcNDEzyAJJsUOCa2YIBE3N-8KtpsZBShxxXhddAGVFko"],"bt":"0","br":[],"ba":[],"a":[]}-AADAAZte0g5dCVxAD4qxbBf-Y8uLqMu-4NlrqoVi1FR2JxmZuHAXU-8BUhEJ7z8nxPycvTBJW7kXR30Wyk19GVm-fBwAB8NydT0xIWiYLPuavDpzlZZrYVF_nFgBgf-joxH0FSmyTuDEDhwz9H6b0EY47PhQeJ6cy6PtH8AXK_HVZ2yojDwACeHxfXD8MNjnqjkl0JmpFHNwlif7V0_DjUx3VHkGjDcMfW2bCt16jRW0Sefh45sb4ZXHfMNZ1vmwhPv1L5lNGDA"#;
 
     process_stream(test_kel.to_string())?;
-    let kel = get_kel("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".into())?;
+    let kel = get_kel_by_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".into())?;
     println!("kel: {}", kel);
 
     Ok(())
@@ -65,7 +65,7 @@ pub fn test_parse_attachment() -> Result<()> {
     // let test_kel = r#"{"v":"KERI10JSON0001e7_","t":"icp","d":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","i":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","s":"0","kt":"2","k":["DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","DVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI","DT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8"],"nt":"2","n":["E_IkdcjsIFrFba-LS1sJDjpec_4vM3XtIPa6D51GcUIw","EU28GjHFKeXzncPxgwlHQZ0iO7f09Y89vy-3VkZ23bBI","E2PRzip7UZ5UTA_1ucb5eoAzxeRS3sIThrSbZhdRaZY8"],"bt":"0","b":[],"c":[],"a":[]}-AADAAzclB26m4VWp5R8ANlTU2qhqE6GA9siAK_vhtqtNNR6qhVed-xEoXRadnL5Jc0kxPZi8XUqSk5KSaOnke_SxXDAABX--x4JGI0Dp0Ran-t1LMg3NEgizu1Jb85LTImofYqD6jz9w5TTPNAmj7rfIFvd4mfJ_ioH0Z0mzLWuIvTIFCBAACQTiHacY3flY9y_Wup66bNzcyQvJUT-WGkv4CPgqkMwq5mOEFf2ps74bur1AE9OSGgrEBlcOQ9HWuTcr80FMKCg{"v":"KERI10JSON00021c_","t":"rot","d":"EcR5L1yzQeSOFBdFwmWouiEMzCFC6GhJ28Q2RWta4GxQ","i":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","s":"1","p":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","kt":"2","k":["DKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","D1kcBE7h0ImWW6_Sp7MQxGYSshZZz6XM7OiUE5DXm0dU","D4JDgo3WNSUpt-NG14Ni31_GCmrU0r38yo7kgDuyGkQM"],"nt":"2","n":["E2PRzip7UZ5UTA_1ucb5eoAzxeRS3sIThrSbZhdRaZY8","Ea450np2ffBYk-mkVaxPk9h17OykLKqEkGrBFKomwe1A","EcNDEzyAJJsUOCa2YIBE3N-8KtpsZBShxxXhddAGVFko"],"bt":"0","br":[],"ba":[],"a":[]}-AADAAZte0g5dCVxAD4qxbBf-Y8uLqMu-4NlrqoVi1FR2JxmZuHAXU-8BUhEJ7z8nxPycvTBJW7kXR30Wyk19GVm-fBwAB8NydT0xIWiYLPuavDpzlZZrYVF_nFgBgf-joxH0FSmyTuDEDhwz9H6b0EY47PhQeJ6cy6PtH8AXK_HVZ2yojDwACeHxfXD8MNjnqjkl0JmpFHNwlif7V0_DjUx3VHkGjDcMfW2bCt16jRW0Sefh45sb4ZXHfMNZ1vmwhPv1L5lNGDA"#;
 
     process_stream(test_kel.to_string())?;
-    let _kel = get_kel("Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M".into())?;
+    let _kel = get_kel_by_str("Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M".into())?;
 
     let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";
 
@@ -97,9 +97,7 @@ pub fn test_add_watcher() -> Result<()> {
     let current_b64key = base64::encode(key_manager.public_key().key());
     let next_b64key = base64::encode(key_manager.next_public_key().key());
 
-    let watcher_oobi = r#"[{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:3236/"}]"#.into();
-    let initial_oobis = initial_oobis(watcher_oobi);
-    init_kel(root_path, Some(initial_oobis))?;
+    init_kel(root_path, None)?;
 
     let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
     let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
@@ -110,14 +108,13 @@ pub fn test_add_watcher() -> Result<()> {
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
 
     let controller = finalize_inception(icp_event, signature)?;
-    let kel = get_kel(controller.get_id())?;
+    let kel = get_kel(controller.clone())?;
     println!("Current controller kel: \n{}", kel);
 
+    let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:3236/"}"#.into();
     let add_watcher_message = add_watcher(
         controller.clone(),
-        "BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ"
-            .parse()
-            .unwrap(),
+       watcher_oobi 
     )?;
     println!(
         "\nController generate end role message to add watcher: \n{}",
@@ -128,17 +125,16 @@ pub fn test_add_watcher() -> Result<()> {
 
     finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
 
-    let witness_oobi = r#"{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}"#;
-    let issuer_oobi = r#"{"cid":"Eic-k3P3cxiYaHvfyvug7AMT7BR9hJGQuUUP1s19t2M8","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}"#;
+    let issuer_oobi: String = r#"[{"cid":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
     println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
-    propagate_oobi(controller.clone(), witness_oobi.into()).unwrap();
+    // propagate_oobi(controller.clone(), witness_oobi.into()).unwrap();
     propagate_oobi(controller.clone(), issuer_oobi.into()).unwrap();
 
     println!("\nQuering about issuer kel...");
-    let iss_id = "Eic-k3P3cxiYaHvfyvug7AMT7BR9hJGQuUUP1s19t2M8";
-    query(controller, iss_id.into()).unwrap();
+    let iss_id = "EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE".to_string();
+    query(controller, iss_id.clone()).unwrap();
 
-    let issuer_kel = get_kel(iss_id.into())?;
+    let issuer_kel = get_kel_by_str(iss_id)?;
     println!("\nIssuer kel: \n{}", issuer_kel);
 
     Ok(())
