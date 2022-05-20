@@ -1,6 +1,6 @@
 use std::{path::Path, sync::Mutex};
 
-use flutter_rust_bridge::{frb, support::lazy_static};
+use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
@@ -98,13 +98,14 @@ impl Signature {
     }
 }
 
-#[frb(mirror(OptionalConfig))]
-pub struct _OptionalConfig {
+pub struct Config {
     pub initial_oobis: String,
 }
 
-pub fn initial_oobis(oobis_json: String) -> Result<OptionalConfig> {
-    OptionalConfig::init().set_initial_oobis(&oobis_json)
+pub fn initial_oobis(oobis_json: String) -> Config {
+    Config {
+        initial_oobis: oobis_json,
+    }
 }
 
 lazy_static! {
@@ -122,13 +123,18 @@ impl Controller {
     }
 }
 
-pub fn init_kel(input_app_dir: String, known_oobis: Option<OptionalConfig>) -> Result<()> {
+pub fn init_kel(input_app_dir: String, known_oobis: Option<Config>) -> Result<()> {
     let event_db_path = vec![input_app_dir.clone(), "db".into()].join("");
     let oobi_db_path = vec![input_app_dir, "oobi_db".into()].join("");
+    let config = if let Some(conf) = known_oobis {
+        Some(OptionalConfig::init().set_initial_oobis(&conf.initial_oobis)?)
+    } else {
+        None
+    };
     let controller = keriox_wrapper::controller::Controller::new(
         Path::new(&event_db_path),
         Path::new(&oobi_db_path),
-        known_oobis.map(|config| config),
+        config,
     )?;
 
     *KEL.lock().unwrap() = Some(controller);

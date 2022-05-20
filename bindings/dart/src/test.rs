@@ -1,7 +1,9 @@
 use anyhow::Result;
 use keriox_wrapper::kel::{CryptoBox, KeyManager};
 
-use crate::api::{add_watcher, finalize_event, initial_oobis, propagate_oobi, query, resolve_oobi};
+use crate::api::{
+    add_watcher, finalize_event, initial_oobis, propagate_oobi, query, resolve_oobi, Config,
+};
 
 #[test]
 pub fn test_api() -> Result<()> {
@@ -96,7 +98,7 @@ pub fn test_add_watcher() -> Result<()> {
     let next_b64key = base64::encode(key_manager.next_public_key().key());
 
     let watcher_oobi = r#"[{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:3236/"}]"#.into();
-    let initial_oobis = initial_oobis(watcher_oobi)?;
+    let initial_oobis = initial_oobis(watcher_oobi);
     init_kel(root_path, Some(initial_oobis))?;
 
     let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
