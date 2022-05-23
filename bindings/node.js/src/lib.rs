@@ -1,13 +1,17 @@
-use std::{path::Path, sync::Arc};
+use std::{
+    sync::Arc,
+};
 
 use keriox_wrapper::{
-    controller::OptionalConfig,
     identifier_controller::IdentifierController,
-    kel::{BasicPrefix, IdentifierPrefix, Kel, Prefix, SelfAddressingPrefix, Attachment, AttachedSignaturePrefix},
+    kel::{
+        AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, Kel,
+        Prefix, SelfAddressingPrefix,
+    },
 };
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
-use utils::{key_config::Key, signature_config::Signature};
+use utils::{key_config::Key, signature_config::Signature, configs};
 pub mod utils;
 use napi::bindgen_prelude::ToNapiValue;
 
@@ -37,14 +41,10 @@ struct Controller {
 #[napi]
 impl Controller {
     #[napi(factory)]
-    pub fn init(witnesses_oobi: String) -> napi::Result<Self> {
-        let optional_configs = OptionalConfig::init()
-            .set_initial_oobis(&witnesses_oobi)
-            .ok();
-        // TODO setting database path
+    pub fn init(config: Option<configs::Configs>) -> napi::Result<Self> {
+        let optional_configs = config.map(|c| c.build().unwrap());
+
         let c = keriox_wrapper::controller::Controller::new(
-            Path::new("./db"),
-            Path::new("./oobi_db"),
             optional_configs,
         )
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
@@ -166,9 +166,16 @@ impl IdController {
 
     #[napi]
     pub fn sign_data(&self, signature: Signature) -> napi::Result<String> {
-        let attached_signature = AttachedSignaturePrefix { index: 0, signature: signature.to_prefix() };
+        let attached_signature = AttachedSignaturePrefix {
+            index: 0,
+            signature: signature.to_prefix(),
+        };
 
-        let event_seal = self.controller.get_last_establishment_event_seal().map_err(|e| napi::Error::from_reason(e.to_string()))?.unwrap();
+        let event_seal = self
+            .controller
+            .get_last_establishment_event_seal()
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?
+            .unwrap();
         let att = Attachment::SealSignaturesGroups(vec![(event_seal, vec![attached_signature])]);
         Ok(att.to_cesr())
     }

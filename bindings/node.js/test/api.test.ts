@@ -14,7 +14,8 @@ describe("Managing controller", () => {
 			"url": "http://localhost:3232/"
 		}
 	]`;
-  let controller = keri.Controller.init(known_oobis);
+  let configs = new keri.ConfigBuilder().withInitialOobis(known_oobis).build();
+  let controller = keri.Controller.init(configs);
 
   let key_type = keri.KeyType.Ed25519;
   let pk = new keri.PublicKey(key_type, Buffer.from(currentKeyManager.pubKey));

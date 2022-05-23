@@ -21,6 +21,10 @@ export const enum SignatureType {
   ECDSAsecp256k1Sha256 = 1,
   Ed448 = 2
 }
+export interface Configs {
+  dbPath?: string
+  initialOobis?: string
+}
 export function incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Buffer
 export class PublicKey {
   prefix: string
@@ -32,8 +36,16 @@ export class SignatureBuilder {
   constructor(algorithm: SignatureType, signature: Buffer)
   getSignature(): Signature
 }
+export class ConfigBuilder {
+  dbPath?: string
+  initialOobis?: string
+  constructor()
+  withInitialOobis(oobisJson: string): ConfigBuilder
+  withDbPath(dbPath: string): ConfigBuilder
+  build(): Configs
+}
 export class Controller {
-  static init(witnessesOobi: string): Controller
+  static init(config?: Configs | undefined | null): Controller
   finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): IdController
   getByIdentifier(id: string): IdController
 }

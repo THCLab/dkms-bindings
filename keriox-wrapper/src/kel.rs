@@ -4,12 +4,13 @@ pub use keri::derivation::{
 use keri::event::sections::seal::EventSeal;
 pub use keri::event::sections::threshold::SignatureThreshold;
 use keri::event_message::signed_event_message::SignedEventMessage;
+pub use keri::event_parsing::Attachment;
 pub use keri::keys::PublicKey;
 pub use keri::oobi::{EndRole, LocationScheme, Role};
 pub use keri::prefix::{
-    BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix, SelfSigningPrefix, AttachedSignaturePrefix
+    AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix,
+    SelfSigningPrefix,
 };
-pub use keri::event_parsing::Attachment;
 pub use keri::signer::{CryptoBox, KeyManager};
 use keri::{
     database::sled::SledEventDatabase,
@@ -329,9 +330,14 @@ impl Kel {
         get_current_public_key(storage, &att_str)
     }
 
-    pub fn get_last_establishment_event_seal(&self, id: &IdentifierPrefix) -> Result<Option<EventSeal>, KelError> {
+    pub fn get_last_establishment_event_seal(
+        &self,
+        id: &IdentifierPrefix,
+    ) -> Result<Option<EventSeal>, KelError> {
         let storage = EventStorage::new(self.db.clone());
-        storage.get_last_establishment_event_seal(id).map_err(|e| KelError::GeneralError(e.to_string()))
+        storage
+            .get_last_establishment_event_seal(id)
+            .map_err(|e| KelError::GeneralError(e.to_string()))
     }
 }
 

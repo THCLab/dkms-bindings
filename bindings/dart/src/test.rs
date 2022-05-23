@@ -1,8 +1,8 @@
 use anyhow::Result;
-use keriox_wrapper::kel::{CryptoBox, KeyManager, Basic, SelfSigning};
+use keriox_wrapper::kel::{Basic, CryptoBox, KeyManager, SelfSigning};
 
 use crate::api::{
-    add_watcher, finalize_event, propagate_oobi, query, get_kel_by_str, get_current_public_key,
+    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, propagate_oobi, query,
 };
 
 #[test]
@@ -54,7 +54,7 @@ pub fn test_process() -> Result<()> {
 
 #[test]
 pub fn test_parse_attachment() -> Result<()> {
-    use crate::api::{init_kel, get_current_public_key, process_stream};
+    use crate::api::{get_current_public_key, init_kel, process_stream};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -112,10 +112,7 @@ pub fn test_demo() -> Result<()> {
     println!("Current controller kel: \n{}", kel);
 
     let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:3236/"}"#.into();
-    let add_watcher_message = add_watcher(
-        controller.clone(),
-       watcher_oobi 
-    )?;
+    let add_watcher_message = add_watcher(controller.clone(), watcher_oobi)?;
     println!(
         "\nController generate end role message to add watcher: \n{}",
         add_watcher_message
@@ -125,21 +122,21 @@ pub fn test_demo() -> Result<()> {
 
     finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
 
-    let issuer_oobi: String = r#"[{"cid":"EFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
+    let issuer_oobi: String = r#"[{"cid":"EWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
     println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
     // propagate_oobi(controller.clone(), witness_oobi.into()).unwrap();
     propagate_oobi(controller.clone(), issuer_oobi.into()).unwrap();
 
     println!("\nQuering about issuer kel...");
-    let iss_id = "EFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY".to_string();
+    let iss_id = "EWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o".to_string();
     query(controller, iss_id.clone()).unwrap();
-    
+
     let issuer_kel = get_kel_by_str(iss_id)?;
     println!("\nIssuer kel: \n{}", issuer_kel);
-    
+
     // Get acdc signed by issuer
-    let acdc = r#"{"issuer":"EFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;//-FABEFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY0AAAAAAAAAAAAAAAAAAAAAAAEFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY-AABAA-nVFqHOptosOf8iwHDHgKFYkZ8KJICrscCVBwypH9M1CTt1z_6CWXPhd9HHSBzFJTaSa0TCwvQDThmMyBagyBg"#;
-    let attachment_stream = r#"-FABEFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY0AAAAAAAAAAAAAAAAAAAAAAAEFxHNNoySeNhPSv5TUWxY3QIzy_XT9pKI1YLHv355nuY-AABAA-nVFqHOptosOf8iwHDHgKFYkZ8KJICrscCVBwypH9M1CTt1z_6CWXPhd9HHSBzFJTaSa0TCwvQDThmMyBagyBg"#;
+    let acdc = r#"{"issuer":"EWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
+    let attachment_stream = r#"-FABEWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o0AAAAAAAAAAAAAAAAAAAAAAAEWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o-AABAAbVowbAQwlX7n2AJZMQ3OJ373TJP3GowvXgmc3PDr3ZggwnykglX53fxJzSBEZ1W11X3GozeTbhfDYYZefzSOCQ"#;
 
     let key_sig_pair = get_current_public_key(attachment_stream.into()).unwrap();
 
@@ -149,7 +146,8 @@ pub fn test_demo() -> Result<()> {
     let key_signature_pair = public_key_signature_pair[0];
     let pk_raw = base64::decode(&key_signature_pair.key.key).unwrap();
     let key_bp = Basic::Ed25519.derive(keriox_wrapper::kel::PublicKey::new(pk_raw));
-    let sig = SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
+    let sig =
+        SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
 
     assert!(key_bp.verify(acdc.as_bytes(), &sig).unwrap());
 

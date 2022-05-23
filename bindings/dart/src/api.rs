@@ -1,11 +1,11 @@
-use std::{path::Path, sync::Mutex};
+use std::{path::PathBuf, sync::Mutex};
 
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
     controller::OptionalConfig,
-    kel::{Basic, BasicPrefix, IdentifierPrefix, Kel, LocationScheme, Prefix, Role, SelfSigning, EndRole},
+    kel::{Basic, BasicPrefix, EndRole, Kel, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
 use serde::{Deserialize, Serialize};
@@ -103,9 +103,20 @@ pub struct Config {
     pub initial_oobis: String,
 }
 
-pub fn initial_oobis(oobis_json: String) -> Config {
+pub fn with_initial_oobis(config: Config, oobis_json: String) -> Config {
     Config {
         initial_oobis: oobis_json,
+        ..config
+    }
+}
+
+impl Config {
+    pub fn build(&self) -> Result<OptionalConfig> {
+        let oobis: Vec<LocationScheme> = serde_json::from_str(&self.initial_oobis)?;
+        Ok(OptionalConfig {
+            initial_oobis: Some(oobis),
+            db_path: None,
+        })
     }
 }
 
@@ -124,17 +135,13 @@ impl Controller {
     }
 }
 
-pub fn init_kel(input_app_dir: String, known_oobis: Option<Config>) -> Result<()> {
-    let event_db_path = vec![input_app_dir.clone(), "db".into()].join("");
-    let oobi_db_path = vec![input_app_dir, "oobi_db".into()].join("");
-    let config = if let Some(conf) = known_oobis {
-        Some(OptionalConfig::init().set_initial_oobis(&conf.initial_oobis)?)
+pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<()> {
+    let config = if let Some(config) = optional_configs {
+        config.build().map(|c| c.with_db_path(PathBuf::from(input_app_dir))).ok()
     } else {
         None
     };
     let controller = keriox_wrapper::controller::Controller::new(
-        Path::new(&event_db_path),
-        Path::new(&oobi_db_path),
         config,
     )?;
 
@@ -268,13 +275,15 @@ pub fn propagate_oobi(controller: Controller, oobis_json: String) -> Result<()> 
                 (*KEL.lock().unwrap())
                     .as_ref()
                     .unwrap()
-                    .send_oobi_to_watcher(&controller.identifier.parse().unwrap(), &serde_json::to_string(&oobi)?)?;
-            };
-                Ok(())
-        },
+                    .send_oobi_to_watcher(
+                        &controller.identifier.parse().unwrap(),
+                        &serde_json::to_string(&oobi)?,
+                    )?;
+            }
+            Ok(())
+        }
         Err(_) => Err(anyhow!("Wrong oobis format")),
     }
-
 }
 
 pub fn query(controller: Controller, query_id: String) -> Result<()> {
@@ -295,12 +304,20 @@ pub fn process_stream(stream: String) -> Result<()> {
 }
 
 pub fn get_kel(cont: Controller) -> Result<String> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(&cont.identifier)?;
+    let signed_event = (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .kel
+        .get_kel(&cont.identifier)?;
     Ok(signed_event)
 }
 
 pub fn get_kel_by_str(cont_id: String) -> Result<String> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().kel.get_kel(&cont_id)?;
+    let signed_event = (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .kel
+        .get_kel(&cont_id)?;
     Ok(signed_event)
 }
 

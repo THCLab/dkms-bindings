@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use keri::{
-    event::{sections::seal::{Seal, EventSeal}, EventMessage},
+    event::{
+        sections::seal::{EventSeal, Seal},
+        EventMessage,
+    },
     event_message::key_event_message::KeyEvent,
     oobi::Role,
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},

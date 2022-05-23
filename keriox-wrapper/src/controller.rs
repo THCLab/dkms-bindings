@@ -1,5 +1,5 @@
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::Arc,
 };
 
@@ -29,20 +29,26 @@ pub enum Topic {
 }
 
 pub struct OptionalConfig {
-    pub initial_oobis: Option<String>,
+    pub db_path: Option<PathBuf>,
+    pub initial_oobis: Option<Vec<LocationScheme>>,
 }
 
 impl OptionalConfig {
     pub fn init() -> Self {
         Self {
+            db_path: None,
             initial_oobis: None,
         }
     }
 
-    pub fn set_initial_oobis(&self, oobis_json: &str) -> Result<Self> {
-        Ok(Self {
-            initial_oobis: Some(oobis_json.into()),
-        })
+    pub fn with_initial_oobis(self, oobis: Vec<LocationScheme>) -> Self {
+        Self {
+            initial_oobis: Some(oobis),..self        }
+    }
+    pub fn with_db_path(self,db_path: PathBuf) -> Self {
+        Self {
+            db_path: Some(db_path),..self
+        }
     }
 }
 
@@ -51,30 +57,40 @@ pub struct Controller {
     pub oobi_manager: Arc<OobiManager>,
 }
 impl Controller {
-    pub fn new(
-        event_db_path: &Path,
-        oobi_db_path: &Path,
-        configs: Option<OptionalConfig>,
-    ) -> Result<Self> {
-        let mut keri = Kel::init(event_db_path.to_str().unwrap());
-        let oobi_manager = Arc::new(OobiManager::new(oobi_db_path));
+    pub fn new(configs: Option<OptionalConfig>) -> Result<Self> {
+        let (initial_oobis, db_path) = if let Some(configs) = configs {
+            (configs.initial_oobis, configs.db_path)
+        } else {
+            (None, Some(PathBuf::from("./db")))
+        };
+
+        let db_dir_path = match db_path {
+            Some(db_path) => db_path,
+            None => PathBuf::from("./db"),
+        };
+
+        let mut events_db = db_dir_path.clone();
+        events_db.push("events");
+        let mut oobis_db = db_dir_path.clone();
+        oobis_db.push("oobis");
+
+        let mut keri = Kel::init(events_db.to_str().unwrap());
+        let oobi_manager = Arc::new(OobiManager::new(&oobis_db));
         keri.register_observer(oobi_manager.clone(), vec![JustNotification::GotOobi]);
 
         let controller = Self {
             kel: keri,
             oobi_manager: oobi_manager.clone(),
         };
-        if let Some(config) = configs {
-            if let Some(initial_oobis) = config.initial_oobis {
-                controller.setup_witnesses(&initial_oobis)?;
-            }
-        };
+
+        if let Some(initial_oobis) = initial_oobis {
+            controller.setup_witnesses(&initial_oobis)?;
+        }
 
         Ok(controller)
     }
 
-    pub fn setup_witnesses(&self, oobis_json: &str) -> Result<()> {
-        let oobis: Vec<LocationScheme> = serde_json::from_str(oobis_json)?;
+    pub fn setup_witnesses(&self, oobis: &[LocationScheme]) -> Result<()> {
         oobis
             .iter()
             .try_for_each(|lc| self.resolve_loc_schema(lc))?;
