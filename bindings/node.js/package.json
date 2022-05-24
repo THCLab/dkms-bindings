@@ -1,7 +1,10 @@
 {
+  "name": "keri.js",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "package": "keri-bindings-node.js",
+  "version":"0.2.0",
+  "license": "EUPL-1.2",
   "devDependencies": {
     "@napi-rs/cli": "^1.0.0",
     "@types/chai": "^4.2.18",
@@ -26,6 +29,6 @@
     "build": "napi build --release",
     "build:debug": "napi build",
     "test": "jest -c jest.ts-config.js",
-    "ts-compile": "ttsc -p tsconfig.json"
+    "compile": "ttsc -p tsconfig.json"
   }
 }

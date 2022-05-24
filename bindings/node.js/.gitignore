@@ -2,3 +2,5 @@ index.node
 databases
 Session.vim
 build/
+db/
+oobi_db/
