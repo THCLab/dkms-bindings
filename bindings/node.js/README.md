@@ -14,6 +14,9 @@ This library also advocates cryptographic agility, hence it does not enforce to 
 * **KERI** -- see https://keri.one/ page;
 * **TPM** -- [Trusted Platform Module](https://en.wikipedia.org/wiki/Trusted_Platform_Module).
 
+# Install
+
+`npm i keri.js`
 
 # Usage
 
