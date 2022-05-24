@@ -6,7 +6,7 @@ use keri::{
         EventMessage,
     },
     event_message::key_event_message::KeyEvent,
-    oobi::Role,
+    oobi::{LocationScheme, Role},
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
     processor::event_storage::EventStorage,
 };
@@ -37,18 +37,18 @@ impl IdentifierController {
         &self,
         current_keys: Vec<BasicPrefix>,
         new_next_keys: Vec<BasicPrefix>,
-        witness_to_add: Vec<BasicPrefix>,
+        witness_to_add: Vec<LocationScheme>,
         witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-        self.source.kel.rotate(
+        self.source.rotate(
             self.id.clone(),
             current_keys,
             new_next_keys,
             witness_to_add,
             witness_to_remove,
             witness_threshold,
-        )
+        ).map_err(|e| KelError::GeneralError(e.to_string()))
     }
 
     pub fn anchor(

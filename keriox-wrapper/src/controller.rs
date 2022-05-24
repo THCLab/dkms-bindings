@@ -1,14 +1,14 @@
-use std::{
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::{anyhow, Result};
 
 use crate::kel::Kel;
 use keri::{
     derivation::self_addressing::SelfAddressing,
-    event::{event_data::EventData, EventMessage, SerializationFormats},
+    event::{
+        event_data::EventData, EventMessage,
+        SerializationFormats,
+    },
     event_message::{
         key_event_message::KeyEvent, signed_event_message::SignedEventMessage, Digestible,
     },
@@ -43,11 +43,14 @@ impl OptionalConfig {
 
     pub fn with_initial_oobis(self, oobis: Vec<LocationScheme>) -> Self {
         Self {
-            initial_oobis: Some(oobis),..self        }
+            initial_oobis: Some(oobis),
+            ..self
+        }
     }
-    pub fn with_db_path(self,db_path: PathBuf) -> Self {
+    pub fn with_db_path(self, db_path: PathBuf) -> Self {
         Self {
-            db_path: Some(db_path),..self
+            db_path: Some(db_path),
+            ..self
         }
     }
 }
@@ -321,6 +324,32 @@ impl Controller {
         Ok(())
     }
 
+    pub fn incept(
+        &self,
+        public_keys: Vec<BasicPrefix>,
+        next_pub_keys: Vec<BasicPrefix>,
+        witnesses: Vec<LocationScheme>,
+        witness_threshold: u64,
+    ) -> Result<String> {
+        self.setup_witnesses(&witnesses)?;
+        let witnesses = witnesses
+            .iter()
+            .map(|wit| {
+                if let IdentifierPrefix::Basic(bp) = &wit.eid {
+                    Ok(bp.clone())
+                } else {
+                    Err(anyhow!("Improper witness prefix, should be basic prefix",))
+                }
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Kel::incept(
+            public_keys,
+            next_pub_keys,
+            witnesses,
+            witness_threshold,
+        )?)
+    }
+
     pub fn finalize_inception(
         &self,
         event: &[u8],
@@ -340,6 +369,37 @@ impl Controller {
             }
             _ => Err(anyhow!("Wrong event type")),
         }
+    }
+
+    pub fn rotate(
+        &self,
+        id: IdentifierPrefix,
+        current_keys: Vec<BasicPrefix>,
+        new_next_keys: Vec<BasicPrefix>,
+        witness_to_add: Vec<LocationScheme>,
+        witness_to_remove: Vec<BasicPrefix>,
+        witness_threshold: u64,
+    ) -> Result<String> {
+        self.setup_witnesses(&witness_to_add)
+            .map_err(|e| anyhow!(e.to_string()))?;
+        let witnesses_to_add = witness_to_add
+            .iter()
+            .map(|wit| {
+                if let IdentifierPrefix::Basic(bp) = &wit.eid {
+                    Ok(bp.clone())
+                } else {
+                    Err(anyhow!("Improper witness prefix, should be basic prefix",))
+                }
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(self.kel.rotate(
+            id,
+            current_keys,
+            new_next_keys,
+            witnesses_to_add,
+            witness_to_remove,
+            witness_threshold,
+        )?)
     }
 
     /// Check signatures, updates database and send events to watcher or witnesses.

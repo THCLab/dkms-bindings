@@ -1,17 +1,15 @@
-use std::{
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use keriox_wrapper::{
     identifier_controller::IdentifierController,
     kel::{
-        AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, Kel,
+        AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, Kel, LocationScheme,
         Prefix, SelfAddressingPrefix,
     },
 };
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
-use utils::{key_config::Key, signature_config::Signature, configs};
+use utils::{configs, key_config::Key, signature_config::Signature};
 pub mod utils;
 use napi::bindgen_prelude::ToNapiValue;
 
@@ -44,13 +42,35 @@ impl Controller {
     pub fn init(config: Option<configs::Configs>) -> napi::Result<Self> {
         let optional_configs = config.map(|c| c.build().unwrap());
 
-        let c = keriox_wrapper::controller::Controller::new(
-            optional_configs,
-        )
-        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let c = keriox_wrapper::controller::Controller::new(optional_configs)
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(Controller {
             kel_data: Arc::new(c),
         })
+    }
+
+    #[napi]
+    pub fn incept(
+        &self,
+        pks: Vec<Key>,
+        npks: Vec<Key>,
+        // witnesses location schemes jsons
+        witnesses: Vec<String>,
+        witness_threshold: u32,
+    ) -> napi::Result<Buffer> {
+        let curr_keys = pks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
+        let next_keys = npks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
+        let witnesses = witnesses
+            .iter()
+            .map(|wit| serde_json::from_str::<LocationScheme>(wit))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let icp = self
+            .kel_data
+            .incept(curr_keys, next_keys, witnesses, witness_threshold as u64)
+            .map_err(|e| napi::Error::from_reason(e.to_string()))
+            .unwrap();
+        Ok(icp.as_bytes().into())
     }
 
     #[napi]
@@ -108,7 +128,9 @@ impl IdController {
         &self,
         pks: Vec<Key>,
         npks: Vec<Key>,
+        // loc scheme json of witness
         witnesses_to_add: Vec<String>,
+        // identifiers of witness to remove
         witnesses_to_remove: Vec<String>,
         witness_threshold: u32,
     ) -> napi::Result<Buffer> {
@@ -116,7 +138,7 @@ impl IdController {
         let next_keys = npks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
         let witnesses_to_add = witnesses_to_add
             .iter()
-            .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
+            .map(|wit| serde_json::from_str::<LocationScheme>(wit).map_err(|e| e.to_string()))
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         let witnesses_to_remove = witnesses_to_remove

@@ -14,8 +14,10 @@ describe("Managing controller", () => {
 			"url": "http://localhost:3232/"
 		}
 	]`;
-  let configs = new keri.ConfigBuilder().withInitialOobis(known_oobis).build();
-  let controller = keri.Controller.init(configs);
+  let configs = new keri.ConfigBuilder().withInitialOobis(known_oobis)
+    .withDbPath("./database")
+    .build();
+  let controller = keri.Controller.init();
 
   let key_type = keri.KeyType.Ed25519;
   let pk = new keri.PublicKey(key_type, Buffer.from(currentKeyManager.pubKey));
@@ -24,10 +26,14 @@ describe("Managing controller", () => {
 
   console.log(pk.getKey())
 
-  let inceptionEvent = keri.incept(
+  let inceptionEvent = controller.incept(
     [pk.getKey()], 
     [pk2.getKey()], 
-    ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"],
+    [`{
+			"eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
+			"scheme": "http",
+			"url": "http://localhost:3232/"
+		}`],
     1
     );
   console.log(inceptionEvent.toString())
@@ -44,7 +50,7 @@ describe("Managing controller", () => {
 
   console.log(inceptedController.getKel())
 
-  let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BYSUc5ahFNbTaqesfY-6YJwzALaXSx-_Mvbs6y3I74js"], 2);
+  let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"], 0);
   console.log(rotationEvent.toString())
 
   let signature2 = nextKeyManager.sign(rotationEvent);

@@ -19,27 +19,29 @@ impl ConfigBuilder {
         }
     }
 
-#[napi]
-pub fn with_initial_oobis(&self, oobis_json: String) -> ConfigBuilder {
-    ConfigBuilder {
-        initial_oobis: Some(oobis_json),
-        db_path: self.db_path.clone()
+    #[napi]
+    pub fn with_initial_oobis(&self, oobis_json: String) -> ConfigBuilder {
+        ConfigBuilder {
+            initial_oobis: Some(oobis_json),
+            db_path: self.db_path.clone(),
+        }
     }
-}
 
-#[napi]
-pub fn with_db_path(&self, db_path: String) -> ConfigBuilder {
-    ConfigBuilder {
-        db_path: Some(db_path),
-        initial_oobis: self.initial_oobis.clone()
+    #[napi]
+    pub fn with_db_path(&self, db_path: String) -> ConfigBuilder {
+        ConfigBuilder {
+            db_path: Some(db_path),
+            initial_oobis: self.initial_oobis.clone(),
+        }
     }
-}
 
-#[napi]
+    #[napi]
     pub fn build(&self) -> Configs {
-        Configs { db_path: self.db_path.clone(), initial_oobis: self.initial_oobis.clone() }
+        Configs {
+            db_path: self.db_path.clone(),
+            initial_oobis: self.initial_oobis.clone(),
+        }
     }
-
 }
 
 #[napi(object)]
@@ -47,7 +49,6 @@ pub struct Configs {
     pub db_path: Option<String>,
     pub initial_oobis: Option<String>,
 }
-
 
 impl Configs {
     pub fn build(&self) -> napi::Result<OptionalConfig> {

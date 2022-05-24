@@ -106,7 +106,7 @@ impl Kel {
                 .map_err(|e| KelError::ParseEventError(e.to_string()))?;
             self.notification_bus
                 .notify(&not)
-                .map_err(|_e| KelError::NotificationError)?;
+                .map_err(|e| KelError::NotificationError(e.to_string()))?;
             // TODO check if id match
         }
         Ok(event.event.get_prefix())
@@ -226,7 +226,7 @@ impl Kel {
         let not = not.map_err(|e| KelError::ParseEventError(e.to_string()))?;
         self.notification_bus
             .notify(&not)
-            .map_err(|_e| KelError::NotificationError)?;
+            .map_err(|e| KelError::NotificationError(e.to_string()))?;
         Ok(signed_message)
     }
 
@@ -275,7 +275,7 @@ impl Kel {
 
     pub fn process(&self, msg: &[Message]) -> Result<(), KelError> {
         let processor = EventProcessor::new(self.db.clone());
-        let (process_ok, process_failed): (Vec<_>, Vec<_>) = msg
+        let (_process_ok, _process_failed): (Vec<_>, Vec<_>) = msg
             .iter()
             .map(|message| {
                 processor
@@ -283,14 +283,14 @@ impl Kel {
                     .and_then(|not| self.notification_bus.notify(&not))
             })
             .partition(Result::is_ok);
-        let _oks = process_ok
-            .into_iter()
-            .map(Result::unwrap)
-            .collect::<Vec<_>>();
-        let _errs = process_failed
-            .into_iter()
-            .map(Result::unwrap_err)
-            .collect::<Vec<_>>();
+        // let _oks = process_ok
+        //     .into_iter()
+        //     .map(Result::unwrap)
+        //     .collect::<Vec<_>>();
+        // let _errs = process_failed
+        //     .into_iter()
+        //     .map(Result::unwrap_err)
+        // .collect::<Vec<_>>();
 
         Ok(())
     }
@@ -349,8 +349,8 @@ pub enum KelError {
     RotationError,
     #[error("can't parse event: {0}")]
     ParseEventError(String),
-    #[error("can't notify")]
-    NotificationError,
+    #[error("can't notify: {0}")]
+    NotificationError(String),
     #[error("missing event")]
     MissingEventError,
     #[error("general error {0}")]

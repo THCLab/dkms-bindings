@@ -5,7 +5,7 @@ use flutter_rust_bridge::support::lazy_static;
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
     controller::OptionalConfig,
-    kel::{Basic, BasicPrefix, EndRole, Kel, LocationScheme, Prefix, Role, SelfSigning},
+    kel::{Basic, BasicPrefix, EndRole, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
 use serde::{Deserialize, Serialize};
@@ -137,13 +137,14 @@ impl Controller {
 
 pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<()> {
     let config = if let Some(config) = optional_configs {
-        config.build().map(|c| c.with_db_path(PathBuf::from(input_app_dir))).ok()
+        config
+            .build()
+            .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))
+            .ok()
     } else {
         None
     };
-    let controller = keriox_wrapper::controller::Controller::new(
-        config,
-    )?;
+    let controller = keriox_wrapper::controller::Controller::new(config)?;
 
     *KEL.lock().unwrap() = Some(controller);
 
@@ -153,15 +154,16 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
 pub fn incept(
     public_keys: Vec<PublicKey>,
     next_pub_keys: Vec<PublicKey>,
+    // witnesses location scheme json
     witnesses: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
     let witnesses = witnesses
         .iter()
-        .map(|wit| wit.parse::<BasicPrefix>())
+        .map(|wit| serde_json::from_str::<LocationScheme>(wit))
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| anyhow!(e.to_string()))?;
-    let icp = Kel::incept(
+    let icp = (*KEL.lock().unwrap()).as_ref().unwrap().incept(
         public_keys
             .into_iter()
             .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
@@ -196,14 +198,18 @@ pub fn rotate(
     controller: Controller,
     current_keys: Vec<PublicKey>,
     new_next_keys: Vec<PublicKey>,
+    // location schema json of witnesses
     witness_to_add: Vec<String>,
+    // identifier of witnesses. Witness was previously added, so it's adresses
+    // should be known.
     witness_to_remove: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
     let id = controller.identifier.parse().unwrap();
+    // Parse location schema from string
     let witnesses_to_add = witness_to_add
         .iter()
-        .map(|wit| wit.parse::<BasicPrefix>())
+        .map(|wit| serde_json::from_str::<LocationScheme>(wit))
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| anyhow!(e.to_string()))?;
     let witnesses_to_remove = witness_to_remove
@@ -211,7 +217,7 @@ pub fn rotate(
         .map(|wit| wit.parse::<BasicPrefix>())
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| anyhow!(e.to_string()))?;
-    let rot = (*KEL.lock().unwrap()).as_ref().unwrap().kel.rotate(
+    (*KEL.lock().unwrap()).as_ref().unwrap().rotate(
         id,
         current_keys
             .into_iter()
@@ -224,8 +230,7 @@ pub fn rotate(
         witnesses_to_add,
         witnesses_to_remove,
         witness_threshold,
-    )?;
-    Ok(rot)
+    )
 }
 
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
