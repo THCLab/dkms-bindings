@@ -41,14 +41,16 @@ impl IdentifierController {
         witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-        self.source.rotate(
-            self.id.clone(),
-            current_keys,
-            new_next_keys,
-            witness_to_add,
-            witness_to_remove,
-            witness_threshold,
-        ).map_err(|e| KelError::GeneralError(e.to_string()))
+        self.source
+            .rotate(
+                self.id.clone(),
+                current_keys,
+                new_next_keys,
+                witness_to_add,
+                witness_to_remove,
+                witness_threshold,
+            )
+            .map_err(|e| KelError::GeneralError(e.to_string()))
     }
 
     pub fn anchor(

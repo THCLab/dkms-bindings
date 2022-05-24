@@ -5,10 +5,7 @@ use anyhow::{anyhow, Result};
 use crate::kel::Kel;
 use keri::{
     derivation::self_addressing::SelfAddressing,
-    event::{
-        event_data::EventData, EventMessage,
-        SerializationFormats,
-    },
+    event::{event_data::EventData, EventMessage, SerializationFormats},
     event_message::{
         key_event_message::KeyEvent, signed_event_message::SignedEventMessage, Digestible,
     },

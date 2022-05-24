@@ -1,9 +1,7 @@
 use anyhow::Result;
 use keriox_wrapper::kel::{Basic, CryptoBox, KeyManager, SelfSigning};
 
-use crate::api::{
-    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, propagate_oobi, query,
-};
+use crate::api::{add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query};
 
 #[test]
 pub fn test_api() -> Result<()> {
@@ -122,21 +120,15 @@ pub fn test_demo() -> Result<()> {
 
     finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
 
-    let issuer_oobi: String = r#"[{"cid":"EWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
-    println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
-    // propagate_oobi(controller.clone(), witness_oobi.into()).unwrap();
-    propagate_oobi(controller.clone(), issuer_oobi.into()).unwrap();
+    let issuer_oobi: String = r#"[{"cid":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
 
     println!("\nQuering about issuer kel...");
-    let iss_id = "EWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o".to_string();
-    query(controller, iss_id.clone()).unwrap();
-
-    let issuer_kel = get_kel_by_str(iss_id)?;
-    println!("\nIssuer kel: \n{}", issuer_kel);
+    println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
+    query(controller, issuer_oobi).unwrap();
 
     // Get acdc signed by issuer
-    let acdc = r#"{"issuer":"EWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
-    let attachment_stream = r#"-FABEWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o0AAAAAAAAAAAAAAAAAAAAAAAEWtSPsC30Qh9C16Fx_Ej4pYZAwoouWAv6JGRo8y7tl_o-AABAAbVowbAQwlX7n2AJZMQ3OJ373TJP3GowvXgmc3PDr3ZggwnykglX53fxJzSBEZ1W11X3GozeTbhfDYYZefzSOCQ"#;
+    let acdc = r#"{"issuer":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
+    let attachment_stream = r#"-FABEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI00AAAAAAAAAAAAAAAAAAAAAAAEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0-AABAAG3NikDFb-2C20mTxhKet-jt5os5D-8NDGTNgeHKgUPaRzBnIZC9csSgcDP4CmtEJVkNzAsrX4SFUq4SFzxCyAA"#;
 
     let key_sig_pair = get_current_public_key(attachment_stream.into()).unwrap();
 

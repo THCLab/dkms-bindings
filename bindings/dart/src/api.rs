@@ -267,16 +267,28 @@ pub fn resolve_oobi(oobi_json: String) -> Result<()> {
     Ok(())
 }
 
-pub fn propagate_oobi(controller: Controller, oobis_json: String) -> Result<()> {
+fn query_by_id(controller: Controller, query_id: String) -> Result<()> {
+    (*KEL.lock().unwrap())
+        .as_ref()
+        .unwrap()
+        .query(&controller.identifier.parse().unwrap(), &query_id)?;
+    Ok(())
+}
+
+pub fn query(controller: Controller, oobis_json: String) -> Result<()> {
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     enum Oobis {
         LocScheme(LocationScheme),
         EndRole(EndRole),
     }
+    let mut issuer_id: Option<String> = None;
     match serde_json::from_str::<Vec<Oobis>>(&oobis_json) {
         Ok(oobis) => {
             for oobi in oobis {
+                if let Oobis::EndRole(ref er) = oobi {
+                    issuer_id = Some(er.cid.to_str())
+                };
                 (*KEL.lock().unwrap())
                     .as_ref()
                     .unwrap()
@@ -288,15 +300,11 @@ pub fn propagate_oobi(controller: Controller, oobis_json: String) -> Result<()> 
             Ok(())
         }
         Err(_) => Err(anyhow!("Wrong oobis format")),
-    }
-}
-
-pub fn query(controller: Controller, query_id: String) -> Result<()> {
-    (*KEL.lock().unwrap())
-        .as_ref()
-        .unwrap()
-        .query(&controller.identifier.parse().unwrap(), &query_id)?;
-    Ok(())
+    }?;
+    query_by_id(
+        controller,
+        issuer_id.ok_or(anyhow!("Missing issuer end role oobi"))?,
+    )
 }
 
 pub fn process_stream(stream: String) -> Result<()> {
