@@ -8,16 +8,16 @@ describe("Managing controller", () => {
   const nextNextKeyManager = new Tpm();
 
   const known_oobis = `[
-		{
-			"eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
-			"scheme": "http",
-			"url": "http://localhost:3232/"
-		}
-	]`;
+    {
+      "eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
+      "scheme": "http",
+      "url": "http://localhost:3232/"
+    }
+  ]`;
   let configs = new keri.ConfigBuilder().withInitialOobis(known_oobis)
     .withDbPath("./database")
     .build();
-  let controller = keri.Controller.init();
+  let controller = new keri.Controller();
 
   let key_type = keri.KeyType.Ed25519;
   let pk = new keri.PublicKey(key_type, Buffer.from(currentKeyManager.pubKey));
@@ -30,10 +30,10 @@ describe("Managing controller", () => {
     [pk.getKey()], 
     [pk2.getKey()], 
     [`{
-			"eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
-			"scheme": "http",
-			"url": "http://localhost:3232/"
-		}`],
+      "eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA",
+      "scheme": "http",
+      "url": "http://localhost:3232/"
+    }`],
     1
     );
   console.log(inceptionEvent.toString())

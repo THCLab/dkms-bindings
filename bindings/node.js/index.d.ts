@@ -45,7 +45,7 @@ export class SignatureBuilder {
   getSignature(): Signature
 }
 export class Controller {
-  static init(config?: Configs | undefined | null): Controller
+  constructor(config?: Configs | undefined | null)
   incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Buffer
   finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): IdController
   getByIdentifier(id: string): IdController

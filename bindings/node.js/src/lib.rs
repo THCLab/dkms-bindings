@@ -38,7 +38,7 @@ struct Controller {
 
 #[napi]
 impl Controller {
-    #[napi(factory)]
+    #[napi(constructor)]
     pub fn init(config: Option<configs::Configs>) -> napi::Result<Self> {
         let optional_configs = config.map(|c| c.build().unwrap());
 
