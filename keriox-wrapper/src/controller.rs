@@ -101,6 +101,7 @@ impl Controller {
     pub fn resolve_loc_schema(&self, lc: &LocationScheme) -> Result<()> {
         let url = format!("{}oobi/{}", lc.url, lc.eid);
         let oobis = reqwest::blocking::get(url)?.text()?;
+        println!("\n\nin resolve oobi got: {}", oobis);
 
         self.kel.parse_and_process(oobis.as_bytes()).unwrap();
 

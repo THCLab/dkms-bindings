@@ -142,7 +142,7 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
             .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))
             .ok()
     } else {
-        None
+       Some(OptionalConfig { db_path: Some(PathBuf::from(input_app_dir)), initial_oobis: None })
     };
     let controller = keriox_wrapper::controller::Controller::new(config)?;
 
