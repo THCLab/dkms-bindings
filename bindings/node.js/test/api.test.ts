@@ -50,6 +50,7 @@ describe("Managing controller", () => {
 
   console.log(inceptedController.getKel())
 
+  //let witnesses = inceptedController.getWitnessIdentifiers(); => ["id1", "id2"]
   let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"], 0);
   console.log(rotationEvent.toString())
 
