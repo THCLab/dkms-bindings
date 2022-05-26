@@ -1,6 +1,6 @@
 import nacl from "tweetnacl";
 
-export default class Tpm {
+export default class KeyPair {
   public readonly pubKey: Uint8Array;
   private readonly privKey: Uint8Array;
 

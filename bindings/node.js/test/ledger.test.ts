@@ -7,7 +7,9 @@ import {randomBytes} from "crypto";
 
 describe("Anchoring on ledger", () => {
   it("Allows for anchoring one digest", () => {
-    let [ controller, currentKeyManager ] = inceptor();
+    let [ controller, currentKeyManager ] = inceptor(
+      ['{ "eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA", "scheme": "http", "url": "http://localhost:3232/" }']
+    );
 
     let interactionEvent = controller.anchor(["E6ISnmMK-TfP0uN2lLp5vL6JxxBNjXLZ7bpDBkjxngdE"])
 

@@ -1,24 +1,35 @@
-import keri, {KeriController} from "index";
-import {b64EncodeUrlSafe} from "./b64";
-import {prefixedDerivative, prefixedSignature} from "./sai";
-import Tpm from "./tpm";
+import KeyPair from "./key_pair";
+import {ConfigBuilder, Controller, IdController, incept, KeyType, PublicKey, SignatureBuilder, SignatureType} from "index";
 
-export default (): [KeriController, Tpm] => {
-  const currentKeyManager = new Tpm();
+export default (oobis: string[]): [IdController, KeyPair] => {
+  const currentKeyManager = new KeyPair();
   // nextKeyManager is required for prerotation to be known
-  const nextKeyManager = new Tpm();
+  const nextKeyManager = new KeyPair();
 
-  let curKeySai = prefixedDerivative(b64EncodeUrlSafe(currentKeyManager.pubKey));
-  let nextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextKeyManager.pubKey));
+  let pk = new PublicKey(KeyType.Ed25519, Buffer.from(currentKeyManager.pubKey));
+  let pk2 = new PublicKey(KeyType.Ed25519, Buffer.from(nextKeyManager.pubKey));
 
-  let inceptionEvent = keri.incept([[curKeySai, nextKeySai]]);
+  let inceptionEvent = incept(
+    [pk.getKey()],
+    [pk2.getKey()],
+    oobis,
+    oobis.length
+  );
+
+  let config = new ConfigBuilder().withDbPath("./database")
+    .build();
+  console.log(config);
+  let controller = Controller.init(config);
 
   let signature = currentKeyManager.sign(inceptionEvent);
 
-  let controller = keri.finalizeIncept(
+  let sigType = SignatureType.Ed25519Sha512;
+  let signaturePrefix = new SignatureBuilder(sigType, Buffer.from(signature));
+
+  let identifierController = controller.finalizeInception(
     inceptionEvent,
-    [prefixedSignature(b64EncodeUrlSafe(signature))]
+    [signaturePrefix.getSignature()]
   );
 
-  return [ controller, currentKeyManager ];
+  return [ identifierController, currentKeyManager ];
 };
