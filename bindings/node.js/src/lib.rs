@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use keriox_wrapper::{
+    event_generator,
     identifier_controller::IdentifierController,
     kel::{
-        AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, Kel, LocationScheme,
-        Prefix, SelfAddressingPrefix,
+        AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, LocationScheme, Prefix,
+        SelfAddressingPrefix,
     },
 };
 use napi::bindgen_prelude::Buffer;
@@ -196,8 +197,7 @@ impl IdController {
         let event_seal = self
             .controller
             .get_last_establishment_event_seal()
-            .map_err(|e| napi::Error::from_reason(e.to_string()))?
-            .unwrap();
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         let att = Attachment::SealSignaturesGroups(vec![(event_seal, vec![attached_signature])]);
         Ok(att.to_cesr())
     }
@@ -217,7 +217,7 @@ pub fn incept(
         .map(|wit| wit.parse::<BasicPrefix>().map_err(|e| e.to_string()))
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    let icp = Kel::incept(curr_keys, next_keys, witnesses, witness_threshold as u64)
+    let icp = event_generator::incept(curr_keys, next_keys, witnesses, witness_threshold as u64)
         .map_err(|e| napi::Error::from_reason(e.to_string()))
         .unwrap();
     Ok(icp.as_bytes().into())

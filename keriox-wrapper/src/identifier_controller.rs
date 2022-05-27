@@ -50,17 +50,16 @@ impl IdentifierController {
         &self,
         payload: &[SelfAddressingPrefix],
     ) -> Result<EventMessage<KeyEvent>, KelError> {
-        self.source.events_manager.anchor(self.id.clone(), payload)
+        self.source.anchor(self.id.clone(), payload)
     }
 
     pub fn anchor_with_seal(&self, seal_list: &[Seal]) -> Result<EventMessage<KeyEvent>, KelError> {
-        self.source.events_manager.anchor_with_seal(self.id.clone(), seal_list)
+        self.source.anchor_with_seal(self.id.clone(), seal_list)
     }
 
     pub fn add_watcher(&self, watcher_id: IdentifierPrefix) -> String {
         String::from_utf8(
-            self.source
-                .generate_end_role(&self.id, &watcher_id, Role::Watcher, true)
+            Controller::generate_end_role(&self.id, &watcher_id, Role::Watcher, true)
                 .unwrap()
                 .serialize()
                 .unwrap(),
@@ -70,8 +69,7 @@ impl IdentifierController {
 
     pub fn remove_watcher(&self, watcher_id: IdentifierPrefix) -> String {
         String::from_utf8(
-            self.source
-                .generate_end_role(&self.id, &watcher_id, Role::Watcher, false)
+            Controller::generate_end_role(&self.id, &watcher_id, Role::Watcher, false)
                 .unwrap()
                 .serialize()
                 .unwrap(),
@@ -88,7 +86,9 @@ impl IdentifierController {
         Ok(self.source.finalize_event(&self.id, event, sig).unwrap())
     }
 
-    pub fn get_last_establishment_event_seal(&self) -> Result<Option<EventSeal>, KelError> {
-        self.source.events_manager.get_last_establishment_event_seal(&self.id)
+    pub fn get_last_establishment_event_seal(&self) -> Result<EventSeal, KelError> {
+        self.source
+            .events_manager
+            .get_last_establishment_event_seal(&self.id)
     }
 }

@@ -4,7 +4,7 @@ use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
-    controller::OptionalConfig,
+    controller::{Controller as KeriController, OptionalConfig},
     kel::{Basic, BasicPrefix, EndRole, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
@@ -142,7 +142,10 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
             .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))
             .ok()
     } else {
-       Some(OptionalConfig { db_path: Some(PathBuf::from(input_app_dir)), initial_oobis: None })
+        Some(OptionalConfig {
+            db_path: Some(PathBuf::from(input_app_dir)),
+            initial_oobis: None,
+        })
     };
     let controller = keriox_wrapper::controller::Controller::new(config)?;
 
@@ -217,7 +220,7 @@ pub fn rotate(
         .map(|wit| wit.parse::<BasicPrefix>())
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| anyhow!(e.to_string()))?;
-    (*KEL.lock().unwrap()).as_ref().unwrap().rotate(
+    Ok((*KEL.lock().unwrap()).as_ref().unwrap().rotate(
         id,
         current_keys
             .into_iter()
@@ -230,19 +233,14 @@ pub fn rotate(
         witnesses_to_add,
         witnesses_to_remove,
         witness_threshold,
-    )
+    )?)
 }
 
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
     resolve_oobi(watcher_oobi.clone())?;
     let watcher_id = serde_json::from_str::<LocationScheme>(&watcher_oobi)?.eid;
     let id = &controller.identifier.parse()?;
-    let add_watcher = (*KEL.lock().unwrap()).as_ref().unwrap().generate_end_role(
-        id,
-        &watcher_id,
-        Role::Watcher,
-        true,
-    )?;
+    let add_watcher = KeriController::generate_end_role(id, &watcher_id, Role::Watcher, true)?;
     String::from_utf8(add_watcher.serialize()?).map_err(|e| anyhow!(e.to_string()))
 }
 
@@ -321,7 +319,7 @@ pub fn get_kel(cont: Controller) -> Result<String> {
         .as_ref()
         .unwrap()
         .events_manager
-        .get_kel(&cont.identifier)?;
+        .get_kel(&cont.identifier.parse()?)?;
     Ok(signed_event)
 }
 
@@ -330,7 +328,7 @@ pub fn get_kel_by_str(cont_id: String) -> Result<String> {
         .as_ref()
         .unwrap()
         .events_manager
-        .get_kel(&cont_id)?;
+        .get_kel(&cont_id.parse()?)?;
     Ok(signed_event)
 }
 
@@ -345,7 +343,7 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
         .as_ref()
         .unwrap()
         .events_manager
-        .get_current_public_key(attachment)?;
+        .get_public_key_for_attachment(attachment)?;
     Ok(attachment
         .iter()
         .map(|(bp, sp)| PublicKeySignaturePair {
