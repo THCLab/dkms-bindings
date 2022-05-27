@@ -311,7 +311,7 @@ pub fn process_stream(stream: String) -> Result<()> {
     (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .kel
+        .events_manager
         .parse_and_process(stream.as_bytes())?;
     Ok(())
 }
@@ -320,7 +320,7 @@ pub fn get_kel(cont: Controller) -> Result<String> {
     let signed_event = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .kel
+        .events_manager
         .get_kel(&cont.identifier)?;
     Ok(signed_event)
 }
@@ -329,7 +329,7 @@ pub fn get_kel_by_str(cont_id: String) -> Result<String> {
     let signed_event = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .kel
+        .events_manager
         .get_kel(&cont_id)?;
     Ok(signed_event)
 }
@@ -344,7 +344,7 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
     let attachment = (*KEL.lock().unwrap())
         .as_ref()
         .unwrap()
-        .kel
+        .events_manager
         .get_current_public_key(attachment)?;
     Ok(attachment
         .iter()

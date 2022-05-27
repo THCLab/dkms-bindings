@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use crate::kel::Kel;
 use keri::{
     derivation::self_addressing::SelfAddressing,
-    event::{event_data::EventData, EventMessage, SerializationFormats},
+    event::{event_data::EventData, EventMessage, SerializationFormats, sections::seal::EventSeal},
     event_message::{
         key_event_message::KeyEvent, signed_event_message::SignedEventMessage, Digestible,
     },
@@ -15,7 +15,7 @@ use keri::{
     },
     oobi::{EndRole, LocationScheme, OobiManager, Role, Scheme},
     prefix::{AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfSigningPrefix},
-    processor::{event_storage::EventStorage, notification::JustNotification},
+    processor::notification::JustNotification,
     query::reply_event::{ReplyEvent, ReplyRoute, SignedReply},
 };
 
@@ -53,8 +53,8 @@ impl OptionalConfig {
 }
 
 pub struct Controller {
-    pub kel: Kel,
-    pub oobi_manager: Arc<OobiManager>,
+    pub events_manager: Kel,
+    oobi_manager: Arc<OobiManager>,
 }
 impl Controller {
     pub fn new(configs: Option<OptionalConfig>) -> Result<Self> {
@@ -79,7 +79,7 @@ impl Controller {
         keri.register_observer(oobi_manager.clone(), vec![JustNotification::GotOobi]);
 
         let controller = Self {
-            kel: keri,
+            events_manager: keri,
             oobi_manager: oobi_manager.clone(),
         };
 
@@ -103,7 +103,7 @@ impl Controller {
         let oobis = reqwest::blocking::get(url)?.text()?;
         println!("\n\nin resolve oobi got: {}", oobis);
 
-        self.kel.parse_and_process(oobis.as_bytes()).unwrap();
+        self.events_manager.parse_and_process(oobis.as_bytes()).unwrap();
 
         Ok(())
     }
@@ -146,7 +146,7 @@ impl Controller {
         let kel = self.send_to(&watchers[0], Scheme::Http, Topic::Query(query_id.into()))?;
         match kel {
             Some(kel) => {
-                self.kel.parse_and_process(kel.as_bytes())?;
+                self.events_manager.parse_and_process(kel.as_bytes())?;
                 Ok(())
             }
             None => Err(anyhow!("Can't find kel of identifier {}", id.to_str())),
@@ -290,7 +290,7 @@ impl Controller {
         // assert!(self.kel.get_kel(self.kel.prefix()).unwrap().is_none());
 
         // process collected receipts
-        self.kel
+        self.events_manager
             .parse_and_process(collected_receipts.as_bytes())
             .unwrap();
 
@@ -300,13 +300,11 @@ impl Controller {
         // Get processed receipts from database to send all of them to witnesses. It
         // will return one receipt with all witness signatures as one attachment,
         // not three separate receipts as in `collected_receipts`.
-        let storage = EventStorage::new(self.kel.db.clone());
-        let rcts_from_db = storage
-            .get_nt_receipts(
-                &message.event_message.event.get_prefix(),
-                message.event_message.event.get_sn(),
-                &message.event_message.event.get_digest(),
-            )?
+        let rcts_from_db =self.events_manager.get_receipts_of_event(EventSeal { 
+            prefix: message.event_message.event.get_prefix(), 
+            sn: message.event_message.event.get_sn(), 
+            event_digest: message.event_message.event.get_digest() 
+        })?
             .map(|rct| SignedEventData::from(rct).to_cesr().unwrap())
             .unwrap_or_default();
 
@@ -390,7 +388,7 @@ impl Controller {
                 }
             })
             .collect::<Result<Vec<_>>>()?;
-        Ok(self.kel.rotate(
+        Ok(self.events_manager.rotate(
             id,
             current_keys,
             new_next_keys,
@@ -425,13 +423,13 @@ impl Controller {
         event: EventMessage<KeyEvent>,
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<()> {
-        let message = self.kel.finalize_event(&event, sig)?;
+        let message = self.events_manager.finalize_event(&event, sig)?;
 
         let wits = match event.event.get_event_data() {
             keri::event::event_data::EventData::Icp(icp) => icp.witness_config.initial_witnesses,
             keri::event::event_data::EventData::Rot(rot) => {
                 let wits = self
-                    .kel
+                    .events_manager
                     .get_current_witness_list(&event.event.content.prefix)?
                     .unwrap_or_default();
                 wits.into_iter()
@@ -440,7 +438,7 @@ impl Controller {
                     .collect::<Vec<_>>()
             }
             keri::event::event_data::EventData::Ixn(_) => self
-                .kel
+                .events_manager
                 .get_current_witness_list(&event.event.content.prefix)?
                 .unwrap_or_default(),
             keri::event::event_data::EventData::Dip(_) => todo!(),
@@ -471,10 +469,9 @@ impl Controller {
             ReplyRoute::EndRoleAdd(role) => role.eid.clone(),
             ReplyRoute::EndRoleCut(role) => role.eid.clone(),
         };
-        let storage = EventStorage::new(self.kel.db.clone());
         let signed_rpy = SignedReply::new_trans(
             event,
-            storage
+           self.events_manager 
                 .get_last_establishment_event_seal(signer_prefix)
                 .unwrap()
                 .unwrap(),
@@ -482,8 +479,8 @@ impl Controller {
         );
         self.oobi_manager.save_oobi(signed_rpy.clone()).unwrap();
         let mut kel = self
-            .kel
-            .get_kel(&signer_prefix.to_str())?
+            .events_manager
+            .get_kel(&signer_prefix)?
             .as_bytes()
             .to_vec();
         let end_role = SignedEventData::from(signed_rpy)

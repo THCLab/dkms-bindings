@@ -41,7 +41,7 @@ use thiserror::Error;
 use crate::utils::get_current_public_key;
 
 pub struct Kel {
-    pub db: Arc<SledEventDatabase>,
+    db: Arc<SledEventDatabase>,
     notification_bus: NotificationBus,
 }
 impl Kel {
@@ -230,13 +230,12 @@ impl Kel {
         Ok(signed_message)
     }
 
-    pub fn get_kel(&self, id: &str) -> Result<String, KelError> {
+    pub fn get_kel(&self, id: &IdentifierPrefix) -> Result<String, KelError> {
         let storage = EventStorage::new(self.db.clone());
         String::from_utf8(
             storage
                 .get_kel(
-                    &id.parse::<IdentifierPrefix>()
-                        .map_err(|e| KelError::ParseEventError(e.to_string()))?,
+                    &id
                 )?
                 .ok_or(KelError::UnknownIdentifierError)?,
         )
@@ -338,6 +337,22 @@ impl Kel {
         storage
             .get_last_establishment_event_seal(id)
             .map_err(|e| KelError::GeneralError(e.to_string()))
+    }
+
+    pub fn get_receipts_of_event(&self, event_seal: EventSeal) -> Result<Option<SignedNontransferableReceipt>, KelError> {
+        let storage = EventStorage::new(self.db.clone());
+        Ok(storage
+                .get_nt_receipts(
+                    &event_seal.prefix,
+                    event_seal.sn,
+                    &event_seal.event_digest,
+                )?)
+        }
+
+    pub fn get_last_establishemnt_event(&self, id: &IdentifierPrefix) -> Result<Option<EventSeal>, KelError> {
+        let storage = EventStorage::new(self.db.clone());
+        Ok(storage
+            .get_last_establishment_event_seal(id)?)
     }
 }
 

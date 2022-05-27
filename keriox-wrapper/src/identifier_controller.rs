@@ -8,7 +8,6 @@ use keri::{
     event_message::key_event_message::KeyEvent,
     oobi::{LocationScheme, Role},
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
-    processor::event_storage::EventStorage,
 };
 
 use crate::{controller::Controller, kel::KelError};
@@ -24,13 +23,7 @@ impl IdentifierController {
     }
 
     pub fn get_kel(&self) -> Result<String, KelError> {
-        let storage = EventStorage::new(self.source.kel.db.clone());
-        String::from_utf8(
-            storage
-                .get_kel(&self.id)?
-                .ok_or(KelError::UnknownIdentifierError)?,
-        )
-        .map_err(|e| KelError::ParseEventError(e.to_string()))
+        self.source.events_manager.get_kel(&self.id)
     }
 
     pub fn rotate(
@@ -57,11 +50,11 @@ impl IdentifierController {
         &self,
         payload: &[SelfAddressingPrefix],
     ) -> Result<EventMessage<KeyEvent>, KelError> {
-        self.source.kel.anchor(self.id.clone(), payload)
+        self.source.events_manager.anchor(self.id.clone(), payload)
     }
 
     pub fn anchor_with_seal(&self, seal_list: &[Seal]) -> Result<EventMessage<KeyEvent>, KelError> {
-        self.source.kel.anchor_with_seal(self.id.clone(), seal_list)
+        self.source.events_manager.anchor_with_seal(self.id.clone(), seal_list)
     }
 
     pub fn add_watcher(&self, watcher_id: IdentifierPrefix) -> String {
@@ -96,6 +89,6 @@ impl IdentifierController {
     }
 
     pub fn get_last_establishment_event_seal(&self) -> Result<Option<EventSeal>, KelError> {
-        self.source.kel.get_last_establishment_event_seal(&self.id)
+        self.source.events_manager.get_last_establishment_event_seal(&self.id)
     }
 }
