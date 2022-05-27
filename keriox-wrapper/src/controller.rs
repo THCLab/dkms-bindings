@@ -7,11 +7,10 @@ use crate::{
     kel::{Kel, KelError},
 };
 use keri::{
-    derivation::self_addressing::SelfAddressing,
     event::{
         event_data::EventData,
         sections::seal::{EventSeal, Seal},
-        EventMessage, SerializationFormats,
+        EventMessage,
     },
     event_message::{
         key_event_message::KeyEvent,
@@ -22,9 +21,9 @@ use keri::{
         message::{event_message, key_event_message},
         EventType, SignedEventData,
     },
-    oobi::{EndRole, LocationScheme, OobiManager, Role, Scheme},
+    oobi::{LocationScheme, OobiManager, Role, Scheme},
     prefix::{
-        AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix,
+        AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, SelfAddressingPrefix,
         SelfSigningPrefix,
     },
     processor::notification::JustNotification,
@@ -70,15 +69,12 @@ pub struct Controller {
 }
 impl Controller {
     pub fn new(configs: Option<OptionalConfig>) -> Result<Self, KelError> {
-        let (initial_oobis, db_path) = if let Some(configs) = configs {
-            (configs.initial_oobis, configs.db_path)
-        } else {
-            (None, Some(PathBuf::from("./db")))
-        };
-
-        let db_dir_path = match db_path {
-            Some(db_path) => db_path,
-            None => PathBuf::from("./db"),
+        let (db_dir_path, initial_oobis) = match configs {
+            Some(OptionalConfig {
+                db_path,
+                initial_oobis,
+            }) => (db_path.unwrap_or(PathBuf::from("./db")), initial_oobis),
+            None => (PathBuf::from("./db"), None),
         };
 
         let mut events_db = db_dir_path.clone();
@@ -86,12 +82,17 @@ impl Controller {
         let mut oobis_db = db_dir_path.clone();
         oobis_db.push("oobis");
 
-        let mut keri = Kel::init(events_db.to_str().unwrap());
+        let mut events_manager = Kel::init(
+            events_db
+                .to_str()
+                .ok_or(KelError::GeneralError("Improper path".into()))?,
+        )?;
         let oobi_manager = Arc::new(OobiManager::new(&oobis_db));
-        keri.register_observer(oobi_manager.clone(), vec![JustNotification::GotOobi]);
+        // TODO oobi manager should be independent of event manager
+        events_manager.register_observer(oobi_manager.clone(), vec![JustNotification::GotOobi]);
 
         let controller = Self {
-            events_manager: keri,
+            events_manager,
             oobi_manager: oobi_manager.clone(),
         };
 
@@ -116,20 +117,15 @@ impl Controller {
             .map_err(|e| KelError::GeneralError(e.to_string()))?
             .text()
             .map_err(|e| KelError::GeneralError(e.to_string()))?;
-        println!("\n\nin resolve oobi got: {}", oobis);
 
-        self.events_manager
-            .parse_and_process(oobis.as_bytes())
-            .unwrap();
-
-        Ok(())
+        self.events_manager.parse_and_process(oobis.as_bytes())
     }
 
     fn get_watchers(&self, id: &IdentifierPrefix) -> Result<Vec<IdentifierPrefix>, KelError> {
         Ok(self
             .oobi_manager
             .get_end_role(id, Role::Watcher)?
-            .unwrap()
+            .ok_or_else(|| KelError::UnknownIdentifierError)?
             .into_iter()
             .filter_map(|r| {
                 if let ReplyRoute::EndRoleAdd(adds) = r.reply.get_route() {
@@ -141,20 +137,20 @@ impl Controller {
             .collect::<Vec<_>>())
     }
 
-    /// Sends identifier's endpoint information to id's watchers.
+    /// Sends identifier's endpoint information to identifiers's watchers.
+    // TODO use stream instead of json
     pub fn send_oobi_to_watcher(
         &self,
         id: &IdentifierPrefix,
         end_role_json: &str,
     ) -> Result<(), KelError> {
-        self.get_watchers(id)?.iter().for_each(|watcher| {
+        for watcher in self.get_watchers(id)?.iter() {
             self.send_to(
                 &watcher,
                 Scheme::Http,
                 Topic::Oobi(end_role_json.as_bytes().to_vec()),
-            )
-            .unwrap();
-        });
+            )?;
+        }
 
         Ok(())
     }
@@ -164,17 +160,11 @@ impl Controller {
     pub fn query(&self, id: &IdentifierPrefix, query_id: &str) -> Result<(), KelError> {
         let watchers = self.get_watchers(id)?;
         // TODO choose random watcher id?
+        // TODO we assume that we get the answer immediately which is not always true
         let kel = self.send_to(&watchers[0], Scheme::Http, Topic::Query(query_id.into()))?;
-        match kel {
-            Some(kel) => {
-                self.events_manager.parse_and_process(kel.as_bytes())?;
-                Ok(())
-            }
-            None => Err(KelError::GeneralError(format!(
-                "Can't find kel of identifier {}",
-                id.to_str()
-            ))),
-        }
+
+        self.events_manager.parse_and_process(kel.as_bytes())?;
+        Ok(())
     }
 
     /// Returns identifier contact information.
@@ -182,7 +172,7 @@ impl Controller {
         Ok(self
             .oobi_manager
             .get_loc_scheme(id)?
-            .unwrap()
+            .ok_or_else(|| KelError::UnknownIdentifierError)?
             .iter()
             .filter_map(|lc| {
                 if let ReplyRoute::LocScheme(loc_scheme) = lc.get_route() {
@@ -200,10 +190,11 @@ impl Controller {
         watcher_id: &IdentifierPrefix,
         schema: Scheme,
         topic: Topic,
-    ) -> Result<Option<String>, KelError> {
+    ) -> Result<String, KelError> {
         let addresses = self.get_loc_schemas(&watcher_id)?;
         match addresses
             .iter()
+            // TODO It uses first found address that match schema
             .find(|loc| loc.scheme == schema)
             .map(|lc| &lc.url)
         {
@@ -215,43 +206,27 @@ impl Controller {
                             .post(format!("{}resolve", address))
                             .body(oobi_json)
                             .send()
-                            .unwrap()
+                            .map_err(|e| KelError::GeneralError(e.to_string()))?
                             .text()
-                            .unwrap(),
+                            .map_err(|e| KelError::GeneralError(e.to_string()))?,
                         Topic::Query(id) => client
                             .get(format!("{}query/{}", address, id))
                             .send()
-                            .unwrap()
+                            .map_err(|e| KelError::GeneralError(e.to_string()))?
                             .text()
-                            .unwrap(),
+                            .map_err(|e| KelError::GeneralError(e.to_string()))?,
                         Topic::Process(to_process) => client
                             .post(format!("{}process", address))
                             .body(to_process)
                             .send()
-                            .unwrap()
+                            .map_err(|e| KelError::GeneralError(e.to_string()))?
                             .text()
-                            .unwrap(),
+                            .map_err(|e| KelError::GeneralError(e.to_string()))?,
                     };
 
-                    Ok(Some(response))
+                    Ok(response)
                 }
                 Scheme::Tcp => {
-                    // let mut stream = TcpStream::connect(format!(
-                    //     "{}:{}",
-                    //     address
-                    //         .host()
-                    //         .ok_or(anyhow!("Wrong url, missing host {:?}", schema))?,
-                    //     address
-                    //         .port()
-                    //         .ok_or(anyhow!("Wrong url, missing port {:?}", schema))?
-                    // ))
-                    // .await?;
-                    // stream.write(&msg).await?;
-                    // println!("Sending message to witness {}", wit_id.to_str());
-                    // let mut buf = vec![];
-                    // stream.read(&mut buf).await?;
-                    // println!("Got response: {}", String::from_utf8(buf).unwrap());
-                    // Ok(None)
                     todo!()
                 }
             },
@@ -260,31 +235,6 @@ impl Controller {
                 schema
             ))),
         }
-    }
-
-    /// Generate reply event used to add role to given identifier.
-    pub fn generate_end_role(
-        controller_id: &IdentifierPrefix,
-        watcher_id: &IdentifierPrefix,
-        role: Role,
-        enabled: bool,
-    ) -> Result<ReplyEvent, KelError> {
-        let end_role = EndRole {
-            cid: controller_id.clone(),
-            role,
-            eid: watcher_id.clone(),
-        };
-        let reply_route = if enabled {
-            ReplyRoute::EndRoleAdd(end_role)
-        } else {
-            ReplyRoute::EndRoleCut(end_role)
-        };
-        ReplyEvent::new_reply(
-            reply_route,
-            SelfAddressing::Blake3_256,
-            SerializationFormats::JSON,
-        )
-        .map_err(|e| KelError::GeneralError(e.to_string()))
     }
 
     /// Publish key event to witnesses
@@ -308,17 +258,15 @@ impl Controller {
                 )
             })
             .into_iter()
-            .fold(String::default(), |acc, res| {
-                [acc, res.unwrap().unwrap()].join("")
-            });
+            .collect::<Result<Vec<_>, _>>()?
+            .join("");
 
         // Kel should be empty because event is not fully witnessed
         // assert!(self.kel.get_kel(self.kel.prefix()).unwrap().is_none());
 
         // process collected receipts
         self.events_manager
-            .parse_and_process(collected_receipts.as_bytes())
-            .unwrap();
+            .parse_and_process(collected_receipts.as_bytes())?;
 
         // Now event is fully witnessed
         // assert!(self.kel.get_kel(self.kel.prefix()).unwrap().is_some());
@@ -326,25 +274,25 @@ impl Controller {
         // Get processed receipts from database to send all of them to witnesses. It
         // will return one receipt with all witness signatures as one attachment,
         // not three separate receipts as in `collected_receipts`.
-        let rcts_from_db = self
-            .events_manager
-            .get_receipts_of_event(EventSeal {
-                prefix: message.event_message.event.get_prefix(),
-                sn: message.event_message.event.get_sn(),
-                event_digest: message.event_message.event.get_digest(),
-            })?
-            .map(|rct| SignedEventData::from(rct).to_cesr().unwrap())
-            .unwrap_or_default();
+        let rcts_from_db = self.events_manager.get_receipts_of_event(EventSeal {
+            prefix: message.event_message.event.get_prefix(),
+            sn: message.event_message.event.get_sn(),
+            event_digest: message.event_message.event.get_digest(),
+        })?;
+
+        let serialized_receipts = SignedEventData::from(rcts_from_db).to_cesr()?;
 
         // send receipts to all witnesses
-        witness_prefixes.iter().for_each(|prefix| {
-            self.send_to(
-                &IdentifierPrefix::Basic(prefix.clone()),
-                Scheme::Http,
-                Topic::Process(rcts_from_db.clone()),
-            )
-            .unwrap();
-        });
+        witness_prefixes
+            .iter()
+            .try_for_each(|prefix| -> Result<_, KelError> {
+                self.send_to(
+                    &IdentifierPrefix::Basic(prefix.clone()),
+                    Scheme::Http,
+                    Topic::Process(serialized_receipts.clone()),
+                )?;
+                Ok(())
+            })?;
         Ok(())
     }
 
@@ -384,14 +332,20 @@ impl Controller {
         let (_, parsed_event) =
             key_event_message(&event).map_err(|e| KelError::ParseEventError(e.to_string()))?;
         match parsed_event {
-            keri::event_parsing::EventType::KeyEvent(ke) => {
-                let pref = ke.event.get_prefix().clone();
-                if let EventData::Icp(_) = ke.event.get_event_data() {
-                    self.finalize_key_event(ke, sig)?;
+            EventType::KeyEvent(ke) => {
+                if let EventData::Icp(_) = &ke.event.get_event_data() {
+                    self.finalize_key_event(&ke, sig)?;
+                    Ok(ke.event.get_prefix())
+                } else {
+                    // Wrong event type
+                    Err(KelError::InceptionError)
                 }
-                Ok(pref)
             }
-            _ => Err(KelError::GeneralError("Wrong event type".into())),
+            _ =>
+            // Wrong event type
+            {
+                Err(KelError::InceptionError)
+            }
         }
     }
 
@@ -460,11 +414,11 @@ impl Controller {
             .map_err(|e| KelError::GeneralError(e.to_string()))?
             .1;
         match parsed_event {
-            EventType::KeyEvent(ke) => Ok(self.finalize_key_event(ke, sig).unwrap_or_default()),
+            EventType::KeyEvent(ke) => Ok(self.finalize_key_event(&ke, sig)?),
             EventType::Receipt(_) => todo!(),
             EventType::Qry(_) => todo!(),
             EventType::Rpy(rpy) => match rpy.get_route() {
-                ReplyRoute::EndRoleAdd(_) => Ok(self.finalize_add_role(id, rpy, sig).unwrap()),
+                ReplyRoute::EndRoleAdd(_) => Ok(self.finalize_add_role(id, rpy, sig)?),
                 ReplyRoute::EndRoleCut(_) => todo!(),
                 _ => Err(KelError::GeneralError("Wrong event type".into())),
             },
@@ -473,7 +427,7 @@ impl Controller {
 
     fn finalize_key_event(
         &self,
-        event: EventMessage<KeyEvent>,
+        event: &EventMessage<KeyEvent>,
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
         let sigs = sig
@@ -543,9 +497,7 @@ impl Controller {
             .get_kel(&signer_prefix)?
             .as_bytes()
             .to_vec();
-        let end_role = SignedEventData::from(signed_rpy)
-            .to_cesr()
-            .unwrap_or_default();
+        let end_role = SignedEventData::from(signed_rpy).to_cesr()?;
         kel.extend(end_role.iter());
 
         self.send_to(&dest_prefix, Scheme::Http, Topic::Process(kel))?;

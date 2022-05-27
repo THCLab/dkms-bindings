@@ -4,7 +4,8 @@ use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
-    controller::{Controller as KeriController, OptionalConfig},
+    controller::OptionalConfig,
+    event_generator,
     kel::{Basic, BasicPrefix, EndRole, LocationScheme, Prefix, Role, SelfSigning},
     utils::{key_prefix_from_b64, signature_prefix_from_hex},
 };
@@ -240,7 +241,7 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
     resolve_oobi(watcher_oobi.clone())?;
     let watcher_id = serde_json::from_str::<LocationScheme>(&watcher_oobi)?.eid;
     let id = &controller.identifier.parse()?;
-    let add_watcher = KeriController::generate_end_role(id, &watcher_id, Role::Watcher, true)?;
+    let add_watcher = event_generator::generate_end_role(id, &watcher_id, Role::Watcher, true)?;
     String::from_utf8(add_watcher.serialize()?).map_err(|e| anyhow!(e.to_string()))
 }
 

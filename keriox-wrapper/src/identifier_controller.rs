@@ -10,7 +10,7 @@ use keri::{
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
 
-use crate::{controller::Controller, kel::KelError};
+use crate::{controller::Controller, event_generator, kel::KelError};
 
 pub struct IdentifierController {
     pub id: IdentifierPrefix,
@@ -59,7 +59,7 @@ impl IdentifierController {
 
     pub fn add_watcher(&self, watcher_id: IdentifierPrefix) -> String {
         String::from_utf8(
-            Controller::generate_end_role(&self.id, &watcher_id, Role::Watcher, true)
+            event_generator::generate_end_role(&self.id, &watcher_id, Role::Watcher, true)
                 .unwrap()
                 .serialize()
                 .unwrap(),
@@ -69,7 +69,7 @@ impl IdentifierController {
 
     pub fn remove_watcher(&self, watcher_id: IdentifierPrefix) -> String {
         String::from_utf8(
-            Controller::generate_end_role(&self.id, &watcher_id, Role::Watcher, false)
+            event_generator::generate_end_role(&self.id, &watcher_id, Role::Watcher, false)
                 .unwrap()
                 .serialize()
                 .unwrap(),

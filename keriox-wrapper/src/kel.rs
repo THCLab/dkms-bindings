@@ -34,12 +34,12 @@ pub struct Kel {
     notification_bus: NotificationBus,
 }
 impl Kel {
-    pub fn init(path: &str) -> Self {
-        let db = Arc::new(SledEventDatabase::new(Path::new(&path)).unwrap());
-        Kel {
+    pub fn init(path: &str) -> Result<Self, KelError> {
+        let db = Arc::new(SledEventDatabase::new(Path::new(&path))?);
+        Ok(Kel {
             db: db.clone(),
             notification_bus: default_escrow_bus(db.clone()),
-        }
+        })
     }
 
     pub fn register_observer(
@@ -69,32 +69,36 @@ impl Kel {
     }
 
     pub fn parse_and_process(&self, msg: &[u8]) -> Result<(), KelError> {
-        let events = signed_event_stream(msg)
-            .map_err(|e| KelError::ParseEventError(e.to_string()))?
-            .1
+        let (_, events) =
+            signed_event_stream(msg).map_err(|e| KelError::ParseEventError(e.to_string()))?;
+
+        events
             .into_iter()
-            .map(|data| Message::try_from(data).unwrap());
-        events.clone().for_each(|msg| {
-            self.process(&vec![msg.clone()]).unwrap();
-            // check if receipts are attached
-            if let Message::Event(ev) = msg {
-                if let Some(witness_receipts) = ev.witness_receipts {
-                    let id = ev.event_message.event.get_prefix();
-                    let receipt = Receipt {
-                        receipted_event_digest: ev.event_message.get_digest(),
-                        prefix: id,
-                        sn: ev.event_message.event.get_sn(),
-                    };
-                    let signed_receipt = SignedNontransferableReceipt::new(
-                        &receipt.to_message(SerializationFormats::JSON).unwrap(),
-                        None,
-                        Some(witness_receipts),
-                    );
-                    self.process(&vec![Message::NontransferableRct(signed_receipt)])
-                        .unwrap();
+            .try_for_each(|parsed_event| -> Result<_, _> {
+                let msg = Message::try_from(parsed_event)?;
+                self.process(&vec![msg.clone()])?;
+                // check if receipts are attached
+                if let Message::Event(ev) = msg {
+                    if let Some(witness_receipts) = ev.witness_receipts {
+                        let id = ev.event_message.event.get_prefix();
+                        let receipt = Receipt {
+                            receipted_event_digest: ev.event_message.get_digest(),
+                            prefix: id,
+                            sn: ev.event_message.event.get_sn(),
+                        };
+                        let signed_receipt = SignedNontransferableReceipt::new(
+                            &receipt.to_message(SerializationFormats::JSON)?,
+                            None,
+                            Some(witness_receipts),
+                        );
+                        self.process(&vec![Message::NontransferableRct(signed_receipt)])
+                    } else {
+                        Ok(())
+                    }
+                } else {
+                    Ok(())
                 }
-            }
-        });
+            })?;
         Ok(())
     }
 
@@ -148,9 +152,11 @@ impl Kel {
     pub fn get_receipts_of_event(
         &self,
         event_seal: EventSeal,
-    ) -> Result<Option<SignedNontransferableReceipt>, KelError> {
+    ) -> Result<SignedNontransferableReceipt, KelError> {
         let storage = EventStorage::new(self.db.clone());
-        Ok(storage.get_nt_receipts(&event_seal.prefix, event_seal.sn, &event_seal.event_digest)?)
+        storage
+            .get_nt_receipts(&event_seal.prefix, event_seal.sn, &event_seal.event_digest)?
+            .ok_or_else(|| KelError::NoReceipts(event_seal))
     }
 }
 
@@ -170,6 +176,8 @@ pub enum KelError {
     GeneralError(String),
     #[error("unknown identifier")]
     UnknownIdentifierError,
+    #[error("Can't find receipts of {0:?}")]
+    NoReceipts(EventSeal),
     #[error("keri error")]
     KeriError(#[from] keri::error::Error),
     #[error("base64 decode error")]
@@ -197,7 +205,7 @@ pub fn test_parse_attachment() {
 
     // Create temporary db file.
     let root = Builder::new().prefix("test-db").tempdir().unwrap();
-    let kel = Kel::init(root.path().to_str().unwrap().into());
+    let kel = Kel::init(root.path().to_str().unwrap().into()).unwrap();
 
     let issuer_kel = r#"{"v":"KERI10JSON0001b7_","t":"icp","d":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"0","kt":"1","k":["DruZ2ykSgEmw2EHm34wIiEGsUa_1QkYlsCAidBSzUkTU"],"nt":"1","n":["Eao8tZQinzilol20Ot-PPlVz6ta8C4z-NpDOeVs63U8s"],"bt":"3","b":["BGKVzj4ve0VSd8z_AmvhLg4lqcC_9WYX90k03q-R_Ydo","BuyRFMideczFZoapylLIyCjSdhtqVb31wZkRKvPfNqkw","Bgoq68HCmYNUDgOz4Skvlu306o_NY-NrYuKAVhk3Zh9c"],"c":[],"a":[]}-VBq-AABAA0EpZtBNLxOIncUDeLgwX3trvDXFA5adfjpUwb21M5HWwNuzBMFiMZQ9XqM5L2bFUVi6zXomcYuF-mR7CFpP8DQ-BADAAWUZOb17DTdCd2rOaWCf01ybl41U7BImalPLJtUEU-FLrZhDHls8iItGRQsFDYfqft_zOr8cNNdzUnD8hlSziBwABmUbyT6rzGLWk7SpuXGAj5pkSw3vHQZKQ1sSRKt6x4P13NMbZyoWPUYb10ftJlfXSyyBRQrc0_TFqfLTu_bXHCwACKPLkcCa_tZKalQzn3EgZd1e_xImWdVyzfYQmQvBpfJZFfg2c-sYIL3zl1WHpMQQ_iDmxLSmLSQ9jZ9WAjcmDCg-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2022-04-11T20c50c16d643400p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"1","p":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","a":[{"i":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM","s":"0","d":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM"}]}-VBq-AABAAZZlCpwL0QwqF-eTuqEgfn95QV9S4ruh4wtxKQbf1-My60Nmysprv71y0tJGEHkMsUBRz0bf-JZsMKyZ3N8m7BQ-BADAA6ghW2PpLC0P9CxmW13G6AeZpHinH-_HtVOu2jWS7K08MYkDPrfghmkKXzdsMZ44RseUgPPty7ZEaAxZaj95bAgABKy0uBR3LGMwg51xjMZeVZcxlBs6uARz6quyl0t65BVrHX3vXgoFtzwJt7BUl8LXuMuoM9u4PQNv6yBhxg_XEDwACJe4TwVqtGy1fTDrfPxa14JabjsdRxAzZ90wz18-pt0IwG77CLHhi9vB5fF99-fgbYp2Zoa9ZVEI8pkU6iejcDg-EAB0AAAAAAAAAAAAAAAAAAAAAAQ1AAG2022-04-11T20c50c22d909900p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"EPYT0dEpoc_5QKIGnRYFRqpXHGpeYOhveJTmHoVC6LMU","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"2","p":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","a":[{"i":"EzSVC7-SuizvdVkpXmHQx5FhUElLjUOjCbgN81ymeWOE","s":"0","d":"EQ6RIFoVUDmmyuoMDMPPHDm14GtXaIf98j4AG2vNfZ1U"}]}-VBq-AABAAYycRM_VyvV2fKyHdUceMcK8ioVrBSixEFqY1nEO9eTZQ2NV8hrLc_ux9_sKn1p58kyZv5_y2NW3weEiqn-5KAA-BADAAQl22xz4Vzkkf14xsHMAOm0sDkuxYY8SAgJV-RwDDwdxhN4WPr-3Pi19x57rDJAE_VkyYwKloUuzB5Dekh-JzCQABk98CK_xwG52KFWt8IEUU-Crmf058ZJPB0dCffn-zjiNNgjv9xyGVs8seb0YGInwrB351JNu0sMHuEEgPJLKxAgACw556h2q5_BG6kPHAF1o9neMLDrZN_sCaJ-3slWWX-y8M3ddPN8Zp89R9A36t3m2rq-sbC5h_UDg5qdnrZ-ZxAw-EAB0AAAAAAAAAAAAAAAAAAAAAAg1AAG2022-04-11T20c50c23d726188p00c00"#;
 

@@ -1,15 +1,18 @@
 use keri::{
+    derivation::self_addressing::SelfAddressing,
     event::{
         sections::{
             seal::{DigestSeal, Seal},
             threshold::SignatureThreshold,
         },
-        EventMessage,
+        EventMessage, SerializationFormats,
     },
     event_message::{
         event_msg_builder::EventMsgBuilder, key_event_message::KeyEvent, EventTypeTag,
     },
-    prefix::{BasicPrefix, SelfAddressingPrefix},
+    oobi::{EndRole, Role},
+    prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix},
+    query::reply_event::{ReplyEvent, ReplyRoute},
     state::IdentifierState,
 };
 
@@ -110,4 +113,30 @@ pub fn anchor_with_seal(
         .with_seal(seal_list.to_owned())
         .build()?;
     Ok(ev)
+}
+
+/// Generate reply event used to add role to given identifier.
+pub fn generate_end_role(
+    controller_id: &IdentifierPrefix,
+    watcher_id: &IdentifierPrefix,
+    role: Role,
+    enabled: bool,
+) -> Result<ReplyEvent, KelError> {
+    let end_role = EndRole {
+        cid: controller_id.clone(),
+        role,
+        eid: watcher_id.clone(),
+    };
+    let reply_route = if enabled {
+        ReplyRoute::EndRoleAdd(end_role)
+    } else {
+        ReplyRoute::EndRoleCut(end_role)
+    };
+    ReplyEvent::new_reply(
+        reply_route,
+        // TODO set algo and serialization
+        SelfAddressing::Blake3_256,
+        SerializationFormats::JSON,
+    )
+    .map_err(|e| KelError::GeneralError(e.to_string()))
 }
