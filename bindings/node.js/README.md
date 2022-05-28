@@ -16,54 +16,10 @@ This library also advocates cryptographic agility, hence it does not enforce to 
 
 * **Controller** -- manages Identifiers;
 * **KERI** -- see https://keri.one/ page;
-* **TPM** -- [Trusted Platform Module](https://en.wikipedia.org/wiki/Trusted_Platform_Module).
-
-# Install
-
-`npm i keri.js`
 
 # Usage
 
-## Bootstraping Controller
-
-```
-import keri from "index";
-import Tpm from "./test/support/tpm";
-import { b64EncodeUrlSafe } from "./test/support/b64";
-
-const currentKeyManager = new Tpm();
-// nextKeyManager is required for prerotation to be known
-const nextKeyManager = new Tpm();
-
-let inceptionEvent = keri.incept([[curKeySai, nextKeySai]]);
-
-let signature = currentKeyManager.sign(inceptionEvent);
-
-let controller = keri.finalizeIncept(
-  inceptionEvent,
-  [prefixedSignature(b64EncodeUrlSafe(signature))]
-);
-```
-
-## Rotating current key
-
-```
-import keri from "index";
-import Tpm from "./test/support/tpm";
-import { b64EncodeUrlSafe } from "./test/support/b64";
-
-const nextNextKeyManager = new Tpm();
-let nextNextKeySai = prefixedDerivative(b64EncodeUrlSafe(nextNextKeyManager.pubKey));
-
-let rotationEvent = controller.rotate([[nextKeySai, nextNextKeySai]])
-
-signature = nextKeyManager.sign(rotationEvent);
-
-let result = controller.finalizeRotation(
-  rotationEvent,
-  [prefixedSignature(b64EncodeUrlSafe(signature))]
-);
-```
+See tests.
 
 ## Interface overview
 
@@ -80,19 +36,11 @@ Creates new Interaction Event along with arbitrary data. The purpose of Interact
 
 * `keri.anchor(ListOfDigests: Array): InteractionEvent`
 
-### `#delegate` **[WIP]**
-
-Bootstraps delegated Identifier, so a Delegatee.
-
 ### `#getKel`
 
 Returns Key Event Log in the CESR representation for current Identifier.
 
 * `controller.getKel(): String`
-
-### `#establishDelegatee` **[WIP]**
-
-Establishes delegation from the Delegator perspective.
 
 ### `#finalizeAnchor`
 
@@ -100,27 +48,11 @@ Finalizes appending `InteractionEvent` to KEL.
 
 * `controller.finalizeAnchor(icp: InteractionEvent, sig: Signature): Controller`
 
-### `#finalizeDelegate` **[WIP]**
-
-Finalizes delegation from the Delegator perspective.
-
 ### `#finalizeIncept`
 
 Finalizes inception (bootstrapping an Identifier and its Key Event Log).
 
 * `controller.finalizeIncept(icp: InceptionEvent, sig: Signature): Controller`
-
-### `#finalizeRotateWitnesses` **[WIP]**
-
-Finalizes Witnesses rotation by appending new rotation event to KEL.
-
-* `controller.finalizeRotateWitnesses(rot: RotationEvent, sig: Signature): bool`
-
-### `#finalizeRotation`
-
-Finalizes key rotation by appending new rotation event to KEL.
-
-* `controller.finalizeRotation(rot: RotationEvent, sig: Signature): bool`
 
 ### `.incept`
 
@@ -133,10 +65,4 @@ Creates inception event that needs to be signed externally.
 Creates rotation event that needs to be signed externally.
 
 * `controller.rotate(currentNextKeyPairs: Array): RotationEvent`
-
-### `#rotateWitnesses` **[WIP]**
-
-Creates rotation event for Witnesses rotation that needs to be signed externally.
-
-* `controller.rotateWitnesses(witnessesToAdd: Array, witnessesToRemove: Array): RotationEvent`
 
