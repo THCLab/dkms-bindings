@@ -9,17 +9,18 @@ export default (oobis: string[]): [IdController, KeyPair] => {
   let pk = new PublicKey(KeyType.Ed25519, Buffer.from(currentKeyManager.pubKey));
   let pk2 = new PublicKey(KeyType.Ed25519, Buffer.from(nextKeyManager.pubKey));
 
-  let inceptionEvent = incept(
+
+  let config = new ConfigBuilder().withDbPath("./database")
+    .build();
+  console.log(config);
+  let controller = new Controller(config);
+
+  let inceptionEvent = controller.incept(
     [pk.getKey()],
     [pk2.getKey()],
     oobis,
     oobis.length
   );
-
-  let config = new ConfigBuilder().withDbPath("./database")
-    .build();
-  console.log(config);
-  let controller = Controller.init(config);
 
   let signature = currentKeyManager.sign(inceptionEvent);
 
