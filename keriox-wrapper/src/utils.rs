@@ -9,7 +9,7 @@ use keri::{
 use crate::kel::KelError;
 
 pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, KelError> {
-    let key = KeriPK::new(base64::decode(key).unwrap());
+    let key = KeriPK::new(base64::decode(key)?);
     Ok(derivation.derive(key))
 }
 

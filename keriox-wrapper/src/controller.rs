@@ -85,7 +85,7 @@ impl Controller {
         let mut events_manager = Kel::init(
             events_db
                 .to_str()
-                .ok_or(KelError::GeneralError("Improper path".into()))?,
+                .ok_or(KelError::DatabaseError("Improper path".into()))?,
         )?;
         let oobi_manager = Arc::new(OobiManager::new(&oobis_db));
         // TODO oobi manager should be independent of event manager
@@ -114,9 +114,9 @@ impl Controller {
     pub fn resolve_loc_schema(&self, lc: &LocationScheme) -> Result<(), KelError> {
         let url = format!("{}oobi/{}", lc.url, lc.eid);
         let oobis = reqwest::blocking::get(url)
-            .map_err(|e| KelError::GeneralError(e.to_string()))?
+            .map_err(|e| KelError::CommunicationError(e.to_string()))?
             .text()
-            .map_err(|e| KelError::GeneralError(e.to_string()))?;
+            .map_err(|e| KelError::CommunicationError(e.to_string()))?;
 
         self.events_manager.parse_and_process(oobis.as_bytes())
     }
@@ -280,19 +280,24 @@ impl Controller {
             event_digest: message.event_message.event.get_digest(),
         })?;
 
-        let serialized_receipts = SignedEventData::from(rcts_from_db).to_cesr()?;
+        match rcts_from_db {
+            Some(receipts) => {
+                let serialized_receipts = SignedEventData::from(receipts).to_cesr()?;
+                // send receipts to all witnesses
+                witness_prefixes
+                    .iter()
+                    .try_for_each(|prefix| -> Result<_, KelError> {
+                        self.send_to(
+                            &IdentifierPrefix::Basic(prefix.clone()),
+                            Scheme::Http,
+                            Topic::Process(serialized_receipts.clone()),
+                        )?;
+                        Ok(())
+                    })?;
+            }
+            None => (),
+        };
 
-        // send receipts to all witnesses
-        witness_prefixes
-            .iter()
-            .try_for_each(|prefix| -> Result<_, KelError> {
-                self.send_to(
-                    &IdentifierPrefix::Basic(prefix.clone()),
-                    Scheme::Http,
-                    Topic::Process(serialized_receipts.clone()),
-                )?;
-                Ok(())
-            })?;
         Ok(())
     }
 
@@ -337,15 +342,14 @@ impl Controller {
                     self.finalize_key_event(&ke, sig)?;
                     Ok(ke.event.get_prefix())
                 } else {
-                    // Wrong event type
-                    Err(KelError::InceptionError)
+                    Err(KelError::ParseEventError(
+                        "Wrong event type, should be inception event".into(),
+                    ))
                 }
             }
-            _ =>
-            // Wrong event type
-            {
-                Err(KelError::InceptionError)
-            }
+            _ => Err(KelError::ParseEventError(
+                "Wrong event type, should be inception event".into(),
+            )),
         }
     }
 
@@ -358,8 +362,7 @@ impl Controller {
         witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
     ) -> Result<String, KelError> {
-        self.setup_witnesses(&witness_to_add)
-            .map_err(|e| KelError::GeneralError(e.to_string()))?;
+        self.setup_witnesses(&witness_to_add)?;
         let witnesses_to_add = witness_to_add
             .iter()
             .map(|wit| {
@@ -411,7 +414,7 @@ impl Controller {
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
         let parsed_event = event_message(event)
-            .map_err(|e| KelError::GeneralError(e.to_string()))?
+            .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
         match parsed_event {
             EventType::KeyEvent(ke) => Ok(self.finalize_key_event(&ke, sig)?),
@@ -441,11 +444,11 @@ impl Controller {
 
         let signed_message = event.sign(sigs, None, None);
         self.events_manager
-            .process(&vec![Message::Event(signed_message.clone())])?;
+            .process(&Message::Event(signed_message.clone()))?;
 
         let wits = match event.event.get_event_data() {
-            keri::event::event_data::EventData::Icp(icp) => icp.witness_config.initial_witnesses,
-            keri::event::event_data::EventData::Rot(rot) => {
+            EventData::Icp(icp) => icp.witness_config.initial_witnesses,
+            EventData::Rot(rot) => {
                 let wits = self
                     .events_manager
                     .get_current_witness_list(&event.event.content.prefix)?;
@@ -454,11 +457,11 @@ impl Controller {
                     .chain(rot.witness_config.graft.into_iter())
                     .collect::<Vec<_>>()
             }
-            keri::event::event_data::EventData::Ixn(_) => self
+            EventData::Ixn(_) => self
                 .events_manager
                 .get_current_witness_list(&event.event.content.prefix)?,
-            keri::event::event_data::EventData::Dip(_) => todo!(),
-            keri::event::event_data::EventData::Drt(_) => todo!(),
+            EventData::Dip(_) => todo!(),
+            EventData::Drt(_) => todo!(),
         };
 
         self.publish(&wits, &signed_message)

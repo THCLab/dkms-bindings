@@ -150,7 +150,7 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
     };
     let controller = keriox_wrapper::controller::Controller::new(config)?;
 
-    *KEL.lock().unwrap() = Some(controller);
+    *KEL.lock().map_err(|_e| anyhow!("Can't lock database"))? = Some(controller);
 
     Ok(())
 }
@@ -166,26 +166,29 @@ pub fn incept(
         .iter()
         .map(|wit| serde_json::from_str::<LocationScheme>(wit))
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| anyhow!(e.to_string()))?;
-    let icp = (*KEL.lock().unwrap()).as_ref().unwrap().incept(
-        public_keys
-            .into_iter()
-            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-            .collect(),
-        next_pub_keys
-            .into_iter()
-            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-            .collect(),
-        witnesses,
-        witness_threshold,
-    )?;
+        .map_err(|_e| anyhow!("Can't parse witnesses oobis"))?;
+    let icp = (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
+        .as_ref()
+        .ok_or(anyhow!("Controller wasn't initiated"))?
+        .incept(
+            public_keys
+                .into_iter()
+                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+                .collect(),
+            next_pub_keys
+                .into_iter()
+                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
+                .collect(),
+            witnesses,
+            witness_threshold,
+        )?;
     Ok(icp)
 }
 
 pub fn finalize_inception(event: String, signature: Signature) -> Result<Controller> {
-    let controller_id = (*KEL.lock().unwrap())
+    let controller_id = (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
         .as_ref()
-        .ok_or(anyhow!("There is no controller"))?
+        .ok_or(anyhow!("Controller wasn't initiated"))?
         .finalize_inception(
             event.as_bytes(),
             vec![signature_prefix_from_hex(
@@ -209,32 +212,38 @@ pub fn rotate(
     witness_to_remove: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
-    let id = controller.identifier.parse().unwrap();
+    let id = controller
+        .identifier
+        .parse()
+        .map_err(|_e| anyhow!("Can't parse controller prefix"))?;
     // Parse location schema from string
     let witnesses_to_add = witness_to_add
         .iter()
         .map(|wit| serde_json::from_str::<LocationScheme>(wit))
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| anyhow!(e.to_string()))?;
+        .map_err(|_| anyhow!("Can't parse witnesses to add oobis"))?;
     let witnesses_to_remove = witness_to_remove
         .iter()
         .map(|wit| wit.parse::<BasicPrefix>())
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| anyhow!(e.to_string()))?;
-    Ok((*KEL.lock().unwrap()).as_ref().unwrap().rotate(
-        id,
-        current_keys
-            .into_iter()
-            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-            .collect(),
-        new_next_keys
-            .into_iter()
-            .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-            .collect(),
-        witnesses_to_add,
-        witnesses_to_remove,
-        witness_threshold,
-    )?)
+        .map_err(|_| anyhow!("Can't parse witnesses to remove identifiers"))?;
+    Ok((*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
+        .as_ref()
+        .ok_or(anyhow!("Controller wasn't initiated"))?
+        .rotate(
+            id,
+            current_keys
+                .into_iter()
+                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()))
+                .collect::<Result<Vec<_>, _>>()?,
+            new_next_keys
+                .into_iter()
+                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()))
+                .collect::<Result<Vec<_>, _>>()?,
+            witnesses_to_add,
+            witnesses_to_remove,
+            witness_threshold,
+        )?)
 }
 
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
@@ -246,30 +255,33 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
 }
 
 pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<()> {
-    let signed_event = (*KEL.lock().unwrap()).as_ref().unwrap().finalize_event(
-        &identifier.identifier.parse()?,
-        event.as_bytes(),
-        vec![signature_prefix_from_hex(
-            &signature.key,
-            signature.algorithm.into(),
-        )?],
-    )?;
+    let signed_event = (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
+        .as_ref()
+        .ok_or(anyhow!("Controller wasn't initiated"))?
+        .finalize_event(
+            &identifier.identifier.parse()?,
+            event.as_bytes(),
+            vec![signature_prefix_from_hex(
+                &signature.key,
+                signature.algorithm.into(),
+            )?],
+        )?;
     Ok(signed_event)
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<()> {
     let lc: LocationScheme = serde_json::from_str(&oobi_json)?;
-    (*KEL.lock().unwrap())
+    (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
         .as_ref()
-        .unwrap()
+        .ok_or(anyhow!("Controller wasn't initiated"))?
         .resolve_loc_schema(&lc)?;
     Ok(())
 }
 
 fn query_by_id(controller: Controller, query_id: String) -> Result<()> {
-    (*KEL.lock().unwrap())
+    (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
         .as_ref()
-        .unwrap()
+        .ok_or(anyhow!("Controller wasn't initiated"))?
         .query(&controller.identifier.parse().unwrap(), &query_id)?;
     Ok(())
 }
@@ -288,9 +300,9 @@ pub fn query(controller: Controller, oobis_json: String) -> Result<()> {
                 if let Oobis::EndRole(ref er) = oobi {
                     issuer_id = Some(er.cid.to_str())
                 };
-                (*KEL.lock().unwrap())
+                (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
                     .as_ref()
-                    .unwrap()
+                    .ok_or(anyhow!("Controller wasn't initiated"))?
                     .send_oobi_to_watcher(
                         &controller.identifier.parse().unwrap(),
                         &serde_json::to_string(&oobi)?,
@@ -307,9 +319,9 @@ pub fn query(controller: Controller, oobis_json: String) -> Result<()> {
 }
 
 pub fn process_stream(stream: String) -> Result<()> {
-    (*KEL.lock().unwrap())
+    (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
         .as_ref()
-        .unwrap()
+        .ok_or(anyhow!("Controller wasn't initiated"))?
         .events_manager
         .parse_and_process(stream.as_bytes())?;
     Ok(())

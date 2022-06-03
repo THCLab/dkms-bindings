@@ -76,7 +76,7 @@ impl Kel {
             .into_iter()
             .try_for_each(|parsed_event| -> Result<_, _> {
                 let msg = Message::try_from(parsed_event)?;
-                self.process(&vec![msg.clone()])?;
+                self.process(&msg)?;
                 // check if receipts are attached
                 if let Message::Event(ev) = msg {
                     if let Some(witness_receipts) = ev.witness_receipts {
@@ -91,7 +91,7 @@ impl Kel {
                             None,
                             Some(witness_receipts),
                         );
-                        self.process(&vec![Message::NontransferableRct(signed_receipt)])
+                        self.process(&Message::NontransferableRct(signed_receipt))
                     } else {
                         Ok(())
                     }
@@ -102,17 +102,11 @@ impl Kel {
         Ok(())
     }
 
-    pub fn process(&self, msg: &[Message]) -> Result<(), KelError> {
+    pub fn process(&self, msg: &Message) -> Result<(), KelError> {
         let processor = EventProcessor::new(self.db.clone());
-        let (_process_ok, _process_failed): (Vec<_>, Vec<_>) = msg
-            .iter()
-            .map(|message| {
-                processor
-                    .process(message.clone())
-                    .and_then(|not| self.notification_bus.notify(&not))
-            })
-            .partition(Result::is_ok);
-        Ok(())
+        Ok(processor
+            .process(msg.clone())
+            .and_then(|not| self.notification_bus.notify(&not))?)
     }
 
     pub fn get_current_public_keys(
@@ -152,17 +146,19 @@ impl Kel {
     pub fn get_receipts_of_event(
         &self,
         event_seal: EventSeal,
-    ) -> Result<SignedNontransferableReceipt, KelError> {
+    ) -> Result<Option<SignedNontransferableReceipt>, KelError> {
         let storage = EventStorage::new(self.db.clone());
-        storage
-            .get_nt_receipts(&event_seal.prefix, event_seal.sn, &event_seal.event_digest)?
-            .ok_or_else(|| KelError::NoReceipts(event_seal))
+        Ok(storage.get_nt_receipts(&event_seal.prefix, event_seal.sn, &event_seal.event_digest)?)
     }
 }
 
 #[derive(Error, Debug)]
 pub enum KelError {
-    #[error("can't generate inception event")]
+    #[error("Database error: {0}")]
+    DatabaseError(String),
+    #[error("Communication error: {0}")]
+    CommunicationError(String),
+    #[error("Inception event error")]
     InceptionError,
     #[error("can't generate rotation event")]
     RotationError,
@@ -176,10 +172,8 @@ pub enum KelError {
     GeneralError(String),
     #[error("unknown identifier")]
     UnknownIdentifierError,
-    #[error("Can't find receipts of {0:?}")]
-    NoReceipts(EventSeal),
-    #[error("keri error")]
-    KeriError(#[from] keri::error::Error),
+    #[error("Error while event processing: ")]
+    EventProcessingError(#[from] keri::error::Error),
     #[error("base64 decode error")]
     Base64Error(#[from] base64::DecodeError),
     #[error("hex decode error")]
