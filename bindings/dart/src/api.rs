@@ -113,7 +113,8 @@ pub fn with_initial_oobis(config: Config, oobis_json: String) -> Config {
 
 impl Config {
     pub fn build(&self) -> Result<OptionalConfig> {
-        let oobis: Vec<LocationScheme> = serde_json::from_str(&self.initial_oobis)?;
+        let oobis: Vec<LocationScheme> = serde_json::from_str(&self.initial_oobis)
+            .map_err(|_e| anyhow!("Improper location scheme structure"))?;
         Ok(OptionalConfig {
             initial_oobis: Some(oobis),
             db_path: None,
@@ -140,15 +141,14 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
     let config = if let Some(config) = optional_configs {
         config
             .build()
-            .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))
-            .ok()
+            .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))?
     } else {
-        Some(OptionalConfig {
+        OptionalConfig {
             db_path: Some(PathBuf::from(input_app_dir)),
             initial_oobis: None,
-        })
+        }
     };
-    let controller = keriox_wrapper::controller::Controller::new(config)?;
+    let controller = keriox_wrapper::controller::Controller::new(Some(config))?;
 
     *KEL.lock().map_err(|_e| anyhow!("Can't lock database"))? = Some(controller);
 
