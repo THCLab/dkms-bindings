@@ -54,7 +54,7 @@ pub fn test_process() -> Result<()> {
 
 #[test]
 pub fn test_optional_config() -> Result<()> {
-    use crate::api::{init_kel};
+    use crate::api::init_kel;
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -66,9 +66,9 @@ pub fn test_optional_config() -> Result<()> {
     let oc = config.build();
     assert!(oc.is_err());
 
-    let config = Config { initial_oobis: r#"[{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:3236/"}]"#.into() };
-    //    let oc = config.build()?;
+    let config = Config { initial_oobis: r#"[{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:0/"}]"#.into() };
 
+    // Fail to resolve oobi
     let result = init_kel(root.path().to_str().unwrap().into(), Some(config));
     assert!(result.is_err());
 

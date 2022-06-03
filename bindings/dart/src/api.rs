@@ -148,9 +148,16 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
             initial_oobis: None,
         }
     };
-    let controller = keriox_wrapper::controller::Controller::new(Some(config))?;
+    let is_initialized = {
+        (*KEL.lock().map_err(|_e| anyhow!("Can't lock database"))?)
+            .as_ref()
+            .is_some()
+    };
 
-    *KEL.lock().map_err(|_e| anyhow!("Can't lock database"))? = Some(controller);
+    if !is_initialized {
+        let controller = keriox_wrapper::controller::Controller::new(Some(config))?;
+        *KEL.lock().map_err(|_e| anyhow!("Can't lock database"))? = Some(controller);
+    }
 
     Ok(())
 }
