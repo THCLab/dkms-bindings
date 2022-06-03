@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:keri/keri.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,7 +22,13 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+    initKel();
     super.initState();
+  }
+
+  Future<void> initKel()async {
+    var dir = await getLocalPath();
+    await Keri.initKel(inputAppDir: dir);
   }
 
 
@@ -37,5 +44,10 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
     );
+  }
+
+  Future<String> getLocalPath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
   }
 }

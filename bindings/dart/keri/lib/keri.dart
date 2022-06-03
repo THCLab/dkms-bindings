@@ -6,16 +6,16 @@ import 'bridge_generated.dart';
 
 class Keri {
   static const base = 'dartkeriox';
-  final path = Platform.isWindows ? '$base.dll' : 'lib$base.so';
-  late final dylib = Platform.isIOS
+  static const path = 'lib$base.so';
+  static late final dylib = Platform.isIOS
       ? DynamicLibrary.process()
       : Platform.isMacOS
       ? DynamicLibrary.executable()
       : DynamicLibrary.open(path);
-  late final api = KeriDartImpl(dylib);
+  static late final api = KeriDartImpl(dylib);
 
 
-  Future<void> initKel({required String inputAppDir, Config? optionalConfigs, dynamic hint}) async{
+  static Future<void> initKel({required String inputAppDir, Config? optionalConfigs, dynamic hint}) async{
     await api.initKel(inputAppDir: inputAppDir);
   }
 
