@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:keri/bridge_generated.dart';
 import 'package:keri/keri.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -28,7 +29,10 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initKel()async {
     var dir = await getLocalPath();
-    await Keri.initKel(inputAppDir: dir);
+    var conf = Config(initialOobis: "[{\"eid\":\"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ\",\"scheme\":\"http\",\"url\":\"http://127.0.0.1:3236/\"}]");
+    print(conf);
+    await Keri.initKel(inputAppDir: dir, optionalConfigs: conf);
+    print('initialized');
   }
 
 

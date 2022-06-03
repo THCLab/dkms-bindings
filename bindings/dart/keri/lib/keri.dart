@@ -2,6 +2,9 @@
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:keri/exceptions.dart';
+
 import 'bridge_generated.dart';
 
 class Keri {
@@ -16,7 +19,25 @@ class Keri {
 
 
   static Future<void> initKel({required String inputAppDir, Config? optionalConfigs, dynamic hint}) async{
-    await api.initKel(inputAppDir: inputAppDir);
+    if(optionalConfigs != null){
+      try{
+        await api.initKel(inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
+      }on FfiException catch(e){
+        if(e.message.contains('Improper location scheme structure')){
+          throw IncorrectInitialConfigException("The provided argument optionalConfigs contains incorrect data.");
+        }
+        if(e.message.contains('os error 30')){
+          throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
+        }
+      }
+    }else{
+      await api.initKel(inputAppDir: inputAppDir);
+      try{
+        await api.initKel(inputAppDir: inputAppDir);
+      }on FfiException catch(e){
+        throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
+      }
+    }
   }
 
   Future<String> incept(
