@@ -67,7 +67,7 @@ class Keri {
     }
   }
 
-  Future<Controller> finalizeInception(
+  static Future<Controller> finalizeInception(
       {required String event, required Signature signature, dynamic hint}) async{
     return await api.finalizeInception(event: event, signature: signature);
   }
