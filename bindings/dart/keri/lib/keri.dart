@@ -23,11 +23,15 @@ class Keri {
       try{
         await api.initKel(inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
       }on FfiException catch(e){
+        print(e.message);
         if(e.message.contains('Improper location scheme structure')){
-          throw IncorrectInitialConfigException("The provided argument optionalConfigs contains incorrect data.");
+          throw IncorrectOptionalConfigsException("The provided argument optionalConfigs contains incorrect data.");
         }
         if(e.message.contains('os error 30')){
           throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
+        }
+        if(e.message.contains('error sending request for url')){
+          throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
         }
       }
     }else{
@@ -40,13 +44,27 @@ class Keri {
     }
   }
 
-  Future<String> incept(
+  static Future<String> incept(
       {required List<PublicKey> publicKeys,
         required List<PublicKey> nextPubKeys,
         required List<String> witnesses,
         required int witnessThreshold,
         dynamic hint}) async{
-    return await api.incept(publicKeys: publicKeys, nextPubKeys: nextPubKeys, witnesses: witnesses, witnessThreshold: witnessThreshold);
+    try{
+      return await api.incept(publicKeys: publicKeys, nextPubKeys: nextPubKeys, witnesses: witnesses, witnessThreshold: witnessThreshold);
+    }on FfiException catch(e){
+      if(e.message.contains('Controller wasn\'t initiated')){
+        throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
+      }
+      if(e.message.contains('Base64Error')){
+        throw IncorrectKeyFormatException("The provided key is not a Base64 string. Check the string once again.");
+      }
+      if(e.message.contains('Can\'t parse witnesses oobis')){
+        throw IncorrectWitnessOobiException("The provided witness oobi is incorrect. Check the string once again.");
+      }
+      print(e);
+      throw Exception(e.message);
+    }
   }
 
   Future<Controller> finalizeInception(

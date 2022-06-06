@@ -29,10 +29,21 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initKel()async {
     var dir = await getLocalPath();
-    var conf = Config(initialOobis: "[{\"eid\":\"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ\",\"scheme\":\"http\",\"url\":\"http://127.0.0.1:3236/\"}]");
+    var conf = Config(initialOobis: "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}]");
+    var oobiString = "[\"{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}\"]";
     print(conf);
     await Keri.initKel(inputAppDir: dir, optionalConfigs: conf);
     print('initialized');
+    var key_pub_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
+    var key_pub_2 = 'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
+    List<PublicKey> vec1 = [];
+    vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_1));
+    List<PublicKey> vec2 = [];
+    vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_2));
+    List<String> vec3 = [];
+    var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+    print('icp');
+
   }
 
 
