@@ -82,7 +82,9 @@ class _MyAppState extends State<MyApp> {
 
     //var kelkel = await Keri.getKelByStr(contId: 'Eqq7GNTmaF9ELjAuL3f_hWFLK4NoO014dxdUbrJRAVG0');
 
-    var add = await Keri.addWatcher(controller: Controller(identifier: 'E7DTjsMVpK29UqpWYI_GrnYuhvf42sq4l7LTqGJtFZOs'), watcherOobi: oobiString);
+    //var add = await Keri.addWatcher(controller: Controller(identifier: 'E7DTjsMVpK29UqpWYI_GrnYuhvf42sq4l7LTqGJtFZOs'), watcherOobi: oobiString);
+
+    await Keri.resolveOobi(oobiJson: oobiString);
   }
 
 

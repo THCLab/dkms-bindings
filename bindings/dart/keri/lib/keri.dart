@@ -175,6 +175,22 @@ class Keri {
   }
 
   static Future<void> resolveOobi({required String oobiJson, dynamic hint}) async{
+    try{
+
+    }on FfiException catch(e){
+      if(e.message.contains('expected value at line')){
+        throw IncorrectWitnessOobiException('Provided oobi is incorrect. Please check the JSON once again');
+      }
+      if(e.message.contains('EOF while parsing a value')){
+        throw IncorrectWitnessOobiException('Provided oobi is an empty string. Please provide a correct string.');
+      }
+      if(e.message.contains('error sending request for url')){
+        throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      }
+      if(e.message.contains('Deserialize error')){//CZY TO POPRAWNE?
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+    }
     await api.resolveOobi(oobiJson: oobiJson);
   }
 
