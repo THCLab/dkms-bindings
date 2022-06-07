@@ -62,7 +62,12 @@ class Keri {
       if(e.message.contains('Can\'t parse witnesses oobis')){
         throw IncorrectWitnessOobiException("The provided witness oobi is incorrect. Check the string once again.");
       }
-      print(e);
+      if(e.message.contains('Improper witness prefix')){
+        throw ImproperWitnessPrefixException("Improper witness prefix, should be basic prefix. Check the eid field.");
+      }
+      if(e.message.contains('error sending request for url')){
+        throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      }
       throw Exception(e.message);
     }
   }
@@ -73,10 +78,13 @@ class Keri {
       return await api.finalizeInception(event: event, signature: signature);
     }on FfiException catch (e){
       if(e.message.contains('hex decode error')){
-        throw IncorrectSignatureException('The signature provided is not a correct HEX string. Check the signature once again');
+        throw IncorrectSignatureException('The signature provided is not a correct HEX string. Check the signature once again.');
       }
       if(e.message.contains('can\'t parse event')){
         throw WrongEventException('Provided string is not a correct icp event. Check the string once again.');
+      }
+      if(e.message.contains('Signature verification failed')){
+        throw SignatureVerificationException('Signature verification failed - event signature does not match event keys.');
       }
       rethrow;
     }
@@ -92,22 +100,32 @@ class Keri {
         required int witnessThreshold,
         dynamic hint}) async{
     try{
+      return await api.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: witnessToAdd, witnessToRemove: witnessToRemove, witnessThreshold: witnessThreshold);
 
     }on FfiException catch (e){
       if(e.message.contains('Can\'t parse controller')){
-        throw WrongControllerIdentifierException('Can\'t parse controller prefix. Check the confroller once again.');
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
       }
       if(e.message.contains('base64 decode error')){
         throw IncorrectKeyFormatException("The provided key is not a Base64 string. Check the string once again.");
       }
-      if(e.message.contains('Can\'t parse witnesses to add oobis')) {
+      if(e.message.contains('parse witnesses to add oobis')) {
         throw WitnessParsingException('Can\'t parse witnesses to add oobis. Check the wittnessToAdd field.');
       }
       if(e.message.contains('Can\'t parse witnesses to remove identifiers')){
         throw WitnessParsingException('Can\'t parse witnesses to remove identifiers. Check the wittnessToRemove field.');
       }
+      if(e.message.contains('error sending request for url')){
+        throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      }
+      if(e.message.contains('Improper witness prefix')){
+        throw ImproperWitnessPrefixException("Improper witness prefix, should be basic prefix. Check the eid field.");
+      }
+      if(e.message.contains('unknown identifier')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      rethrow;
     }
-    return await api.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: witnessToAdd, witnessToRemove: witnessToRemove, witnessThreshold: witnessThreshold);
   }
 
   static Future<String> addWatcher(
@@ -145,7 +163,7 @@ class Keri {
       return await api.getKel(cont: cont);
     }on FfiException catch(e){
       if(e.message.contains('Deserialize error')){
-        throw WrongControllerIdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
       rethrow;
     }

@@ -87,17 +87,17 @@ class WrongEventException implements Exception {
 }
 
 ///An exception thrown when the controller provided to function has an incorrect identifier
-class WrongControllerIdentifierException implements Exception {
+class IdentifierException implements Exception {
   ///The description for the exception.
   String cause;
 
   ///Exception constructor containing the description for the exception.
-  WrongControllerIdentifierException(this.cause);
+  IdentifierException(this.cause);
   @override
-  String toString() => "WrongControllerIdentifierException: $cause";
+  String toString() => "IdentifierException: $cause";
 }
 
-///An exception thrown when the controller provided to function has an incorrect identifier
+///An exception thrown when the witness provided to function cannot be parsed.
 class WitnessParsingException implements Exception {
   ///The description for the exception.
   String cause;
@@ -106,5 +106,27 @@ class WitnessParsingException implements Exception {
   WitnessParsingException(this.cause);
   @override
   String toString() => "WitnessParsingException: $cause";
+}
+
+///An exception thrown when the witness prefix is in the wrong scheme.
+class ImproperWitnessPrefixException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  ImproperWitnessPrefixException(this.cause);
+  @override
+  String toString() => "ImproperWitnessPrefixException: $cause";
+}
+
+///An exception thrown when the event signature does not match the event keys.
+class SignatureVerificationException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  SignatureVerificationException(this.cause);
+  @override
+  String toString() => "SignatureVerificationException: $cause";
 }
 

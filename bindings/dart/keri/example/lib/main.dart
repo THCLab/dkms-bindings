@@ -32,8 +32,11 @@ class _MyAppState extends State<MyApp> {
     var signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
     var conf = Config(initialOobis: "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}]");
-    var oobiString = "[\"{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}\"]";
+    var oobiString = "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}";
     print(conf);
+    //var kel = await Keri.getKel(cont: Controller(identifier: 'E4ipTizaI6dOOi_F0POXLG4l9mqrCoBmB0-gnk8Lag5U'));
+    //var key_temp_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
+    //var key_temp_2 = 'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
     await Keri.initKel(inputAppDir: dir);
     print('initialized');
     //var key_pub_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
@@ -45,14 +48,18 @@ class _MyAppState extends State<MyApp> {
     List<PublicKey> vec2 = [];
     vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_2));
     List<String> vec3 = [];
+    var ev = '{"v":"KERI10JSON00012b_","t":"icp","d":"ET63RU-HSU3PSgHYqCr4o2veyL0GiThI_kcabIWK3mlk","i":"ET63RU-HSU3PSgHYqCr4o2veyL0GiThI_kcabIWK3mlk","s":"0","kt":"1","k":["B3-pfSEBecCc6FGwYzyJ83Nndkbq24LAhGzqc9vZlb0E"],"nt":"1","n":["EVqsf_2iPF9bl9cqh4ZK32k_ed4XczosHlvJuCeb7zlw"],"bt":"0","b":[],"c":[],"a":[]}';
+    var sig2 = await signer.sign(ev);
+    var controller = await Keri.finalizeInception(event: ev, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: sig2));
+
     var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
     print('icp');
     var signature = await signer.sign(icp_event);
     print(signature);
-    //print(icp_event);
-    //var ev = '{"v":"kotki","t":"icp","d":"E1IsYB9Ei_F9cJvtrnsug5aopeU62OF2kej-YBtMuLRo","i":"E1IsYB9Ei_F9cJvtrnsug5aopeU62OF2kej-YBtMuLRo","s":"0","kt":"1","k":["Bv4AzLgC8riN3ZKWz8NERNdLmYvgCjYCrc0l8OZql1aM"],"nt":"1","n":["EHODwKX9ygXX033OrDW9P_PTmfAmL9xM6DOqya2heG0Y"],"bt":"0","b":[],"c":[],"a":[]}';
-    var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+    print(icp_event);
+    //var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
     //var kel = await Keri.getKel(cont: Controller(identifier: 'cat'));
+    print('controller: ${controller.identifier}');
     await signer.rotateForEd25519();
     var key_pub_3 = await signer.getCurrentPubKey();
     var key_pub_4 = await signer.getNextPubKey();
@@ -61,8 +68,8 @@ class _MyAppState extends State<MyApp> {
     currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_3));
     newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_4));
 
-    var result = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: ['cat'], witnessThreshold: 0);
-
+    var result = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+    await AsymmetricCryptoPrimitives.cleanUp(signer);
   }
 
 
