@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> initKel()async {
-    var signer = await AsymmetricCryptoPrimitives.establishForRSA();
+    var signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
     var conf = Config(initialOobis: "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}]");
     var oobiString = "[\"{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}\"]";
@@ -48,6 +48,9 @@ class _MyAppState extends State<MyApp> {
     var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
     print('icp');
     var signature = await signer.sign(icp_event);
+    print(signature);
+    //print(icp_event);
+    //var ev = '{"v":"kotki","t":"icp","d":"E1IsYB9Ei_F9cJvtrnsug5aopeU62OF2kej-YBtMuLRo","i":"E1IsYB9Ei_F9cJvtrnsug5aopeU62OF2kej-YBtMuLRo","s":"0","kt":"1","k":["Bv4AzLgC8riN3ZKWz8NERNdLmYvgCjYCrc0l8OZql1aM"],"nt":"1","n":["EHODwKX9ygXX033OrDW9P_PTmfAmL9xM6DOqya2heG0Y"],"bt":"0","b":[],"c":[],"a":[]}';
     var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
 
   }

@@ -63,3 +63,25 @@ class OobiResolvingErrorException implements Exception {
   @override
   String toString() => "OobiResolvingErrorException: $cause";
 }
+
+///An exception thrown when the signature provided is not a hex string.
+class IncorrectSignatureException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  IncorrectSignatureException(this.cause);
+  @override
+  String toString() => "IncorrectSignatureException: $cause";
+}
+
+///An exception thrown when the string provided as event is not a correct event
+class WrongEventException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  WrongEventException(this.cause);
+  @override
+  String toString() => "WrongEventException: $cause";
+}

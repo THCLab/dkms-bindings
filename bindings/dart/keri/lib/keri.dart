@@ -69,7 +69,18 @@ class Keri {
 
   static Future<Controller> finalizeInception(
       {required String event, required Signature signature, dynamic hint}) async{
-    return await api.finalizeInception(event: event, signature: signature);
+    try{
+      return await api.finalizeInception(event: event, signature: signature);
+    }on FfiException catch (e){
+      if(e.message.contains('hex decode error')){
+        throw IncorrectSignatureException('The signature provided is not a correct HEX string. Check the signature once again');
+      }
+      if(e.message.contains('can\'t parse event')){
+        throw WrongEventException('Provided string is not a correct icp event. Check the string once again.');
+      }
+      rethrow;
+    }
+
   }
 
   Future<String> rotate(
