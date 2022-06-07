@@ -135,7 +135,29 @@ class Keri {
       {required Controller controller,
         required String watcherOobi,
         dynamic hint}) async{
-    return await api.addWatcher(controller: controller, watcherOobi: watcherOobi);
+    try{
+      return await api.addWatcher(controller: controller, watcherOobi: watcherOobi);
+    }on FfiException catch(e){
+      if(e.message.contains('expected value at line')){
+        throw IncorrectWatcherOobiException('Provided watcher oobi is not a correct string. Check it once again.');
+      }
+      if(e.message.contains('EOF while parsing a value')){
+        throw IncorrectWatcherOobiException('Provided watcher oobi is an empty string. Please provide a correct string.');
+      }
+      if(e.message.contains('unknown identifier')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse controller')){
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('error sending request for url')){
+        throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      }
+      if(e.message.contains('Deserialize error')){
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+      rethrow;
+    }
   }
 
   static Future<void> finalizeEvent(

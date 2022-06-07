@@ -32,7 +32,7 @@ class _MyAppState extends State<MyApp> {
     var signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
     var conf = Config(initialOobis: "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}]");
-    var oobiString = "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}";
+    var oobiString = "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}";
     print(conf);
     //var kel = await Keri.getKel(cont: Controller(identifier: 'E4ipTizaI6dOOi_F0POXLG4l9mqrCoBmB0-gnk8Lag5U'));
     //var key_temp_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
@@ -80,7 +80,9 @@ class _MyAppState extends State<MyApp> {
     print('finalized');
     await AsymmetricCryptoPrimitives.cleanUp(signer);
 
-    var kelkel = await Keri.getKelByStr(contId: 'Eqq7GNTmaF9ELjAuL3f_hWFLK4NoO014dxdUbrJRAVG0');
+    //var kelkel = await Keri.getKelByStr(contId: 'Eqq7GNTmaF9ELjAuL3f_hWFLK4NoO014dxdUbrJRAVG0');
+
+    var add = await Keri.addWatcher(controller: Controller(identifier: 'E7DTjsMVpK29UqpWYI_GrnYuhvf42sq4l7LTqGJtFZOs'), watcherOobi: oobiString);
   }
 
 
