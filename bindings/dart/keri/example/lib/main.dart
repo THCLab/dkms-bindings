@@ -52,6 +52,16 @@ class _MyAppState extends State<MyApp> {
     //print(icp_event);
     //var ev = '{"v":"kotki","t":"icp","d":"E1IsYB9Ei_F9cJvtrnsug5aopeU62OF2kej-YBtMuLRo","i":"E1IsYB9Ei_F9cJvtrnsug5aopeU62OF2kej-YBtMuLRo","s":"0","kt":"1","k":["Bv4AzLgC8riN3ZKWz8NERNdLmYvgCjYCrc0l8OZql1aM"],"nt":"1","n":["EHODwKX9ygXX033OrDW9P_PTmfAmL9xM6DOqya2heG0Y"],"bt":"0","b":[],"c":[],"a":[]}';
     var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+    //var kel = await Keri.getKel(cont: Controller(identifier: 'cat'));
+    await signer.rotateForEd25519();
+    var key_pub_3 = await signer.getCurrentPubKey();
+    var key_pub_4 = await signer.getNextPubKey();
+    List<PublicKey> currentKeys = [];
+    List<PublicKey> newNextKeys = [];
+    currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_3));
+    newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_4));
+
+    var result = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: ['cat'], witnessThreshold: 0);
 
   }
 

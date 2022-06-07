@@ -83,7 +83,7 @@ class Keri {
 
   }
 
-  Future<String> rotate(
+  static Future<String> rotate(
       {required Controller controller,
         required List<PublicKey> currentKeys,
         required List<PublicKey> newNextKeys,
@@ -91,17 +91,33 @@ class Keri {
         required List<String> witnessToRemove,
         required int witnessThreshold,
         dynamic hint}) async{
+    try{
+
+    }on FfiException catch (e){
+      if(e.message.contains('Can\'t parse controller')){
+        throw WrongControllerIdentifierException('Can\'t parse controller prefix. Check the confroller once again.');
+      }
+      if(e.message.contains('base64 decode error')){
+        throw IncorrectKeyFormatException("The provided key is not a Base64 string. Check the string once again.");
+      }
+      if(e.message.contains('Can\'t parse witnesses to add oobis')) {
+        throw WitnessParsingException('Can\'t parse witnesses to add oobis. Check the wittnessToAdd field.');
+      }
+      if(e.message.contains('Can\'t parse witnesses to remove identifiers')){
+        throw WitnessParsingException('Can\'t parse witnesses to remove identifiers. Check the wittnessToRemove field.');
+      }
+    }
     return await api.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: witnessToAdd, witnessToRemove: witnessToRemove, witnessThreshold: witnessThreshold);
   }
 
-  Future<String> addWatcher(
+  static Future<String> addWatcher(
       {required Controller controller,
         required String watcherOobi,
         dynamic hint}) async{
     return await api.addWatcher(controller: controller, watcherOobi: watcherOobi);
   }
 
-  Future<void> finalizeEvent(
+  static Future<void> finalizeEvent(
       {required Controller identifier,
         required String event,
         required Signature signature,
@@ -109,31 +125,38 @@ class Keri {
     await api.finalizeEvent(identifier: identifier, event: event, signature: signature);
   }
 
-  Future<void> resolveOobi({required String oobiJson, dynamic hint}) async{
+  static Future<void> resolveOobi({required String oobiJson, dynamic hint}) async{
     await api.resolveOobi(oobiJson: oobiJson);
   }
 
-  Future<void> query(
+  static Future<void> query(
       {required Controller controller,
         required String oobisJson,
         dynamic hint}) async{
     await api.query(controller: controller, oobisJson: oobisJson);
   }
 
-  Future<void> processStream({required String stream, dynamic hint}) async{
+  static Future<void> processStream({required String stream, dynamic hint}) async{
     await api.processStream(stream: stream);
   }
 
-  Future<String> getKel({required Controller cont, dynamic hint}) async{
-    return await api.getKel(cont: cont);
+  static Future<String> getKel({required Controller cont, dynamic hint}) async{
+    try{
+      return await api.getKel(cont: cont);
+    }on FfiException catch(e){
+      if(e.message.contains('Deserialize error')){
+        throw WrongControllerIdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+      rethrow;
+    }
   }
 
-  Future<String> getKelByStr({required String contId, dynamic hint}) async{
+  static Future<String> getKelByStr({required String contId, dynamic hint}) async{
     return await api.getKelByStr(contId: contId);
   }
 
   /// Returns pairs: public key encoded in base64 and signature encoded in hex
-  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
+  static Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
       {required String attachment, dynamic hint}) async{
     return await api.getCurrentPublicKey(attachment: attachment);
   }

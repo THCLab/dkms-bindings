@@ -85,3 +85,26 @@ class WrongEventException implements Exception {
   @override
   String toString() => "WrongEventException: $cause";
 }
+
+///An exception thrown when the controller provided to function has an incorrect identifier
+class WrongControllerIdentifierException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  WrongControllerIdentifierException(this.cause);
+  @override
+  String toString() => "WrongControllerIdentifierException: $cause";
+}
+
+///An exception thrown when the controller provided to function has an incorrect identifier
+class WitnessParsingException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  WitnessParsingException(this.cause);
+  @override
+  String toString() => "WitnessParsingException: $cause";
+}
+
