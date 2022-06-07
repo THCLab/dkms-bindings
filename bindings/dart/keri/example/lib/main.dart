@@ -37,6 +37,11 @@ class _MyAppState extends State<MyApp> {
     //var kel = await Keri.getKel(cont: Controller(identifier: 'E4ipTizaI6dOOi_F0POXLG4l9mqrCoBmB0-gnk8Lag5U'));
     //var key_temp_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
     //var key_temp_2 = 'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
+    //var ev = '{"v":"KERI10JSON00012b_","t":"icp","d":"ET63RU-HSU3PSgHYqCr4o2veyL0GiThI_kcabIWK3mlk","i":"ET63RU-HSU3PSgHYqCr4o2veyL0GiThI_kcabIWK3mlk","s":"0","kt":"1","k":["B3-pfSEBecCc6FGwYzyJ83Nndkbq24LAhGzqc9vZlb0E"],"nt":"1","n":["EVqsf_2iPF9bl9cqh4ZK32k_ed4XczosHlvJuCeb7zlw"],"bt":"0","b":[],"c":[],"a":[]}';
+    //var sig2 = await signer.sign(ev);
+    // var controller = await Keri.finalizeInception(event: ev, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: sig2));
+    //await Keri.finalizeEvent(identifier: Controller(identifier: 'Ea_iehzZAjq-EscCPBm7DKEQc_VVr84gJeGfpGG83ocs'), event: ev, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: sig2));
+
     await Keri.initKel(inputAppDir: dir);
     print('initialized');
     //var key_pub_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
@@ -48,16 +53,14 @@ class _MyAppState extends State<MyApp> {
     List<PublicKey> vec2 = [];
     vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_2));
     List<String> vec3 = [];
-    var ev = '{"v":"KERI10JSON00012b_","t":"icp","d":"ET63RU-HSU3PSgHYqCr4o2veyL0GiThI_kcabIWK3mlk","i":"ET63RU-HSU3PSgHYqCr4o2veyL0GiThI_kcabIWK3mlk","s":"0","kt":"1","k":["B3-pfSEBecCc6FGwYzyJ83Nndkbq24LAhGzqc9vZlb0E"],"nt":"1","n":["EVqsf_2iPF9bl9cqh4ZK32k_ed4XczosHlvJuCeb7zlw"],"bt":"0","b":[],"c":[],"a":[]}';
-    var sig2 = await signer.sign(ev);
-    var controller = await Keri.finalizeInception(event: ev, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: sig2));
+
 
     var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
     print('icp');
     var signature = await signer.sign(icp_event);
     print(signature);
     print(icp_event);
-    //var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+    var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
     //var kel = await Keri.getKel(cont: Controller(identifier: 'cat'));
     print('controller: ${controller.identifier}');
     await signer.rotateForEd25519();
@@ -69,7 +72,15 @@ class _MyAppState extends State<MyApp> {
     newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: key_pub_4));
 
     var result = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+    print('second event: $result');
+    //var secev = 'kotki';
+    var secev = '{"v":"KERI10JSON000160_","t":"rot","d":"E7WpdgyPc747YTx4ZKLInpN0js-OZBQPkjjTq3MzCsvI","i":"EK9RlxdIhQMgS77QjijZKOujG_vY1m3yXjfFG5KEglFQ","s":"1","p":"EK9RlxdIhQMgS77QjijZKOujG_vY1m3yXjfFG5KEglFQ","kt":"1","k":["BRuGG4-_v5eYlLM2XRpcWPSJXzsaLCnBEor5AdnBBfDo"],"nt":"1","n":["ENeOuHv0XDf--bEmm8G5g-zkTML1lRMBa9YuJkMwxuzY"],"bt":"0","br":[],"ba":[],"a":[]}';
+    var signature2 = await signer.sign(result);
+    await Keri.finalizeEvent(identifier: controller, event: result, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+    print('finalized');
     await AsymmetricCryptoPrimitives.cleanUp(signer);
+
+    var kelkel = await Keri.getKelByStr(contId: 'Eqq7GNTmaF9ELjAuL3f_hWFLK4NoO014dxdUbrJRAVG0');
   }
 
 

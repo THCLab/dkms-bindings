@@ -86,6 +86,9 @@ class Keri {
       if(e.message.contains('Signature verification failed')){
         throw SignatureVerificationException('Signature verification failed - event signature does not match event keys.');
       }
+      if(e.message.contains('Controller wasn\'t initiated')){
+        throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
+      }
       rethrow;
     }
 
@@ -140,7 +143,13 @@ class Keri {
         required String event,
         required Signature signature,
         dynamic hint}) async{
-    await api.finalizeEvent(identifier: identifier, event: event, signature: signature);
+    try{
+      await api.finalizeEvent(identifier: identifier, event: event, signature: signature);
+    }on FfiException catch(e){
+      if(e.message.contains('Deserialize error')){
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+    }
   }
 
   static Future<void> resolveOobi({required String oobiJson, dynamic hint}) async{
@@ -165,12 +174,25 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
+      if(e.message.contains('unknown identifier')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
       rethrow;
     }
   }
 
   static Future<String> getKelByStr({required String contId, dynamic hint}) async{
-    return await api.getKelByStr(contId: contId);
+    try{
+      return await api.getKelByStr(contId: contId);
+    }on FfiException catch(e){
+      if(e.message.contains('Deserialize error')){
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+      if(e.message.contains('unknown identifier')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      rethrow;
+    }
   }
 
   /// Returns pairs: public key encoded in base64 and signature encoded in hex
