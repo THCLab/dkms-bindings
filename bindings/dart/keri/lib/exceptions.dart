@@ -130,7 +130,7 @@ class SignatureVerificationException implements Exception {
   String toString() => "SignatureVerificationException: $cause";
 }
 
-///An exception thrown when the event signature does not match the event keys.
+///An exception thrown when the watcher oobi is incorrect
 class IncorrectWatcherOobiException implements Exception {
   ///The description for the exception.
   String cause;
@@ -139,4 +139,16 @@ class IncorrectWatcherOobiException implements Exception {
   IncorrectWatcherOobiException(this.cause);
   @override
   String toString() => "IncorrectWatcherOobiException: $cause";
+}
+
+///An exception thrown when the oobi is incorrect
+class IncorrectOobiException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  IncorrectOobiException(this.cause);
+
+  @override
+  String toString() => "IncorrectOobiException: $cause";
 }

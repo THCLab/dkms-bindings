@@ -10,7 +10,7 @@ import 'bridge_generated.dart';
 class Keri {
   static const base = 'dartkeriox';
   static const path = 'lib$base.so';
-  static late final dylib = Platform.isIOS
+  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open('android/src/main/jniLibs/armeabi-v7a/libdartkeriox.dylib') : Platform.isIOS
       ? DynamicLibrary.process()
       : Platform.isMacOS
       ? DynamicLibrary.executable()
@@ -27,7 +27,7 @@ class Keri {
         if(e.message.contains('Improper location scheme structure')){
           throw IncorrectOptionalConfigsException("The provided argument optionalConfigs contains incorrect data.");
         }
-        if(e.message.contains('os error 30')){
+        if(e.message.contains('Error while event processing')){
           throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
         }
         if(e.message.contains('error sending request for url')){
@@ -35,11 +35,12 @@ class Keri {
         }
       }
     }else{
-      await api.initKel(inputAppDir: inputAppDir);
       try{
         await api.initKel(inputAppDir: inputAppDir);
       }on FfiException catch(e){
-        throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
+        if(e.message.contains('Error while event processing')){
+          throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
+        }
       }
     }
   }
@@ -68,7 +69,7 @@ class Keri {
       if(e.message.contains('error sending request for url')){
         throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
       }
-      throw Exception(e.message);
+      rethrow;
     }
   }
 
@@ -171,37 +172,58 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
+      if(e.message.contains('unknown identifier')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse controller')){
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
+      }
     }
   }
 
   static Future<void> resolveOobi({required String oobiJson, dynamic hint}) async{
     try{
-
+      await api.resolveOobi(oobiJson: oobiJson);
     }on FfiException catch(e){
       if(e.message.contains('expected value at line')){
-        throw IncorrectWitnessOobiException('Provided oobi is incorrect. Please check the JSON once again');
+        throw IncorrectOobiException('Provided oobi is incorrect. Please check the JSON once again');
       }
       if(e.message.contains('EOF while parsing a value')){
-        throw IncorrectWitnessOobiException('Provided oobi is an empty string. Please provide a correct string.');
+        throw IncorrectOobiException('Provided oobi is an empty string. Please provide a correct string.');
       }
       if(e.message.contains('error sending request for url')){
         throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
       }
-      if(e.message.contains('Deserialize error')){//CZY TO POPRAWNE?
-        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      if(e.message.contains('Deserialize error')){
+        throw IdentifierException('The identifier is incorrect. Check the eid field once again.');
       }
     }
-    await api.resolveOobi(oobiJson: oobiJson);
   }
 
   static Future<void> query(
       {required Controller controller,
         required String oobisJson,
         dynamic hint}) async{
-    await api.query(controller: controller, oobisJson: oobisJson);
+    try{
+      await api.query(controller: controller, oobisJson: oobisJson);
+    }on FfiException catch (e){
+      if(e.message.contains('Deserialize error')){
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+      if(e.message.contains('unknown identifier')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse controller')){
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('error sending request for url')){
+        throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      }
+    }
   }
 
-  static Future<void> processStream({required String stream, dynamic hint}) async{
+  //CZY JEST POTRZEBNA?
+  Future<void> processStream({required String stream, dynamic hint}) async{
     await api.processStream(stream: stream);
   }
 
@@ -214,6 +236,9 @@ class Keri {
       }
       if(e.message.contains('unknown identifier')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse controller')){
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
       }
       rethrow;
     }
@@ -228,6 +253,9 @@ class Keri {
       }
       if(e.message.contains('unknown identifier')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse controller')){
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
       }
       rethrow;
     }
