@@ -416,6 +416,7 @@ impl Controller {
         let parsed_event = event_message(event)
             .map_err(|e| KelError::ParseEventError(e.to_string()))?
             .1;
+
         match parsed_event {
             EventType::KeyEvent(ke) => Ok(self.finalize_key_event(&ke, sig)?),
             EventType::Receipt(_) => todo!(),
