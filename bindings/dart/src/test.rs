@@ -1,8 +1,8 @@
 use anyhow::Result;
-use keriox_wrapper::kel::{Basic, CryptoBox, KelError, KeyManager, SelfSigning};
+use keriox_wrapper::kel::{Basic, CryptoBox, KeyManager, SelfSigning};
 
 use crate::api::{
-    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, init_kel, query, Config,
+    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, Config,
 };
 
 #[test]

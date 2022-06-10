@@ -6,9 +6,13 @@ use anyhow::{anyhow, Result};
 use keriox_wrapper::{
     controller::OptionalConfig,
     event_generator,
-    kel::{Basic, BasicPrefix, EndRole, LocationScheme, Prefix, Role, SelfSigning},
-    utils::{key_prefix_from_b64, signature_prefix_from_hex},
+    kel::{
+        parse_attachment, Attachment, Basic, BasicPrefix, EndRole, LocationScheme, Prefix, Role,
+        SelfSigning,
+    },
 };
+
+use crate::utils::{join_keys_and_signatures, key_prefix_from_b64, signature_prefix_from_hex};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -131,20 +135,36 @@ lazy_static! {
 pub enum Error {
     #[error("Can't lock the database")]
     DatabaseLockingError,
+
     #[error("Controller wasn't initialized")]
     ControllerInitializationError,
+    
     #[error("Can't parse controller prefix: {0}")]
     PrefixParseError(String),
+    
     #[error("Can't parse oobi json: {0}")]
     OobiParseError(String),
-    #[error("Can't parse event: {0}")]
-    MessageParseError(String),
+
     #[error("Can't parse event: {0}")]
     EventGenerationError(String),
+
     #[error("Can't resolve oobi: {0}")]
     OobiResolvingError(String),
+
     #[error("Missing issuer oobi")]
     MissingIssuerOobi,
+
+    #[error("base64 decode error")]
+    Base64Error(#[from] base64::DecodeError),
+
+    #[error("hex decode error")]
+    HexError(#[from] hex::FromHexError),
+
+    #[error("Utils error: {0}")]
+    UtilsError(String),
+
+    #[error("Can't parse attachment")]
+    AttachmentParseError,
 }
 
 #[derive(Clone)]
@@ -404,16 +424,30 @@ pub struct PublicKeySignaturePair {
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex
 pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
-    let attachment = (*KEL.lock().unwrap())
-        .as_ref()
-        .unwrap()
-        .events_manager
-        .get_public_key_for_attachment(attachment)?;
-    Ok(attachment
-        .iter()
-        .map(|(bp, sp)| PublicKeySignaturePair {
-            key: PublicKey::new(bp.derivation.into(), base64::encode(bp.public_key.key())),
-            signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone())),
-        })
-        .collect::<Vec<_>>())
+    let att = parse_attachment(attachment)?;
+
+    let keys = if let Attachment::SealSignaturesGroups(group) = att {
+        let r = group
+            .iter()
+            .map(|(seal, signatures)| -> Result<Vec<_>, Error> {
+                let current_keys = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+                    .as_ref()
+                    .ok_or(Error::ControllerInitializationError)?
+                    .get_public_keys_for_seal(seal)
+                    .unwrap();
+                join_keys_and_signatures(current_keys, signatures)
+            })
+            .collect::<Result<Vec<_>, Error>>();
+        Ok(r.into_iter()
+            .flatten()
+            .flatten()
+            .map(|(bp, sp)| PublicKeySignaturePair {
+                key: PublicKey::new(bp.derivation.into(), base64::encode(bp.public_key.key())),
+                signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone())),
+            })
+            .collect::<Vec<_>>())
+    } else {
+        Err(Error::UtilsError("Wrong attachment".into()))
+    };
+    Ok(keys?)
 }

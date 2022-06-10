@@ -1,7 +1,5 @@
 use std::{path::PathBuf, sync::Arc};
 
-// use anyhow::{anyhow, Result};
-
 use crate::{
     event_generator,
     kel::{Kel, KelError},
@@ -67,6 +65,7 @@ pub struct Controller {
     pub events_manager: Kel,
     oobi_manager: Arc<OobiManager>,
 }
+
 impl Controller {
     pub fn new(configs: Option<OptionalConfig>) -> Result<Self, KelError> {
         let (db_dir_path, initial_oobis) = match configs {
@@ -101,6 +100,13 @@ impl Controller {
         }
 
         Ok(controller)
+    }
+
+    pub fn get_public_keys_for_seal(
+        &self,
+        event_seal: &EventSeal,
+    ) -> Result<Vec<BasicPrefix>, KelError> {
+        self.events_manager.get_public_key_for_seal(event_seal)
     }
 
     pub fn setup_witnesses(&self, oobis: &[LocationScheme]) -> Result<(), KelError> {
@@ -178,7 +184,7 @@ impl Controller {
                 if let ReplyRoute::LocScheme(loc_scheme) = lc.get_route() {
                     Ok(loc_scheme)
                 } else {
-                    Err(KelError::GeneralError("Wrong route type".into()))
+                    Err(KelError::WrongEventTypeError)
                 }
                 .ok()
             })
@@ -206,22 +212,22 @@ impl Controller {
                             .post(format!("{}resolve", address))
                             .body(oobi_json)
                             .send()
-                            .map_err(|e| KelError::GeneralError(e.to_string()))?
+                            .map_err(|e| KelError::CommunicationError(e.to_string()))?
                             .text()
-                            .map_err(|e| KelError::GeneralError(e.to_string()))?,
+                            .map_err(|e| KelError::CommunicationError(e.to_string()))?,
                         Topic::Query(id) => client
                             .get(format!("{}query/{}", address, id))
                             .send()
-                            .map_err(|e| KelError::GeneralError(e.to_string()))?
+                            .map_err(|e| KelError::CommunicationError(e.to_string()))?
                             .text()
-                            .map_err(|e| KelError::GeneralError(e.to_string()))?,
+                            .map_err(|e| KelError::CommunicationError(e.to_string()))?,
                         Topic::Process(to_process) => client
                             .post(format!("{}process", address))
                             .body(to_process)
                             .send()
-                            .map_err(|e| KelError::GeneralError(e.to_string()))?
+                            .map_err(|e| KelError::CommunicationError(e.to_string()))?
                             .text()
-                            .map_err(|e| KelError::GeneralError(e.to_string()))?,
+                            .map_err(|e| KelError::CommunicationError(e.to_string()))?,
                     };
 
                     Ok(response)
@@ -230,7 +236,7 @@ impl Controller {
                     todo!()
                 }
             },
-            _ => Err(KelError::GeneralError(format!(
+            _ => Err(KelError::CommunicationError(format!(
                 "No address for scheme {:?}",
                 schema
             ))),
@@ -315,9 +321,7 @@ impl Controller {
                 if let IdentifierPrefix::Basic(bp) = &wit.eid {
                     Ok(bp.clone())
                 } else {
-                    Err(KelError::GeneralError(
-                        "Improper witness prefix, should be basic prefix".into(),
-                    ))
+                    Err(KelError::WrongWitnessPrefixError)
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -335,19 +339,19 @@ impl Controller {
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<IdentifierPrefix, KelError> {
         let (_, parsed_event) =
-            key_event_message(&event).map_err(|e| KelError::ParseEventError(e.to_string()))?;
+            key_event_message(&event).map_err(|_e| KelError::EventParseError)?;
         match parsed_event {
             EventType::KeyEvent(ke) => {
                 if let EventData::Icp(_) = &ke.event.get_event_data() {
                     self.finalize_key_event(&ke, sig)?;
                     Ok(ke.event.get_prefix())
                 } else {
-                    Err(KelError::ParseEventError(
+                    Err(KelError::InceptionError(
                         "Wrong event type, should be inception event".into(),
                     ))
                 }
             }
-            _ => Err(KelError::ParseEventError(
+            _ => Err(KelError::InceptionError(
                 "Wrong event type, should be inception event".into(),
             )),
         }
@@ -369,9 +373,7 @@ impl Controller {
                 if let IdentifierPrefix::Basic(bp) = &wit.eid {
                     Ok(bp.clone())
                 } else {
-                    Err(KelError::GeneralError(
-                        "Improper witness prefix, should be basic prefix".into(),
-                    ))
+                    Err(KelError::WrongWitnessPrefixError)
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -414,7 +416,7 @@ impl Controller {
         sig: Vec<SelfSigningPrefix>,
     ) -> Result<(), KelError> {
         let parsed_event = event_message(event)
-            .map_err(|e| KelError::ParseEventError(e.to_string()))?
+            .map_err(|_e| KelError::EventParseError)?
             .1;
 
         match parsed_event {
@@ -424,7 +426,7 @@ impl Controller {
             EventType::Rpy(rpy) => match rpy.get_route() {
                 ReplyRoute::EndRoleAdd(_) => Ok(self.finalize_add_role(id, rpy, sig)?),
                 ReplyRoute::EndRoleCut(_) => todo!(),
-                _ => Err(KelError::GeneralError("Wrong event type".into())),
+                _ => Err(KelError::WrongEventTypeError),
             },
         }
     }

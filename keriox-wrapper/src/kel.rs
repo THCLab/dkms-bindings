@@ -12,11 +12,11 @@ pub use keri::prefix::{
 };
 pub use keri::signer::{CryptoBox, KeyManager};
 use keri::state::IdentifierState;
-use keri::{
+pub use keri::{
     database::sled::SledEventDatabase,
     event::{receipt::Receipt, SerializationFormats},
     event_message::signed_event_message::{Message, SignedNontransferableReceipt},
-    event_parsing::message::signed_event_stream,
+    event_parsing::{attachment::attachment, message::signed_event_stream},
     processor::{
         escrow::default_escrow_bus,
         event_storage::EventStorage,
@@ -26,8 +26,6 @@ use keri::{
 };
 use std::{path::Path, sync::Arc};
 use thiserror::Error;
-
-use crate::utils::get_current_public_key;
 
 pub struct Kel {
     db: Arc<SledEventDatabase>,
@@ -65,12 +63,11 @@ impl Kel {
                 .get_kel(&id)?
                 .ok_or(KelError::UnknownIdentifierError)?,
         )
-        .map_err(|e| KelError::ParseEventError(e.to_string()))
+        .map_err(|_e| KelError::EventParseError)
     }
 
     pub fn parse_and_process(&self, msg: &[u8]) -> Result<(), KelError> {
-        let (_, events) =
-            signed_event_stream(msg).map_err(|e| KelError::ParseEventError(e.to_string()))?;
+        let (_, events) = signed_event_stream(msg).map_err(|_e| KelError::EventParseError)?;
 
         events
             .into_iter()
@@ -125,12 +122,25 @@ impl Kel {
         Ok(keys)
     }
 
-    pub fn get_public_key_for_attachment(
+    pub fn get_public_key_for_seal(
         &self,
-        att_str: String,
-    ) -> Result<Vec<(BasicPrefix, SelfSigningPrefix)>, KelError> {
+        event_seal: &EventSeal,
+    ) -> Result<Vec<BasicPrefix>, KelError> {
         let storage = EventStorage::new(self.db.clone());
-        get_current_public_key(storage, &att_str)
+        // let event = storage
+        //     .get_event_at_sn(&seal.prefix, seal.sn)?
+        //     .ok_or_else(|| KelError::MissingEventError)?;
+        // //check digests
+        // if event.signed_event_message.event_message.event.get_digest()
+        //     != seal.event_digest
+        // {
+        //     return Err(KelError::GeneralError("Event digests doesn't match".into()));
+        // };
+        Ok(storage
+            .compute_state_at_sn(&event_seal.prefix, event_seal.sn)?
+            .ok_or_else(|| KelError::UnknownIdentifierError)?
+            .current
+            .public_keys)
     }
 
     pub fn get_last_establishment_event_seal(
@@ -152,32 +162,46 @@ impl Kel {
     }
 }
 
+pub fn parse_attachment(att_stream: String) -> Result<Attachment, KelError> {
+    attachment(att_stream.as_bytes())
+        .map(|(_rest, att)| att)
+        .map_err(|_e| KelError::AttachmentParseError)
+}
+
 #[derive(Error, Debug)]
 pub enum KelError {
     #[error("Database error: {0}")]
     DatabaseError(String),
+
     #[error("Communication error: {0}")]
     CommunicationError(String),
-    #[error("Inception event error")]
-    InceptionError,
-    #[error("can't generate rotation event")]
-    RotationError,
-    #[error("can't parse event: {0}")]
-    ParseEventError(String),
-    #[error("can't notify: {0}")]
-    NotificationError(String),
+
+    #[error("Inception event error: {0}")]
+    InceptionError(String),
+
+    #[error("Can't generate event: {0}")]
+    EventGenerationError(String),
+
+    #[error("Can't parse event")]
+    EventParseError,
+
+    #[error("Can't parse attachment")]
+    AttachmentParseError,
+
+    #[error("Improper witness prefix, should be basic prefix")]
+    WrongWitnessPrefixError,
+
     #[error("missing event")]
     MissingEventError,
-    #[error("general error {0}")]
-    GeneralError(String),
-    #[error("unknown identifier")]
+
+    #[error("Wrong event type")]
+    WrongEventTypeError,
+
+    #[error("Unknown identifier")]
     UnknownIdentifierError,
+
     #[error("Error while event processing: ")]
     EventProcessingError(#[from] keri::error::Error),
-    #[error("base64 decode error")]
-    Base64Error(#[from] base64::DecodeError),
-    #[error("hex decode error")]
-    HexError(#[from] hex::FromHexError),
 }
 
 #[test]
@@ -193,25 +217,25 @@ pub fn test_ed_key() {
     assert!(res);
 }
 
-#[test]
-pub fn test_parse_attachment() {
-    use tempfile::Builder;
+// #[test]
+// pub fn test_parse_attachment() {
+//     use tempfile::Builder;
 
-    // Create temporary db file.
-    let root = Builder::new().prefix("test-db").tempdir().unwrap();
-    let kel = Kel::init(root.path().to_str().unwrap().into()).unwrap();
+//     // Create temporary db file.
+//     let root = Builder::new().prefix("test-db").tempdir().unwrap();
+//     let kel = Kel::init(root.path().to_str().unwrap().into()).unwrap();
 
-    let issuer_kel = r#"{"v":"KERI10JSON0001b7_","t":"icp","d":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"0","kt":"1","k":["DruZ2ykSgEmw2EHm34wIiEGsUa_1QkYlsCAidBSzUkTU"],"nt":"1","n":["Eao8tZQinzilol20Ot-PPlVz6ta8C4z-NpDOeVs63U8s"],"bt":"3","b":["BGKVzj4ve0VSd8z_AmvhLg4lqcC_9WYX90k03q-R_Ydo","BuyRFMideczFZoapylLIyCjSdhtqVb31wZkRKvPfNqkw","Bgoq68HCmYNUDgOz4Skvlu306o_NY-NrYuKAVhk3Zh9c"],"c":[],"a":[]}-VBq-AABAA0EpZtBNLxOIncUDeLgwX3trvDXFA5adfjpUwb21M5HWwNuzBMFiMZQ9XqM5L2bFUVi6zXomcYuF-mR7CFpP8DQ-BADAAWUZOb17DTdCd2rOaWCf01ybl41U7BImalPLJtUEU-FLrZhDHls8iItGRQsFDYfqft_zOr8cNNdzUnD8hlSziBwABmUbyT6rzGLWk7SpuXGAj5pkSw3vHQZKQ1sSRKt6x4P13NMbZyoWPUYb10ftJlfXSyyBRQrc0_TFqfLTu_bXHCwACKPLkcCa_tZKalQzn3EgZd1e_xImWdVyzfYQmQvBpfJZFfg2c-sYIL3zl1WHpMQQ_iDmxLSmLSQ9jZ9WAjcmDCg-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2022-04-11T20c50c16d643400p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"1","p":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","a":[{"i":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM","s":"0","d":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM"}]}-VBq-AABAAZZlCpwL0QwqF-eTuqEgfn95QV9S4ruh4wtxKQbf1-My60Nmysprv71y0tJGEHkMsUBRz0bf-JZsMKyZ3N8m7BQ-BADAA6ghW2PpLC0P9CxmW13G6AeZpHinH-_HtVOu2jWS7K08MYkDPrfghmkKXzdsMZ44RseUgPPty7ZEaAxZaj95bAgABKy0uBR3LGMwg51xjMZeVZcxlBs6uARz6quyl0t65BVrHX3vXgoFtzwJt7BUl8LXuMuoM9u4PQNv6yBhxg_XEDwACJe4TwVqtGy1fTDrfPxa14JabjsdRxAzZ90wz18-pt0IwG77CLHhi9vB5fF99-fgbYp2Zoa9ZVEI8pkU6iejcDg-EAB0AAAAAAAAAAAAAAAAAAAAAAQ1AAG2022-04-11T20c50c22d909900p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"EPYT0dEpoc_5QKIGnRYFRqpXHGpeYOhveJTmHoVC6LMU","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"2","p":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","a":[{"i":"EzSVC7-SuizvdVkpXmHQx5FhUElLjUOjCbgN81ymeWOE","s":"0","d":"EQ6RIFoVUDmmyuoMDMPPHDm14GtXaIf98j4AG2vNfZ1U"}]}-VBq-AABAAYycRM_VyvV2fKyHdUceMcK8ioVrBSixEFqY1nEO9eTZQ2NV8hrLc_ux9_sKn1p58kyZv5_y2NW3weEiqn-5KAA-BADAAQl22xz4Vzkkf14xsHMAOm0sDkuxYY8SAgJV-RwDDwdxhN4WPr-3Pi19x57rDJAE_VkyYwKloUuzB5Dekh-JzCQABk98CK_xwG52KFWt8IEUU-Crmf058ZJPB0dCffn-zjiNNgjv9xyGVs8seb0YGInwrB351JNu0sMHuEEgPJLKxAgACw556h2q5_BG6kPHAF1o9neMLDrZN_sCaJ-3slWWX-y8M3ddPN8Zp89R9A36t3m2rq-sbC5h_UDg5qdnrZ-ZxAw-EAB0AAAAAAAAAAAAAAAAAAAAAAg1AAG2022-04-11T20c50c23d726188p00c00"#;
+//     let issuer_kel = r#"{"v":"KERI10JSON0001b7_","t":"icp","d":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"0","kt":"1","k":["DruZ2ykSgEmw2EHm34wIiEGsUa_1QkYlsCAidBSzUkTU"],"nt":"1","n":["Eao8tZQinzilol20Ot-PPlVz6ta8C4z-NpDOeVs63U8s"],"bt":"3","b":["BGKVzj4ve0VSd8z_AmvhLg4lqcC_9WYX90k03q-R_Ydo","BuyRFMideczFZoapylLIyCjSdhtqVb31wZkRKvPfNqkw","Bgoq68HCmYNUDgOz4Skvlu306o_NY-NrYuKAVhk3Zh9c"],"c":[],"a":[]}-VBq-AABAA0EpZtBNLxOIncUDeLgwX3trvDXFA5adfjpUwb21M5HWwNuzBMFiMZQ9XqM5L2bFUVi6zXomcYuF-mR7CFpP8DQ-BADAAWUZOb17DTdCd2rOaWCf01ybl41U7BImalPLJtUEU-FLrZhDHls8iItGRQsFDYfqft_zOr8cNNdzUnD8hlSziBwABmUbyT6rzGLWk7SpuXGAj5pkSw3vHQZKQ1sSRKt6x4P13NMbZyoWPUYb10ftJlfXSyyBRQrc0_TFqfLTu_bXHCwACKPLkcCa_tZKalQzn3EgZd1e_xImWdVyzfYQmQvBpfJZFfg2c-sYIL3zl1WHpMQQ_iDmxLSmLSQ9jZ9WAjcmDCg-EAB0AAAAAAAAAAAAAAAAAAAAAAA1AAG2022-04-11T20c50c16d643400p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"1","p":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","a":[{"i":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM","s":"0","d":"EoLNCdag8PlHpsIwzbwe7uVNcPE1mTr-e1o9nCIDPWgM"}]}-VBq-AABAAZZlCpwL0QwqF-eTuqEgfn95QV9S4ruh4wtxKQbf1-My60Nmysprv71y0tJGEHkMsUBRz0bf-JZsMKyZ3N8m7BQ-BADAA6ghW2PpLC0P9CxmW13G6AeZpHinH-_HtVOu2jWS7K08MYkDPrfghmkKXzdsMZ44RseUgPPty7ZEaAxZaj95bAgABKy0uBR3LGMwg51xjMZeVZcxlBs6uARz6quyl0t65BVrHX3vXgoFtzwJt7BUl8LXuMuoM9u4PQNv6yBhxg_XEDwACJe4TwVqtGy1fTDrfPxa14JabjsdRxAzZ90wz18-pt0IwG77CLHhi9vB5fF99-fgbYp2Zoa9ZVEI8pkU6iejcDg-EAB0AAAAAAAAAAAAAAAAAAAAAAQ1AAG2022-04-11T20c50c22d909900p00c00{"v":"KERI10JSON00013a_","t":"ixn","d":"EPYT0dEpoc_5QKIGnRYFRqpXHGpeYOhveJTmHoVC6LMU","i":"Ew-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M","s":"2","p":"Ek48ahzTIUA1ynJIiRd3H0WymilgqDbj8zZp4zzrad-w","a":[{"i":"EzSVC7-SuizvdVkpXmHQx5FhUElLjUOjCbgN81ymeWOE","s":"0","d":"EQ6RIFoVUDmmyuoMDMPPHDm14GtXaIf98j4AG2vNfZ1U"}]}-VBq-AABAAYycRM_VyvV2fKyHdUceMcK8ioVrBSixEFqY1nEO9eTZQ2NV8hrLc_ux9_sKn1p58kyZv5_y2NW3weEiqn-5KAA-BADAAQl22xz4Vzkkf14xsHMAOm0sDkuxYY8SAgJV-RwDDwdxhN4WPr-3Pi19x57rDJAE_VkyYwKloUuzB5Dekh-JzCQABk98CK_xwG52KFWt8IEUU-Crmf058ZJPB0dCffn-zjiNNgjv9xyGVs8seb0YGInwrB351JNu0sMHuEEgPJLKxAgACw556h2q5_BG6kPHAF1o9neMLDrZN_sCaJ-3slWWX-y8M3ddPN8Zp89R9A36t3m2rq-sbC5h_UDg5qdnrZ-ZxAw-EAB0AAAAAAAAAAAAAAAAAAAAAAg1AAG2022-04-11T20c50c23d726188p00c00"#;
 
-    kel.parse_and_process(issuer_kel.as_bytes()).unwrap();
+//     kel.parse_and_process(issuer_kel.as_bytes()).unwrap();
 
-    let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";
+//     let attachment_stream = "-FABEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M0AAAAAAAAAAAAAAAAAAAAAAAEw-o5dU5WjDrxDBK4b4HrF82_rYb6MX6xsegjq4n0Y7M-AABAAKcvAE-GzYu4_aboNjC0vNOcyHZkm5Vw9-oGGtpZJ8pNdzVEOWhnDpCWYIYBAMVvzkwowFVkriY3nCCiBAf8JDw";
 
-    let a = kel.get_public_key_for_attachment(attachment_stream.into());
-    let public_key_signature_pair = a
-        .unwrap()
-        .iter()
-        .map(|(bp, sp)| (bp.to_str(), sp.to_str()))
-        .collect::<Vec<_>>();
-    assert_eq!(public_key_signature_pair.len(), 1);
-}
+//     let a = kel.get_public_key_for_attachment(attachment_stream.into());
+//     let public_key_signature_pair = a
+//         .unwrap()
+//         .iter()
+//         .map(|(bp, sp)| (bp.to_str(), sp.to_str()))
+//         .collect::<Vec<_>>();
+//     assert_eq!(public_key_signature_pair.len(), 1);
+// }
