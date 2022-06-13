@@ -4,13 +4,23 @@ import 'dart:io';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:keri/exceptions.dart';
+import 'package:path/path.dart' as p;
 
 import 'bridge_generated.dart';
 
 class Keri {
+  static final examplePath = Directory.current.absolute.path;
+  //print(examplePath);
   static const base = 'dartkeriox';
   static const path = 'lib$base.so';
-  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open('android/src/main/jniLibs/armeabi-v7a/libdartkeriox.dylib') : Platform.isIOS
+  static const path2 = 'C:/Users/66jus/Documents/GitHub/keri-bindings/bindings/dart/keri/android/src/main/jniLibs/x86_64/lib$base.so';
+  static const path3 = 'C:/Users/66jus/Documents/GitHub/keri-bindings/bindings/dart/keri/build/test/libdartkeriox.dylib';
+  static const path4 = 'C:/Users/66jus/Documents/GitHub/keri-bindings/bindings/dart/keri/android/src/main/jniLibs/arm64-v8a/lib$base.so';
+
+  //static final path = p.join(examplePath, 'android/src/main/jniLibs/arm64-v8a/lib$base.so');
+  //path = p.join(examplePath, 'lib$base.so');
+
+  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/libdartkeriox.dll").toFilePath()) :  Platform.isIOS
       ? DynamicLibrary.process()
       : Platform.isMacOS
       ? DynamicLibrary.executable()
@@ -45,6 +55,7 @@ class Keri {
     }
   }
 
+  ///Creates inception event that needs to be signed externally.
   static Future<String> incept(
       {required List<PublicKey> publicKeys,
         required List<PublicKey> nextPubKeys,
@@ -73,6 +84,7 @@ class Keri {
     }
   }
 
+  ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
   static Future<Controller> finalizeInception(
       {required String event, required Signature signature, dynamic hint}) async{
     try{
@@ -95,6 +107,7 @@ class Keri {
 
   }
 
+  ///Creates rotation event that needs to be signed externally.
   static Future<String> rotate(
       {required Controller controller,
         required List<PublicKey> currentKeys,
@@ -227,6 +240,7 @@ class Keri {
     await api.processStream(stream: stream);
   }
 
+  ///Returns Key Event Log in the CESR representation for current Identifier when given a controller.
   static Future<String> getKel({required Controller cont, dynamic hint}) async{
     try{
       return await api.getKel(cont: cont);
@@ -244,6 +258,7 @@ class Keri {
     }
   }
 
+  ///Returns Key Event Log in the CESR representation for current Identifier when given a controller identifier.
   static Future<String> getKelByStr({required String contId, dynamic hint}) async{
     try{
       return await api.getKelByStr(contId: contId);

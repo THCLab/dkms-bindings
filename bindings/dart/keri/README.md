@@ -1,15 +1,8 @@
-# keri
+# Overview
 
-A new Flutter project.
+Dart client for managing KERI based Identifiers. See top level [README](https://github.com/THCLab/keri-bindings) to get acquainted with more generic overview and clients features.
 
-## Getting Started
+## Glossary
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
-
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
+* **Controller** -- manages Identifiers;
+* **KERI** -- see https://keri.one/ page;
