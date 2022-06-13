@@ -20,7 +20,7 @@ class Keri {
   //static final path = p.join(examplePath, 'android/src/main/jniLibs/arm64-v8a/lib$base.so');
   //path = p.join(examplePath, 'lib$base.so');
 
-  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/libdartkeriox.dll").toFilePath()) :  Platform.isIOS
+  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/keri-bindings.dll").toFilePath()) :  Platform.isIOS
       ? DynamicLibrary.process()
       : Platform.isMacOS
       ? DynamicLibrary.executable()
