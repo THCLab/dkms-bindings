@@ -3,10 +3,8 @@ use std::{path::PathBuf, sync::Mutex};
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
-use keriox_wrapper::{
-    error::ControllerError, event_generator, utils::OptionalConfig, Attachment, Basic, BasicPrefix,
-    EndRole, LocationScheme, Prefix, Role, SelfSigning,
-};
+use keri::{derivation::{basic::Basic, self_signing::SelfSigning}, controller::{utils::OptionalConfig, error::ControllerError, event_generator}, oobi::{LocationScheme, Role, EndRole}, prefix::{Prefix, BasicPrefix}, event_parsing::Attachment};
+
 
 use crate::utils::{
     join_keys_and_signatures, key_prefix_from_b64, parse_attachment, signature_prefix_from_hex,
@@ -128,7 +126,7 @@ impl Config {
 }
 
 lazy_static! {
-    static ref KEL: Mutex<Option<keriox_wrapper::controller::Controller>> = Mutex::new(None);
+    static ref KEL: Mutex<Option<keri::controller::Controller>> = Mutex::new(None);
 }
 
 #[derive(Error, Debug)]
@@ -194,7 +192,7 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
     };
 
     if !is_initialized {
-        let controller = keriox_wrapper::controller::Controller::new(Some(config))?;
+        let controller = keri::controller::Controller::new(Some(config))?;
         *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(controller);
     }
 

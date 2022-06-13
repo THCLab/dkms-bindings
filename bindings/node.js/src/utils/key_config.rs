@@ -1,4 +1,5 @@
-use keriox_wrapper::{Basic, BasicPrefix, Prefix};
+
+use keri::{derivation::basic::Basic, prefix::{Prefix, BasicPrefix}};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 
@@ -40,7 +41,7 @@ impl PublicKey {
     #[napi(constructor)]
     pub fn new(algorithm: KeyType, key: Buffer) -> Self {
         let d: Basic = algorithm.into();
-        let pref = d.derive(keriox_wrapper::PublicKey::new(key.to_vec()));
+        let pref = d.derive(keri::keys::PublicKey::new(key.to_vec()));
         Self {
             prefix: pref.to_str(),
         }

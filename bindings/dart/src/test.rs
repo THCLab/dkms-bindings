@@ -1,5 +1,5 @@
 use anyhow::Result;
-use keriox_wrapper::{Basic, CryptoBox, KeyManager, SelfSigning};
+use keri::{signer::{CryptoBox, KeyManager}, derivation::{basic::Basic, self_signing::SelfSigning}};
 
 use crate::api::{
     add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, rotate, Config,
@@ -157,7 +157,7 @@ pub fn test_demo() -> Result<()> {
     assert_eq!(public_key_signature_pair.len(), 1);
     let key_signature_pair = public_key_signature_pair[0];
     let pk_raw = base64::decode(&key_signature_pair.key.key).unwrap();
-    let key_bp = Basic::Ed25519.derive(keriox_wrapper::PublicKey::new(pk_raw));
+    let key_bp = Basic::Ed25519.derive(keri::keys::PublicKey::new(pk_raw));
     let sig =
         SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
 

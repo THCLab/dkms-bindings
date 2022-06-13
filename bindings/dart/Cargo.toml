@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 flutter_rust_bridge = "1.23.0"
-keriox-wrapper = { path = "../../keriox-wrapper" }
+keri = { git = "https://github.com/THCLab/keriox.git", branch = "controller_module", features = ["controller"] }
 anyhow = { version = "1.0.56", features = ["backtrace"] }
 thiserror = "1.0.30"
 base64 = "0.13.0"

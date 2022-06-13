@@ -8,7 +8,7 @@ exclude = ["index.node"]
 crate-type = ["cdylib"]
 
 [dependencies]
-keriox-wrapper = { path = "../../keriox-wrapper" }
+keri = { git = "https://github.com/THCLab/keriox.git", branch = "controller_module", features = ["controller"] }
 thiserror = "1.0"
 base64 = "0.13.0"
 napi = { version = "2", features = ["serde-json"]}

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use keriox_wrapper::utils::OptionalConfig;
+use keri::controller::utils::OptionalConfig;
 use napi_derive::napi;
 
 #[napi]

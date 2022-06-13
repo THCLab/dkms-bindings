@@ -1,13 +1,6 @@
 use std::sync::Arc;
 
-use keriox_wrapper::{
-    event_generator,
-    identifier_controller::IdentifierController,
-    {
-        AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, LocationScheme, Prefix,
-        SelfAddressingPrefix,
-    },
-};
+use keri::{oobi::LocationScheme, controller::{identifier_controller::IdentifierController, event_generator}, prefix::{IdentifierPrefix, Prefix, BasicPrefix, SelfAddressingPrefix, AttachedSignaturePrefix}, event_parsing::Attachment};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 use utils::{configs, key_config::Key, signature_config::Signature};
@@ -34,7 +27,7 @@ pub enum SignatureType {
 
 #[napi]
 struct Controller {
-    kel_data: Arc<keriox_wrapper::controller::Controller>,
+    kel_data: Arc<keri::controller::Controller>,
 }
 
 #[napi]
@@ -43,7 +36,7 @@ impl Controller {
     pub fn init(config: Option<configs::Configs>) -> napi::Result<Self> {
         let optional_configs = config.map(|c| c.build().unwrap());
 
-        let c = keriox_wrapper::controller::Controller::new(optional_configs)
+        let c = keri::controller::Controller::new(optional_configs)
             .map_err(|e| napi::Error::from_reason(e.to_string()))?;
         Ok(Controller {
             kel_data: Arc::new(c),
@@ -109,7 +102,7 @@ struct IdController {
 
 #[napi]
 impl IdController {
-    pub fn new(id: IdentifierPrefix, kel: Arc<keriox_wrapper::controller::Controller>) -> Self {
+    pub fn new(id: IdentifierPrefix, kel: Arc<keri::controller::Controller>) -> Self {
         Self {
             controller: IdentifierController { id, source: kel },
         }

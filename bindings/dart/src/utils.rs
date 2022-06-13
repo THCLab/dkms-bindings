@@ -1,10 +1,5 @@
-use keriox_wrapper::PublicKey as KeriPK;
-use keriox_wrapper::error::ControllerError;
-use keriox_wrapper::{
-    AttachedSignaturePrefix, Attachment, Basic, BasicPrefix, SelfSigning, SelfSigningPrefix,
-};
-
 use crate::api::Error;
+use keri::{keys::PublicKey as KeriPK, derivation::{basic::Basic, self_signing::SelfSigning}, prefix::{BasicPrefix, SelfSigningPrefix, AttachedSignaturePrefix}, event_parsing::{Attachment, attachment::attachment}, controller::error::ControllerError};
 
 pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, Error> {
     let key = KeriPK::new(base64::decode(key)?);
@@ -28,7 +23,7 @@ pub fn signature_prefix_from_hex(
 }
 
 pub fn parse_attachment(stream: &[u8]) -> Result<Attachment, Error> {
-    keriox_wrapper::attachment(stream)
+    attachment(stream)
         .map_err(|_e| Error::KelError(ControllerError::AttachmentParseError))
         .map(|(_rest, att)| att)
 }
