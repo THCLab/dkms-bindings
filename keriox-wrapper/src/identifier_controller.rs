@@ -10,7 +10,7 @@ use keri::{
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
 
-use crate::{controller::Controller, event_generator, kel::KelError};
+use crate::{controller::Controller, error::ControllerError, event_generator};
 
 pub struct IdentifierController {
     pub id: IdentifierPrefix,
@@ -22,8 +22,14 @@ impl IdentifierController {
         Self { id, source: kel }
     }
 
-    pub fn get_kel(&self) -> Result<String, KelError> {
-        self.source.events_manager.get_kel(&self.id)
+    pub fn get_kel(&self) -> Result<String, ControllerError> {
+        Ok(String::from_utf8(
+            self.source
+                .storage
+                .get_kel(&self.id)?
+                .ok_or(ControllerError::UnknownIdentifierError)?,
+        )
+        .unwrap())
     }
 
     pub fn rotate(
@@ -33,7 +39,7 @@ impl IdentifierController {
         witness_to_add: Vec<LocationScheme>,
         witness_to_remove: Vec<BasicPrefix>,
         witness_threshold: u64,
-    ) -> Result<String, KelError> {
+    ) -> Result<String, ControllerError> {
         self.source.rotate(
             self.id.clone(),
             current_keys,
@@ -47,11 +53,14 @@ impl IdentifierController {
     pub fn anchor(
         &self,
         payload: &[SelfAddressingPrefix],
-    ) -> Result<EventMessage<KeyEvent>, KelError> {
+    ) -> Result<EventMessage<KeyEvent>, ControllerError> {
         self.source.anchor(self.id.clone(), payload)
     }
 
-    pub fn anchor_with_seal(&self, seal_list: &[Seal]) -> Result<EventMessage<KeyEvent>, KelError> {
+    pub fn anchor_with_seal(
+        &self,
+        seal_list: &[Seal],
+    ) -> Result<EventMessage<KeyEvent>, ControllerError> {
         self.source.anchor_with_seal(self.id.clone(), seal_list)
     }
 
@@ -80,13 +89,14 @@ impl IdentifierController {
         &self,
         event: &[u8],
         sig: Vec<SelfSigningPrefix>,
-    ) -> Result<(), KelError> {
+    ) -> Result<(), ControllerError> {
         Ok(self.source.finalize_event(&self.id, event, sig).unwrap())
     }
 
-    pub fn get_last_establishment_event_seal(&self) -> Result<EventSeal, KelError> {
+    pub fn get_last_establishment_event_seal(&self) -> Result<EventSeal, ControllerError> {
         self.source
-            .events_manager
-            .get_last_establishment_event_seal(&self.id)
+            .storage
+            .get_last_establishment_event_seal(&self.id)?
+            .ok_or(ControllerError::UnknownIdentifierError)
     }
 }

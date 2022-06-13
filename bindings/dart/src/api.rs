@@ -4,15 +4,13 @@ use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
 use keriox_wrapper::{
-    controller::OptionalConfig,
-    event_generator,
-    kel::{
-        parse_attachment, Attachment, Basic, BasicPrefix, EndRole, KelError, LocationScheme,
-        Prefix, Role, SelfSigning,
-    },
+    error::ControllerError, event_generator, utils::OptionalConfig, Attachment, Basic, BasicPrefix,
+    EndRole, LocationScheme, Prefix, Role, SelfSigning,
 };
 
-use crate::utils::{join_keys_and_signatures, key_prefix_from_b64, signature_prefix_from_hex};
+use crate::utils::{
+    join_keys_and_signatures, key_prefix_from_b64, parse_attachment, signature_prefix_from_hex,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -164,7 +162,7 @@ pub enum Error {
     UtilsError(String),
 
     #[error(transparent)]
-    KelError(#[from] KelError),
+    KelError(#[from] ControllerError),
 }
 
 #[derive(Clone)]
@@ -300,8 +298,8 @@ pub fn rotate(
 }
 
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
-    let lc: LocationScheme = serde_json::from_str(&watcher_oobi)
-        .map_err(|_| Error::OobiParseError(watcher_oobi))?;
+    let lc: LocationScheme =
+        serde_json::from_str(&watcher_oobi).map_err(|_| Error::OobiParseError(watcher_oobi))?;
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -385,8 +383,7 @@ pub fn process_stream(stream: String) -> Result<()> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .events_manager
-        .parse_and_process(stream.as_bytes())?;
+        .process_stream(stream.as_bytes())?;
     Ok(())
 }
 
@@ -394,27 +391,29 @@ pub fn get_kel(cont: Controller) -> Result<String> {
     let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .events_manager
+        .storage
         .get_kel(
             &cont
                 .identifier
                 .parse()
                 .map_err(|_e| Error::PrefixParseError(cont.identifier))?,
-        )?;
-    Ok(signed_event)
+        )?
+        .ok_or(Error::UtilsError("Unknown id".into()))?;
+    Ok(String::from_utf8(signed_event).unwrap())
 }
 
 pub fn get_kel_by_str(cont_id: String) -> Result<String> {
     let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .events_manager
+        .storage
         .get_kel(
             &cont_id
                 .parse()
                 .map_err(|_e| Error::PrefixParseError(cont_id))?,
-        )?;
-    Ok(signed_event)
+        )?
+        .ok_or(Error::UtilsError("Unknown id".into()))?;
+    Ok(String::from_utf8(signed_event).unwrap())
 }
 
 pub struct PublicKeySignaturePair {
@@ -424,7 +423,7 @@ pub struct PublicKeySignaturePair {
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex
 pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
-    let att = parse_attachment(attachment)?;
+    let att = parse_attachment(attachment.as_bytes())?;
 
     let keys = if let Attachment::SealSignaturesGroups(group) = att {
         let r = group
@@ -433,7 +432,11 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
                 let current_keys = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
                     .as_ref()
                     .ok_or(Error::ControllerInitializationError)?
-                    .get_public_keys_for_seal(seal)?;
+                    .storage
+                    .get_keys_at_event(&seal.prefix, seal.sn, &seal.event_digest)
+                    .map_err(|e| Error::UtilsError(e.to_string()))?
+                    .ok_or(Error::UtilsError("Can't find event of given seal".into()))?
+                    .public_keys;
                 join_keys_and_signatures(current_keys, signatures)
             })
             .collect::<Result<Vec<_>, Error>>();

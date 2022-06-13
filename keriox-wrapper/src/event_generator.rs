@@ -16,7 +16,7 @@ use keri::{
     state::IdentifierState,
 };
 
-use crate::kel::KelError;
+use crate::error::ControllerError;
 
 // todo add setting signing threshold
 pub fn incept(
@@ -24,19 +24,19 @@ pub fn incept(
     next_pub_keys: Vec<BasicPrefix>,
     witnesses: Vec<BasicPrefix>,
     witness_threshold: u64,
-) -> Result<String, KelError> {
+) -> Result<String, ControllerError> {
     let serialized_icp = EventMsgBuilder::new(EventTypeTag::Icp)
         .with_keys(public_keys)
         .with_next_keys(next_pub_keys)
         .with_witness_list(witnesses.as_slice())
         .with_witness_threshold(&SignatureThreshold::Simple(witness_threshold))
         .build()
-        .map_err(|e| KelError::EventGenerationError(e.to_string()))?
+        .map_err(|e| ControllerError::EventGenerationError(e.to_string()))?
         .serialize()
-        .map_err(|e| KelError::EventGenerationError(e.to_string()))?;
+        .map_err(|e| ControllerError::EventGenerationError(e.to_string()))?;
 
     let icp = String::from_utf8(serialized_icp)
-        .map_err(|e| KelError::EventGenerationError(e.to_string()))?;
+        .map_err(|e| ControllerError::EventGenerationError(e.to_string()))?;
     Ok(icp)
 }
 
@@ -47,7 +47,7 @@ pub fn rotate(
     witness_to_add: Vec<BasicPrefix>,
     witness_to_remove: Vec<BasicPrefix>,
     witness_threshold: u64,
-) -> Result<String, KelError> {
+) -> Result<String, ControllerError> {
     let rot = make_rotation(
         state,
         current_keys,
@@ -57,8 +57,8 @@ pub fn rotate(
         witness_threshold,
     )?
     .serialize()
-    .map_err(|e| KelError::EventGenerationError(e.to_string()))?;
-    String::from_utf8(rot).map_err(|e| KelError::EventGenerationError(e.to_string()))
+    .map_err(|e| ControllerError::EventGenerationError(e.to_string()))?;
+    String::from_utf8(rot).map_err(|e| ControllerError::EventGenerationError(e.to_string()))
 }
 
 fn make_rotation(
@@ -68,7 +68,7 @@ fn make_rotation(
     witness_to_add: Vec<BasicPrefix>,
     witness_to_remove: Vec<BasicPrefix>,
     witness_threshold: u64,
-) -> Result<EventMessage<KeyEvent>, KelError> {
+) -> Result<EventMessage<KeyEvent>, ControllerError> {
     EventMsgBuilder::new(EventTypeTag::Rot)
         .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
@@ -79,13 +79,13 @@ fn make_rotation(
         .with_witness_to_remove(&witness_to_remove)
         .with_witness_threshold(&SignatureThreshold::Simple(witness_threshold))
         .build()
-        .map_err(|e| KelError::EventGenerationError(e.to_string()))
+        .map_err(|e| ControllerError::EventGenerationError(e.to_string()))
 }
 
 pub fn anchor(
     state: IdentifierState,
     payload: &[SelfAddressingPrefix],
-) -> Result<EventMessage<KeyEvent>, KelError> {
+) -> Result<EventMessage<KeyEvent>, ControllerError> {
     let seal_list = payload
         .iter()
         .map(|seal| {
@@ -100,21 +100,21 @@ pub fn anchor(
         .with_previous_event(&state.last_event_digest)
         .with_seal(seal_list)
         .build()
-        .map_err(|e| KelError::EventGenerationError(e.to_string()))?;
+        .map_err(|e| ControllerError::EventGenerationError(e.to_string()))?;
     Ok(ev)
 }
 
 pub fn anchor_with_seal(
     state: IdentifierState,
     seal_list: &[Seal],
-) -> Result<EventMessage<KeyEvent>, KelError> {
+) -> Result<EventMessage<KeyEvent>, ControllerError> {
     let ev = EventMsgBuilder::new(EventTypeTag::Ixn)
         .with_prefix(&state.prefix)
         .with_sn(state.sn + 1)
         .with_previous_event(&state.last_event_digest)
         .with_seal(seal_list.to_owned())
         .build()
-        .map_err(|e| KelError::EventGenerationError(e.to_string()))?;
+        .map_err(|e| ControllerError::EventGenerationError(e.to_string()))?;
     Ok(ev)
 }
 
@@ -124,7 +124,7 @@ pub fn generate_end_role(
     watcher_id: &IdentifierPrefix,
     role: Role,
     enabled: bool,
-) -> Result<ReplyEvent, KelError> {
+) -> Result<ReplyEvent, ControllerError> {
     let end_role = EndRole {
         cid: controller_id.clone(),
         role,
@@ -141,5 +141,5 @@ pub fn generate_end_role(
         SelfAddressing::Blake3_256,
         SerializationFormats::JSON,
     )
-    .map_err(|e| KelError::EventGenerationError(e.to_string()))
+    .map_err(|e| ControllerError::EventGenerationError(e.to_string()))
 }

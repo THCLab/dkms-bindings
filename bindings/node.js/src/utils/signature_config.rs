@@ -1,4 +1,4 @@
-use keriox_wrapper::kel::{Prefix, SelfSigning, SelfSigningPrefix};
+use keriox_wrapper::{Prefix, SelfSigning, SelfSigningPrefix};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 

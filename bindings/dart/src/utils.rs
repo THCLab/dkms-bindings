@@ -1,6 +1,7 @@
-use keriox_wrapper::kel::{
-    AttachedSignaturePrefix, Basic, BasicPrefix, PublicKey as KeriPK, SelfSigning,
-    SelfSigningPrefix,
+use keriox_wrapper::PublicKey as KeriPK;
+use keriox_wrapper::error::ControllerError;
+use keriox_wrapper::{
+    AttachedSignaturePrefix, Attachment, Basic, BasicPrefix, SelfSigning, SelfSigningPrefix,
 };
 
 use crate::api::Error;
@@ -24,6 +25,12 @@ pub fn signature_prefix_from_hex(
 ) -> Result<SelfSigningPrefix, Error> {
     let sig = hex::decode(sig_hex)?;
     Ok(derivation.derive(sig))
+}
+
+pub fn parse_attachment(stream: &[u8]) -> Result<Attachment, Error> {
+    keriox_wrapper::attachment(stream)
+        .map_err(|_e| Error::KelError(ControllerError::AttachmentParseError))
+        .map(|(_rest, att)| att)
 }
 
 // helper functions for parsing attached signatures

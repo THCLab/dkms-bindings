@@ -3,7 +3,7 @@ use std::sync::Arc;
 use keriox_wrapper::{
     event_generator,
     identifier_controller::IdentifierController,
-    kel::{
+    {
         AttachedSignaturePrefix, Attachment, BasicPrefix, IdentifierPrefix, LocationScheme, Prefix,
         SelfAddressingPrefix,
     },
