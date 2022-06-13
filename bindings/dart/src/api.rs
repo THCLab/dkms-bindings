@@ -7,8 +7,8 @@ use keriox_wrapper::{
     controller::OptionalConfig,
     event_generator,
     kel::{
-        parse_attachment, Attachment, Basic, BasicPrefix, EndRole, LocationScheme, Prefix, Role,
-        SelfSigning,
+        parse_attachment, Attachment, Basic, BasicPrefix, EndRole, KelError, LocationScheme,
+        Prefix, Role, SelfSigning,
     },
 };
 
@@ -51,6 +51,7 @@ impl From<Basic> for KeyType {
     }
 }
 
+#[derive(Clone)]
 pub enum SignatureType {
     Ed25519Sha512,
     ECDSAsecp256k1Sha256,
@@ -91,6 +92,7 @@ impl PublicKey {
     }
 }
 
+#[derive(Clone)]
 pub struct Signature {
     pub(crate) algorithm: SignatureType,
     /// hex string of signature
@@ -138,21 +140,13 @@ pub enum Error {
 
     #[error("Controller wasn't initialized")]
     ControllerInitializationError,
-    
+
+    // arguments parsing errors
     #[error("Can't parse controller prefix: {0}")]
     PrefixParseError(String),
-    
+
     #[error("Can't parse oobi json: {0}")]
     OobiParseError(String),
-
-    #[error("Can't parse event: {0}")]
-    EventGenerationError(String),
-
-    #[error("Can't resolve oobi: {0}")]
-    OobiResolvingError(String),
-
-    #[error("Missing issuer oobi")]
-    MissingIssuerOobi,
 
     #[error("base64 decode error")]
     Base64Error(#[from] base64::DecodeError),
@@ -160,11 +154,17 @@ pub enum Error {
     #[error("hex decode error")]
     HexError(#[from] hex::FromHexError),
 
+    #[error("Can't resolve oobi: {0}")]
+    OobiResolvingError(String),
+
+    #[error("Missing issuer oobi")]
+    MissingIssuerOobi,
+
     #[error("Utils error: {0}")]
     UtilsError(String),
 
-    #[error("Can't parse attachment")]
-    AttachmentParseError,
+    #[error(transparent)]
+    KelError(#[from] KelError),
 }
 
 #[derive(Clone)]
@@ -230,8 +230,7 @@ pub fn incept(
                 .collect(),
             witnesses,
             witness_threshold,
-        )
-        .map_err(|e| Error::EventGenerationError(e.to_string()))?;
+        )?;
     Ok(icp)
 }
 
@@ -297,24 +296,22 @@ pub fn rotate(
             witnesses_to_add,
             witnesses_to_remove,
             witness_threshold,
-        )
-        .map_err(|e| Error::EventGenerationError(e.to_string()))?)
+        )?)
 }
 
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
-    resolve_oobi(watcher_oobi.clone())?;
-    let watcher_id = serde_json::from_str::<LocationScheme>(&watcher_oobi)
-        .map_err(|_| Error::OobiParseError(watcher_oobi))?
-        .eid;
+    let lc: LocationScheme = serde_json::from_str(&watcher_oobi)
+        .map_err(|_| Error::OobiParseError(watcher_oobi))?;
+    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .resolve_loc_schema(&lc)
+        .map_err(|e| Error::OobiResolvingError(e.to_string()))?;
+
+    let watcher_id = lc.eid;
     let id = &controller.identifier.parse()?;
-    let add_watcher = event_generator::generate_end_role(id, &watcher_id, Role::Watcher, true)
-        .map_err(|e| Error::EventGenerationError(e.to_string()))?;
-    Ok(String::from_utf8(
-        add_watcher
-            .serialize()
-            .map_err(|e| Error::EventGenerationError(e.to_string()))?,
-    )
-    .map_err(|e| Error::EventGenerationError(e.to_string()))?)
+    let add_watcher = event_generator::generate_end_role(id, &watcher_id, Role::Watcher, true)?;
+    Ok(String::from_utf8(add_watcher.serialize()?)?)
 }
 
 pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<()> {
@@ -374,7 +371,10 @@ pub fn query(controller: Controller, oobis_json: String) -> Result<()> {
             .as_ref()
             .ok_or(Error::ControllerInitializationError)?
             .send_oobi_to_watcher(
-                &controller.identifier.parse().unwrap(),
+                &controller
+                    .identifier
+                    .parse()
+                    .map_err(|_| Error::PrefixParseError((&controller.identifier).into()))?,
                 &serde_json::to_string(&oobi)?,
             )?;
     }
@@ -433,8 +433,7 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
                 let current_keys = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
                     .as_ref()
                     .ok_or(Error::ControllerInitializationError)?
-                    .get_public_keys_for_seal(seal)
-                    .unwrap();
+                    .get_public_keys_for_seal(seal)?;
                 join_keys_and_signatures(current_keys, signatures)
             })
             .collect::<Result<Vec<_>, Error>>();

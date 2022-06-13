@@ -2,7 +2,7 @@ use anyhow::Result;
 use keriox_wrapper::kel::{Basic, CryptoBox, KeyManager, SelfSigning};
 
 use crate::api::{
-    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, Config,
+    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, rotate, Config,
 };
 
 #[test]
@@ -92,7 +92,7 @@ pub fn test_demo() -> Result<()> {
         .unwrap()
         .into();
 
-    let key_manager = CryptoBox::new().unwrap();
+    let mut key_manager = CryptoBox::new().unwrap();
     let current_b64key = base64::encode(key_manager.public_key().key());
     let next_b64key = base64::encode(key_manager.next_public_key().key());
 
@@ -107,6 +107,25 @@ pub fn test_demo() -> Result<()> {
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
 
     let controller = finalize_inception(icp_event, signature)?;
+
+    key_manager.rotate()?;
+    let current_b64key = base64::encode(key_manager.public_key().key());
+    let next_b64key = base64::encode(key_manager.next_public_key().key());
+    let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
+    let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
+    let rotation_event = rotate(controller.clone(), vec![pk], vec![npk], vec![], vec![], 0)?;
+
+    let hex_signature = hex::encode(key_manager.sign(rotation_event.as_bytes())?);
+
+    // sign rot event
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+
+    println!("rotation: \n{}", rotation_event);
+
+    assert!(finalize_event(controller.clone(), "random data".into(), signature.clone()).is_err());
+
+    finalize_event(controller.clone(), rotation_event, signature)?;
+
     let kel = get_kel(controller.clone())?;
     println!("Current controller kel: \n{}", kel);
 
