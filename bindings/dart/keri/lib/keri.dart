@@ -152,7 +152,7 @@ class Keri {
     try{
       return await api.addWatcher(controller: controller, watcherOobi: watcherOobi);
     }on FfiException catch(e){
-      if(e.message.contains('expected value at line')){
+      if(e.message.contains('expected ident at line')){
         throw IncorrectWatcherOobiException('Provided watcher oobi is not a correct string. Check it once again.');
       }
       if(e.message.contains('EOF while parsing a value')){

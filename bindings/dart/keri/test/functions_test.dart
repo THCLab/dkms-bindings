@@ -401,6 +401,140 @@ void main(){
     });
   });
 
+  group('addWatcher()', () {
+    test('addWatcher fails, because nobody is listening on the port provided in watcher.', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      try{
+        await Keri.addWatcher(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), watcherOobi: "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}");        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
+      }
+    });
+
+    test('addWatcher fails, because controller is incorrect', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      try{
+        await Keri.addWatcher(controller: Controller(identifier: 'fail'), watcherOobi: "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+
+    test('addWatcher fails, because controller is unknown', () async{//NIE PRZECHODZI
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      try{
+        await Keri.addWatcher(controller: Controller(identifier: 'EoSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc0bx40'), watcherOobi: "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+
+    test('addWatcher fails, because watcher Oobi is empty.', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      try{
+        await Keri.addWatcher(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), watcherOobi: "");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IncorrectWatcherOobiException>());
+      }
+    });
+
+    test('addWatcher fails, because watcher Oobi is incorrect.', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      try{
+        await Keri.addWatcher(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), watcherOobi: "fail");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IncorrectWatcherOobiException>());
+      }
+    });
+  });
+
+  group('resolveOobi()', () {
+    test('resolveOobi fails, because oobi is an empty string', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      try{
+        await Keri.resolveOobi(oobiJson: '');
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IncorrectOobiException>());
+      }
+    });
+
+    test('resolveOobi fails, because oobi is an incorrect string', () async{//NIE PRZECHODZI
+      await Keri.initKel(inputAppDir: 'keritest');
+      try{
+        await Keri.resolveOobi(oobiJson: "fail");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IncorrectOobiException>());
+      }
+    });
+
+    test('resolveOobi fails, because nobody listens on port provided in oobi', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      try{
+        await Keri.resolveOobi(oobiJson: "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
+      }
+    });
+
+    test('resolveOobi fails, because eid field is incorrect', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      try{
+        await Keri.resolveOobi(oobiJson: "{\"eid\":\"fail\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}");
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+
+  });
+
   group('getKel()', () {
     test('the getKel passes', () async {
       await Keri.initKel(inputAppDir: 'keritest');
@@ -444,7 +578,7 @@ void main(){
       }
     });
 
-    test('the getKel fails, because of incorrect controller string', () async {
+    test('the getKelByStr fails, because of incorrect controller string', () async {
       await Keri.initKel(inputAppDir: 'keritest');
       try{
         await Keri.getKelByStr(contId: 'fail');
