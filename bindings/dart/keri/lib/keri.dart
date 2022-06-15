@@ -10,17 +10,10 @@ import 'bridge_generated.dart';
 
 class Keri {
   static final examplePath = Directory.current.absolute.path;
-  //print(examplePath);
   static const base = 'dartkeriox';
   static const path = 'lib$base.so';
-  static const path2 = 'C:/Users/66jus/Documents/GitHub/keri-bindings/bindings/dart/keri/android/src/main/jniLibs/x86_64/lib$base.so';
-  static const path3 = 'C:/Users/66jus/Documents/GitHub/keri-bindings/bindings/dart/keri/build/test/libdartkeriox.dylib';
-  static const path4 = 'C:/Users/66jus/Documents/GitHub/keri-bindings/bindings/dart/keri/android/src/main/jniLibs/arm64-v8a/lib$base.so';
 
-  //static final path = p.join(examplePath, 'android/src/main/jniLibs/arm64-v8a/lib$base.so');
-  //path = p.join(examplePath, 'lib$base.so');
-
-  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/keri-bindings.dll").toFilePath()) :  Platform.isIOS
+  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/dartkeriox.dll").toFilePath()) :  Platform.isIOS
       ? DynamicLibrary.process()
       : Platform.isMacOS
       ? DynamicLibrary.executable()
@@ -28,10 +21,10 @@ class Keri {
   static late final api = KeriDartImpl(dylib);
 
 
-  static Future<void> initKel({required String inputAppDir, Config? optionalConfigs, dynamic hint}) async{
+  static Future<bool> initKel({required String inputAppDir, Config? optionalConfigs, dynamic hint}) async{
     if(optionalConfigs != null){
       try{
-        await api.initKel(inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
+        return await api.initKel(inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
       }on FfiException catch(e){
         print(e.message);
         if(e.message.contains('Improper location scheme structure')){
@@ -43,14 +36,16 @@ class Keri {
         if(e.message.contains('error sending request for url')){
           throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
         }
+        rethrow;
       }
     }else{
       try{
-        await api.initKel(inputAppDir: inputAppDir);
+        return await api.initKel(inputAppDir: inputAppDir);
       }on FfiException catch(e){
         if(e.message.contains('Error while event processing')){
           throw UnavailableDirectoryException("The provided directory isn't available for writing. Consider changing the path.");
         }
+        rethrow;
       }
     }
   }
@@ -93,7 +88,7 @@ class Keri {
       if(e.message.contains('hex decode error')){
         throw IncorrectSignatureException('The signature provided is not a correct HEX string. Check the signature once again.');
       }
-      if(e.message.contains('can\'t parse event')){
+      if(e.message.contains('Can\'t parse event')){
         throw WrongEventException('Provided string is not a correct icp event. Check the string once again.');
       }
       if(e.message.contains('Signature verification failed')){
@@ -152,11 +147,8 @@ class Keri {
     try{
       return await api.addWatcher(controller: controller, watcherOobi: watcherOobi);
     }on FfiException catch(e){
-      if(e.message.contains('expected ident at line')){
+      if(e.message.contains('Can\'t parse oobi json:')){
         throw IncorrectWatcherOobiException('Provided watcher oobi is not a correct string. Check it once again.');
-      }
-      if(e.message.contains('EOF while parsing a value')){
-        throw IncorrectWatcherOobiException('Provided watcher oobi is an empty string. Please provide a correct string.');
       }
       if(e.message.contains('unknown identifier')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
@@ -174,13 +166,13 @@ class Keri {
     }
   }
 
-  static Future<void> finalizeEvent(
+  static Future<bool> finalizeEvent(
       {required Controller identifier,
         required String event,
         required Signature signature,
         dynamic hint}) async{
     try{
-      await api.finalizeEvent(identifier: identifier, event: event, signature: signature);
+      return await api.finalizeEvent(identifier: identifier, event: event, signature: signature);
     }on FfiException catch(e){
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
@@ -191,18 +183,22 @@ class Keri {
       if(e.message.contains('Can\'t parse controller')){
         throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
       }
+      if(e.message.contains('Signature verification failed')){
+        throw SignatureVerificationException('Signature verification failed - event signature does not match event keys.');
+      }
+      if(e.message.contains('Can\'t parse event')){
+        throw WrongEventException('Provided string is not a correct event. Check the string once again.');
+      }
+      rethrow;
     }
   }
 
-  static Future<void> resolveOobi({required String oobiJson, dynamic hint}) async{
+  static Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async{
     try{
-      await api.resolveOobi(oobiJson: oobiJson);
+      return await api.resolveOobi(oobiJson: oobiJson);
     }on FfiException catch(e){
-      if(e.message.contains('expected value at line')){
+      if(e.message.contains('Can\'t parse oobi json')){
         throw IncorrectOobiException('Provided oobi is incorrect. Please check the JSON once again');
-      }
-      if(e.message.contains('EOF while parsing a value')){
-        throw IncorrectOobiException('Provided oobi is an empty string. Please provide a correct string.');
       }
       if(e.message.contains('error sending request for url')){
         throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
@@ -210,15 +206,16 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier is incorrect. Check the eid field once again.');
       }
+      rethrow;
     }
   }
 
-  static Future<void> query(
+  static Future<bool> query(
       {required Controller controller,
         required String oobisJson,
         dynamic hint}) async{
     try{
-      await api.query(controller: controller, oobisJson: oobisJson);
+      return await api.query(controller: controller, oobisJson: oobisJson);
     }on FfiException catch (e){
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
@@ -232,6 +229,7 @@ class Keri {
       if(e.message.contains('error sending request for url')){
         throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
       }
+      rethrow;
     }
   }
 

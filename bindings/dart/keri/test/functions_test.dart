@@ -34,6 +34,16 @@ void main(){
         expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
       }
     });
+
+    test('The kel fails to init as you cannot initKel twice', () async{
+      try {
+        await Keri.initKel(inputAppDir: 'keritest');
+        await Keri.initKel(inputAppDir: 'keritest');
+        fail("exception not thrown");
+      } catch (e) {
+        expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
+      }
+    });
   });
 
   group("incept()", () {
@@ -455,24 +465,6 @@ void main(){
       }
     });
 
-    test('addWatcher fails, because watcher Oobi is empty.', () async{
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
-      List<String> vec3 = [];
-      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
-      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
-      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      try{
-        await Keri.addWatcher(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), watcherOobi: "");
-        fail("exception not thrown");
-      }catch (e) {
-        expect(e, const ex.isInstanceOf<IncorrectWatcherOobiException>());
-      }
-    });
-
     test('addWatcher fails, because watcher Oobi is incorrect.', () async{
       await Keri.initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
@@ -499,14 +491,15 @@ void main(){
         await Keri.resolveOobi(oobiJson: '');
         fail("exception not thrown");
       }catch (e) {
+        print(e);
         expect(e, const ex.isInstanceOf<IncorrectOobiException>());
       }
     });
 
-    test('resolveOobi fails, because oobi is an incorrect string', () async{//NIE PRZECHODZI
+    test('resolveOobi fails, because oobi is an incorrect string', () async{
       await Keri.initKel(inputAppDir: 'keritest');
       try{
-        await Keri.resolveOobi(oobiJson: "fail");
+        await Keri.resolveOobi(oobiJson: 'fail');
         fail("exception not thrown");
       }catch (e) {
         expect(e, const ex.isInstanceOf<IncorrectOobiException>());
@@ -523,16 +516,115 @@ void main(){
       }
     });
 
-    test('resolveOobi fails, because eid field is incorrect', () async{
+  });
+
+  group('finalizeEvent()', () {
+    test('finalizeEvent passes', () async{
       await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      //MOCK ROTATION
+      publicKey1 = publicKey2;
+      publicKey2 = publicKey3;
+      List<PublicKey> currentKeys = [];
+      List<PublicKey> newNextKeys = [];
+      currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      var rotation_event = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+      var signature2 = 'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
+      var res = await Keri.finalizeEvent(identifier: controller, event: rotation_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+      expect(res, true);
+    });
+
+    test('finalizeEvent fails, because signature is incorrect', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      //MOCK ROTATION
+      publicKey1 = publicKey2;
+      publicKey2 = publicKey3;
+      List<PublicKey> currentKeys = [];
+      List<PublicKey> newNextKeys = [];
+      currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      var rotation_event = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+      var signature2 = 'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
       try{
-        await Keri.resolveOobi(oobiJson: "{\"eid\":\"fail\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}");
+        var res = await Keri.finalizeEvent(identifier: controller, event: rotation_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
         fail("exception not thrown");
       }catch (e) {
-        expect(e, const ex.isInstanceOf<IdentifierException>());
+        print(e);
+        expect(e, const ex.isInstanceOf<SignatureVerificationException>());
       }
     });
 
+    test('finalizeEvent fails, because event string is not a correct string', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      //MOCK ROTATION
+      publicKey1 = publicKey2;
+      publicKey2 = publicKey3;
+      List<PublicKey> currentKeys = [];
+      List<PublicKey> newNextKeys = [];
+      currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      var rotation_event = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+      var signature2 = 'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
+      try{
+        var res = await Keri.finalizeEvent(identifier: controller, event: 'fail', signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<WrongEventException>());
+      }
+    });
+
+    test('finalizeEvent fails, because controller string is not a correct string', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      //MOCK ROTATION
+      publicKey1 = publicKey2;
+      publicKey2 = publicKey3;
+      List<PublicKey> currentKeys = [];
+      List<PublicKey> newNextKeys = [];
+      currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      var rotation_event = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+      var signature2 = 'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
+      try{
+        var res = await Keri.finalizeEvent(identifier: Controller(identifier: 'fail'), event: rotation_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
   });
 
   group('getKel()', () {

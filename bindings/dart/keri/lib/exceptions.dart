@@ -152,3 +152,15 @@ class IncorrectOobiException implements Exception {
   @override
   String toString() => "IncorrectOobiException: $cause";
 }
+
+///An exception thrown when the dynamic library is not found
+class LibraryNotFoundException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  LibraryNotFoundException(this.cause);
+
+  @override
+  String toString() => "LibraryNotFoundException: $cause";
+}

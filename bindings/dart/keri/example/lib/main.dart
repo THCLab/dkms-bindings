@@ -28,8 +28,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    var examplePath = Directory.current.absolute.path;
-    var path = p.join(examplePath, 'android/src/main/jniLibs/arm64-v8a/libdartkeriox.so');
     initKel();
     super.initState();
   }
@@ -87,7 +85,12 @@ class _MyAppState extends State<MyApp> {
     //var secev = 'kotki';
     var secev = '{"v":"KERI10JSON000160_","t":"rot","d":"E7WpdgyPc747YTx4ZKLInpN0js-OZBQPkjjTq3MzCsvI","i":"EK9RlxdIhQMgS77QjijZKOujG_vY1m3yXjfFG5KEglFQ","s":"1","p":"EK9RlxdIhQMgS77QjijZKOujG_vY1m3yXjfFG5KEglFQ","kt":"1","k":["BRuGG4-_v5eYlLM2XRpcWPSJXzsaLCnBEor5AdnBBfDo"],"nt":"1","n":["ENeOuHv0XDf--bEmm8G5g-zkTML1lRMBa9YuJkMwxuzY"],"bt":"0","br":[],"ba":[],"a":[]}';
     var signature2 = await signer.sign(result);
-    await Keri.finalizeEvent(identifier: controller, event: 'kotki', signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+    var val = await Keri.finalizeEvent(identifier: controller, event: 'kotki', signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature)).then((value) {
+      print('po funkcji');
+      print(value);
+    }).catchError((error) {
+      print(error);
+    });
     print('finalized');
 
     //var add = await Keri.addWatcher(controller: Controller(identifier: 'E7DTjsMVpK29UqpWYI_GrnYuhvf42sq4l7LTqGJtFZOs'), watcherOobi: '');

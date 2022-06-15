@@ -15,7 +15,7 @@ abstract class KeriDart {
   Future<Config> withInitialOobis(
       {required Config config, required String oobisJson, dynamic hint});
 
-  Future<void> initKel(
+  Future<bool> initKel(
       {required String inputAppDir, Config? optionalConfigs, dynamic hint});
 
   Future<String> incept(
@@ -42,20 +42,20 @@ abstract class KeriDart {
       required String watcherOobi,
       dynamic hint});
 
-  Future<void> finalizeEvent(
+  Future<bool> finalizeEvent(
       {required Controller identifier,
       required String event,
       required Signature signature,
       dynamic hint});
 
-  Future<void> resolveOobi({required String oobiJson, dynamic hint});
+  Future<bool> resolveOobi({required String oobiJson, dynamic hint});
 
-  Future<void> query(
+  Future<bool> query(
       {required Controller controller,
       required String oobisJson,
       dynamic hint});
 
-  Future<void> processStream({required String stream, dynamic hint});
+  Future<bool> processStream({required String stream, dynamic hint});
 
   Future<String> getKel({required Controller cont, dynamic hint});
 
@@ -151,7 +151,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
         hint: hint,
       ));
 
-  Future<void> initKel(
+  Future<bool> initKel(
           {required String inputAppDir,
           Config? optionalConfigs,
           dynamic hint}) =>
@@ -160,7 +160,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
             port_,
             _api2wire_String(inputAppDir),
             _api2wire_opt_box_autoadd_config(optionalConfigs)),
-        parseSuccessData: _wire2api_unit,
+        parseSuccessData: _wire2api_bool,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "init_kel",
           argNames: ["inputAppDir", "optionalConfigs"],
@@ -272,7 +272,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
         hint: hint,
       ));
 
-  Future<void> finalizeEvent(
+  Future<bool> finalizeEvent(
           {required Controller identifier,
           required String event,
           required Signature signature,
@@ -283,7 +283,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
             _api2wire_box_autoadd_controller(identifier),
             _api2wire_String(event),
             _api2wire_box_autoadd_signature(signature)),
-        parseSuccessData: _wire2api_unit,
+        parseSuccessData: _wire2api_bool,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "finalize_event",
           argNames: ["identifier", "event", "signature"],
@@ -292,11 +292,11 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
         hint: hint,
       ));
 
-  Future<void> resolveOobi({required String oobiJson, dynamic hint}) =>
+  Future<bool> resolveOobi({required String oobiJson, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) =>
             inner.wire_resolve_oobi(port_, _api2wire_String(oobiJson)),
-        parseSuccessData: _wire2api_unit,
+        parseSuccessData: _wire2api_bool,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "resolve_oobi",
           argNames: ["oobiJson"],
@@ -305,7 +305,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
         hint: hint,
       ));
 
-  Future<void> query(
+  Future<bool> query(
           {required Controller controller,
           required String oobisJson,
           dynamic hint}) =>
@@ -314,7 +314,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
             port_,
             _api2wire_box_autoadd_controller(controller),
             _api2wire_String(oobisJson)),
-        parseSuccessData: _wire2api_unit,
+        parseSuccessData: _wire2api_bool,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "query",
           argNames: ["controller", "oobisJson"],
@@ -323,11 +323,11 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
         hint: hint,
       ));
 
-  Future<void> processStream({required String stream, dynamic hint}) =>
+  Future<bool> processStream({required String stream, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) =>
             inner.wire_process_stream(port_, _api2wire_String(stream)),
-        parseSuccessData: _wire2api_unit,
+        parseSuccessData: _wire2api_bool,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "process_stream",
           argNames: ["stream"],
@@ -490,6 +490,10 @@ String _wire2api_String(dynamic raw) {
   return raw as String;
 }
 
+bool _wire2api_bool(dynamic raw) {
+  return raw as bool;
+}
+
 Config _wire2api_config(dynamic raw) {
   final arr = raw as List<dynamic>;
   if (arr.length != 1)
@@ -559,10 +563,6 @@ int _wire2api_u8(dynamic raw) {
 
 Uint8List _wire2api_uint_8_list(dynamic raw) {
   return raw as Uint8List;
-}
-
-void _wire2api_unit(dynamic raw) {
-  return;
 }
 
 // ignore_for_file: camel_case_types, non_constant_identifier_names, avoid_positional_boolean_parameters, annotate_overrides, constant_identifier_names
