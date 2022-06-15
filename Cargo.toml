@@ -5,5 +5,7 @@ members = [
     "bindings/dart",
 ]
 
+
 [profile.release]
 lto = true
+opt-level = "z"

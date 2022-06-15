@@ -3,7 +3,7 @@ use std::{path::PathBuf, sync::Mutex};
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
-use keri::{derivation::{basic::Basic, self_signing::SelfSigning}, controller::{utils::OptionalConfig, error::ControllerError, event_generator}, oobi::{LocationScheme, Role, EndRole}, prefix::{Prefix, BasicPrefix}, event_parsing::Attachment};
+use keri::{derivation::{basic::Basic, self_signing::SelfSigning}, controller::{utils::OptionalConfig, error::ControllerError, event_generator}, oobi::{LocationScheme, Role, EndRole}, prefix::{Prefix, BasicPrefix, IdentifierPrefix}, event_parsing::Attachment};
 
 
 use crate::utils::{
@@ -174,7 +174,7 @@ impl Controller {
     }
 }
 
-pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<()> {
+pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<bool> {
     let config = if let Some(config) = optional_configs {
         config
             .build()
@@ -196,7 +196,7 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
         *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(controller);
     }
 
-    Ok(())
+    Ok(true)
 }
 
 pub fn incept(
@@ -298,20 +298,22 @@ pub fn rotate(
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
     let lc: LocationScheme =
         serde_json::from_str(&watcher_oobi).map_err(|_| Error::OobiParseError(watcher_oobi))?;
+   if let IdentifierPrefix::Basic(_bp) = &lc.eid {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .resolve_loc_schema(&lc)
-        .map_err(|e| Error::OobiResolvingError(e.to_string()))?;
+        .resolve_loc_schema(&lc)?;
 
-    let watcher_id = lc.eid;
-    let id = &controller.identifier.parse()?;
-    let add_watcher = event_generator::generate_end_role(id, &watcher_id, Role::Watcher, true)?;
-    Ok(String::from_utf8(add_watcher.serialize()?)?)
+        let id = &controller.identifier.parse()?;
+        let add_watcher = event_generator::generate_end_role(id, &lc.eid, Role::Watcher, true)?;
+        Ok(String::from_utf8(add_watcher.serialize()?)?)
+    } else {
+        Err(ControllerError::WrongWitnessPrefixError.into())
+    }
 }
 
-pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<()> {
-    let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<bool> {
+    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .finalize_event(
@@ -322,20 +324,20 @@ pub fn finalize_event(identifier: Controller, event: String, signature: Signatur
                 signature.algorithm.into(),
             )?],
         )?;
-    Ok(signed_event)
+    Ok(true)
 }
 
-pub fn resolve_oobi(oobi_json: String) -> Result<()> {
-    let lc: LocationScheme = serde_json::from_str(&oobi_json)?;
+pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
+    let lc: LocationScheme = serde_json::from_str(&oobi_json).map_err(|_e| Error::OobiParseError(oobi_json))?;
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .resolve_loc_schema(&lc)
         .map_err(|e| Error::OobiResolvingError(e.to_string()))?;
-    Ok(())
+    Ok(true)
 }
 
-fn query_by_id(controller: Controller, query_id: String) -> Result<()> {
+fn query_by_id(controller: Controller, query_id: String) -> Result<bool> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -346,10 +348,10 @@ fn query_by_id(controller: Controller, query_id: String) -> Result<()> {
                 .map_err(|_e| Error::PrefixParseError(controller.identifier))?,
             &query_id,
         )?;
-    Ok(())
+    Ok(true)
 }
 
-pub fn query(controller: Controller, oobis_json: String) -> Result<()> {
+pub fn query(controller: Controller, oobis_json: String) -> Result<bool> {
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     enum Oobis {
@@ -377,12 +379,12 @@ pub fn query(controller: Controller, oobis_json: String) -> Result<()> {
     query_by_id(controller, issuer_id.ok_or(Error::MissingIssuerOobi)?)
 }
 
-pub fn process_stream(stream: String) -> Result<()> {
+pub fn process_stream(stream: String) -> Result<bool> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .process_stream(stream.as_bytes())?;
-    Ok(())
+    Ok(true)
 }
 
 pub fn get_kel(cont: Controller) -> Result<String> {

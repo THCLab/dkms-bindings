@@ -2,7 +2,7 @@ use anyhow::Result;
 use keri::{signer::{CryptoBox, KeyManager}, derivation::{basic::Basic, self_signing::SelfSigning}};
 
 use crate::api::{
-    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, rotate, Config,
+    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, rotate, Config, Controller, init_kel, resolve_oobi,
 };
 
 #[test]
@@ -76,6 +76,85 @@ pub fn test_optional_config() -> Result<()> {
 }
 
 #[test]
+pub fn test_add_watcher() -> Result<()> {
+    use tempfile::Builder;
+
+    // Create temporary db file.
+    let root_path = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .path()
+        .to_str()
+        .unwrap()
+        .into();
+
+    init_kel(root_path, None)?;
+    let controller = Controller { identifier: "EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".into() };
+    
+    let add_watcher_message = add_watcher(controller.clone(), "[{}]".into());
+    assert!(add_watcher_message.is_err());
+
+    let add_watcher_message = add_watcher(controller.clone(), r#"[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}]"#.into());
+    assert!(add_watcher_message.is_err());
+
+    // Wrong identifier type, should be basic
+    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    assert!(add_watcher_message.is_err());
+    
+    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"EA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    assert!(add_watcher_message.is_err());
+
+    // Nobody listen
+    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    assert!(add_watcher_message.is_err());
+
+    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    assert!(add_watcher_message.is_ok());
+
+    Ok(())
+}
+
+#[test]
+pub fn test_resolve_oobi() -> Result<()> {
+    use tempfile::Builder;
+
+    // Create temporary db file.
+    let root_path = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .path()
+        .to_str()
+        .unwrap()
+        .into();
+
+    init_kel(root_path, None)?;
+    
+    let resolve_result = resolve_oobi("".into());
+    assert!(resolve_result.is_err());
+
+    let resolve_result = resolve_oobi(r#"[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}]"#.into());
+    assert!(resolve_result.is_err());
+
+    let resolve_result = resolve_oobi(r#"random"#.into());
+    assert!(resolve_result.is_err());
+    
+    // Wrong identifier type, should be basic
+    let resolve_result = resolve_oobi(r#"{"eid":"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    assert!(resolve_result.is_err());
+
+    // Nobody listen
+    let resolve_result = resolve_oobi(r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}"#.into());
+    assert!(resolve_result.is_err());
+
+    let resolvr_result = resolve_oobi(r#"{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    assert!(resolvr_result.is_ok());
+
+    Ok(())
+}
+
+#[test]
 pub fn test_demo() -> Result<()> {
     use crate::api::{
         finalize_inception, get_kel, incept, init_kel, KeyType, PublicKey, Signature, SignatureType,
@@ -122,14 +201,16 @@ pub fn test_demo() -> Result<()> {
 
     println!("rotation: \n{}", rotation_event);
 
-    assert!(finalize_event(controller.clone(), "random data".into(), signature.clone()).is_err());
+    finalize_event(controller.clone(), "random data".into(), signature.clone())?;
+
 
     finalize_event(controller.clone(), rotation_event, signature)?;
 
     let kel = get_kel(controller.clone())?;
-    println!("Current controller kel: \n{}", kel);
+    println!("\nCurrent controller kel: \n{}", kel);
 
-    let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:3236/"}"#.into();
+    let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
+
     let add_watcher_message = add_watcher(controller.clone(), watcher_oobi)?;
     println!(
         "\nController generate end role message to add watcher: \n{}",
@@ -144,6 +225,7 @@ pub fn test_demo() -> Result<()> {
 
     println!("\nQuering about issuer kel...");
     println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
+    query(controller.clone(), "random".into()).unwrap();
     query(controller, issuer_oobi).unwrap();
 
     // Get acdc signed by issuer
