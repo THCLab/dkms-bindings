@@ -14,9 +14,9 @@ class Keri {
   static const path = 'lib$base.so';
 
   static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/dartkeriox.dll").toFilePath()) :  Platform.isIOS
-      ? DynamicLibrary.process()
+      ? throw LibraryNotFoundException('Library for iOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
       : Platform.isMacOS
-      ? DynamicLibrary.executable()
+      ? throw LibraryNotFoundException('Library for MacOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
       : DynamicLibrary.open(path);
   static late final api = KeriDartImpl(dylib);
 

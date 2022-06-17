@@ -46,7 +46,7 @@ class _MyAppState extends State<MyApp> {
     // var controller = await Keri.finalizeInception(event: ev, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: sig2));
     //await Keri.finalizeEvent(identifier: Controller(identifier: 'Ea_iehzZAjq-EscCPBm7DKEQc_VVr84gJeGfpGG83ocs'), event: ev, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: sig2));
 
-    await Keri.initKel(inputAppDir: dir);
+    var inited = await Keri.initKel(inputAppDir: dir);
     print('initialized');
     //var key_pub_1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
     //var key_pub_2 = 'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
