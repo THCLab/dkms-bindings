@@ -627,6 +627,74 @@ void main(){
     });
   });
 
+  group('query()', () {
+    test('query passes', () async{//NIE PRZECHODZI
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      var oobiString = "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}]";
+      var res = await Keri.query(controller: controller, oobisJson: oobiString);
+      expect(res, true);
+    });
+
+    test('query fails, because nobody is listening on the port.', () async{//NIE PRZECHODZI
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      var oobiString = "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}]";
+      try{
+        var res = await Keri.query(controller: controller, oobisJson: oobiString);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
+      }
+    });
+
+    test('query fails, because the controller identifier is incorrect.', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      var oobiString = "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}]";
+      try{
+        var res = await Keri.query(controller: Controller(identifier: 'fail'), oobisJson: oobiString);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+
+    test('query fails, because the controller has not been initialized', () async{
+      var oobiString = "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}]";
+      try{
+        var res = await Keri.query(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), oobisJson: oobiString);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<ControllerNotInitializedException>());
+      }
+    });
+  });
+
   group('getKel()', () {
     test('the getKel passes', () async {
       await Keri.initKel(inputAppDir: 'keritest');

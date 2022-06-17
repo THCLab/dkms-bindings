@@ -60,7 +60,7 @@ class Keri {
     try{
       return await api.incept(publicKeys: publicKeys, nextPubKeys: nextPubKeys, witnesses: witnesses, witnessThreshold: witnessThreshold);
     }on FfiException catch(e){
-      if(e.message.contains('Controller wasn\'t initiated')){
+      if(e.message.contains('Controller wasn\'t initialized')){
         throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
       }
       if(e.message.contains('Base64Error')){
@@ -94,7 +94,7 @@ class Keri {
       if(e.message.contains('Signature verification failed')){
         throw SignatureVerificationException('Signature verification failed - event signature does not match event keys.');
       }
-      if(e.message.contains('Controller wasn\'t initiated')){
+      if(e.message.contains('Controller wasn\'t initialized')){
         throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
       }
       rethrow;
@@ -189,6 +189,9 @@ class Keri {
       if(e.message.contains('Can\'t parse event')){
         throw WrongEventException('Provided string is not a correct event. Check the string once again.');
       }
+      if(e.message.contains('Controller wasn\'t initialized')){
+        throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
+      }
       rethrow;
     }
   }
@@ -228,6 +231,9 @@ class Keri {
       }
       if(e.message.contains('error sending request for url')){
         throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      }
+      if(e.message.contains('Controller wasn\'t initialized')){
+        throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
       }
       rethrow;
     }
