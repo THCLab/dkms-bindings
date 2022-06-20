@@ -11,7 +11,7 @@ import 'bridge_generated.dart';
 class Keri {
   static final examplePath = Directory.current.absolute.path;
   static const base = 'dartkeriox';
-  static const path = 'libb$base.so';
+  static const path = 'lib$base.so';
 
   static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("test/dartkeriox.dll").toFilePath()) :  Platform.isIOS
       ? throw LibraryNotImplementedException('Library for iOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
