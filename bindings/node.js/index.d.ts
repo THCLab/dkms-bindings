@@ -54,7 +54,7 @@ export class IdController {
   getKel(): string
   getId(): string
   rotate(pks: Array<Key>, npks: Array<Key>, witnessesToAdd: Array<string>, witnessesToRemove: Array<string>, witnessThreshold: number): Buffer
-  interact(anchoredData: Array<string>): Buffer
+  anchor(anchoredData: Array<string>): Buffer
   finalizeEvent(event: Buffer, signatures: Array<Signature>): void
   signData(signature: Signature): string
 }

@@ -1,6 +1,13 @@
 use std::sync::Arc;
 
-use keri::{oobi::LocationScheme, controller::{identifier_controller::IdentifierController, event_generator}, prefix::{IdentifierPrefix, Prefix, BasicPrefix, SelfAddressingPrefix, AttachedSignaturePrefix}, event_parsing::Attachment};
+use keri::{
+    controller::{event_generator, identifier_controller::IdentifierController},
+    event_parsing::Attachment,
+    oobi::LocationScheme,
+    prefix::{
+        AttachedSignaturePrefix, BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix,
+    },
+};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 use utils::{configs, key_config::Key, signature_config::Signature};
@@ -155,18 +162,12 @@ impl IdController {
     }
 
     #[napi]
-    pub fn interact(&self, anchored_data: Vec<String>) -> napi::Result<Buffer> {
+    pub fn anchor(&self, anchored_data: Vec<String>) -> napi::Result<Buffer> {
         let sais = anchored_data
             .iter()
             .map(|d| d.parse::<SelfAddressingPrefix>().unwrap())
             .collect::<Vec<_>>();
-        Ok(self
-            .controller
-            .anchor(&sais)
-            .unwrap()
-            .serialize()
-            .unwrap()
-            .into())
+        Ok(self.controller.anchor(&sais).unwrap().as_bytes().into())
     }
 
     #[napi]

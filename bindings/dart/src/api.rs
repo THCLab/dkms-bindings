@@ -3,8 +3,13 @@ use std::{path::PathBuf, sync::Mutex};
 use flutter_rust_bridge::support::lazy_static;
 
 use anyhow::{anyhow, Result};
-use keri::{derivation::{basic::Basic, self_signing::SelfSigning}, controller::{utils::OptionalConfig, error::ControllerError, event_generator}, oobi::{LocationScheme, Role, EndRole}, prefix::{Prefix, BasicPrefix, IdentifierPrefix}, event_parsing::Attachment};
-
+use keri::{
+    controller::{error::ControllerError, event_generator, utils::OptionalConfig},
+    derivation::{basic::Basic, self_signing::SelfSigning},
+    event_parsing::Attachment,
+    oobi::{EndRole, LocationScheme, Role},
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix},
+};
 
 use crate::utils::{
     join_keys_and_signatures, key_prefix_from_b64, parse_attachment, signature_prefix_from_hex,
@@ -295,14 +300,27 @@ pub fn rotate(
         )?)
 }
 
+pub fn anchor(controller: Controller, sais: Vec<String>) -> Result<String> {
+    let sais = sais
+        .iter()
+        .map(|sai| sai.parse::<SelfAddressingPrefix>().unwrap())
+        .collect::<Vec<_>>();
+
+    let id = controller.get_id().parse::<IdentifierPrefix>()?;
+    Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .anchor(id, &sais)?)
+}
+
 pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
     let lc: LocationScheme =
         serde_json::from_str(&watcher_oobi).map_err(|_| Error::OobiParseError(watcher_oobi))?;
-   if let IdentifierPrefix::Basic(_bp) = &lc.eid {
-    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-        .as_ref()
-        .ok_or(Error::ControllerInitializationError)?
-        .resolve_loc_schema(&lc)?;
+    if let IdentifierPrefix::Basic(_bp) = &lc.eid {
+        (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .resolve_loc_schema(&lc)?;
 
         let id = &controller.identifier.parse()?;
         let add_watcher = event_generator::generate_end_role(id, &lc.eid, Role::Watcher, true)?;
@@ -328,7 +346,8 @@ pub fn finalize_event(identifier: Controller, event: String, signature: Signatur
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
-    let lc: LocationScheme = serde_json::from_str(&oobi_json).map_err(|_e| Error::OobiParseError(oobi_json))?;
+    let lc: LocationScheme =
+        serde_json::from_str(&oobi_json).map_err(|_e| Error::OobiParseError(oobi_json))?;
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -398,7 +417,7 @@ pub fn get_kel(cont: Controller) -> Result<String> {
                 .parse()
                 .map_err(|_e| Error::PrefixParseError(cont.identifier))?,
         )?
-        .ok_or(Error::UtilsError("Unknown id".into()))?;
+        .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?;
     Ok(String::from_utf8(signed_event).unwrap())
 }
 
@@ -412,7 +431,7 @@ pub fn get_kel_by_str(cont_id: String) -> Result<String> {
                 .parse()
                 .map_err(|_e| Error::PrefixParseError(cont_id))?,
         )?
-        .ok_or(Error::UtilsError("Unknown id".into()))?;
+        .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?;
     Ok(String::from_utf8(signed_event).unwrap())
 }
 

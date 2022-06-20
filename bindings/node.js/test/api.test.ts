@@ -50,7 +50,7 @@ describe("Managing controller", () => {
     inceptedController.finalizeEvent(rotationEvent, [signaturePrefix2.getSignature()])
     console.log(inceptedController.getKel())
 
-    let interactionEvent = inceptedController.interact(["E3WFzw8WgDMFPpup9UJI3Wwu41h16NNJVzkKclj2_6Rc"]);
+    let interactionEvent = inceptedController.anchor(["E3WFzw8WgDMFPpup9UJI3Wwu41h16NNJVzkKclj2_6Rc"]);
     let signature3 = nextKeyManager.sign(interactionEvent);
     let signaturePrefix3 = new SignatureBuilder(sigType, Buffer.from(signature3));
 

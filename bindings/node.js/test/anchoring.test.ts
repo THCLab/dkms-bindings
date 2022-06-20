@@ -9,7 +9,7 @@ describe("Anchoring", () => {
       ['{ "eid": "BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA", "scheme": "http", "url": "http://localhost:3232/" }']
     );
 
-    let interactionEvent = controller.interact(["E6ISnmMK-TfP0uN2lLp5vL6JxxBNjXLZ7bpDBkjxngdE"])
+    let interactionEvent = controller.anchor(["E6ISnmMK-TfP0uN2lLp5vL6JxxBNjXLZ7bpDBkjxngdE"])
 
     let signature = currentKeyManager.sign(interactionEvent);
 

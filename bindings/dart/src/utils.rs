@@ -1,5 +1,11 @@
 use crate::api::Error;
-use keri::{keys::PublicKey as KeriPK, derivation::{basic::Basic, self_signing::SelfSigning}, prefix::{BasicPrefix, SelfSigningPrefix, AttachedSignaturePrefix}, event_parsing::{Attachment, attachment::attachment}, controller::error::ControllerError};
+use keri::{
+    controller::error::ControllerError,
+    derivation::{basic::Basic, self_signing::SelfSigning},
+    event_parsing::{attachment::attachment, Attachment},
+    keys::PublicKey as KeriPK,
+    prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix},
+};
 
 pub fn key_prefix_from_b64(key: &str, derivation: Basic) -> Result<BasicPrefix, Error> {
     let key = KeriPK::new(base64::decode(key)?);

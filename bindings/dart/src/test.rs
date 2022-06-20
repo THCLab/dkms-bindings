@@ -1,8 +1,12 @@
 use anyhow::Result;
-use keri::{signer::{CryptoBox, KeyManager}, derivation::{basic::Basic, self_signing::SelfSigning}};
+use keri::{
+    derivation::{basic::Basic, self_signing::SelfSigning},
+    signer::{CryptoBox, KeyManager},
+};
 
 use crate::api::{
-    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, query, rotate, Config, Controller, init_kel, resolve_oobi,
+    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, init_kel, query,
+    resolve_oobi, rotate, Config, Controller,
 };
 
 #[test]
@@ -90,8 +94,10 @@ pub fn test_add_watcher() -> Result<()> {
         .into();
 
     init_kel(root_path, None)?;
-    let controller = Controller { identifier: "EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".into() };
-    
+    let controller = Controller {
+        identifier: "EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".into(),
+    };
+
     let add_watcher_message = add_watcher(controller.clone(), "[{}]".into());
     assert!(add_watcher_message.is_err());
 
@@ -101,8 +107,11 @@ pub fn test_add_watcher() -> Result<()> {
     // Wrong identifier type, should be basic
     let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
     assert!(add_watcher_message.is_err());
-    
-    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"EA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+
+    let add_watcher_message = add_watcher(
+        controller.clone(),
+        r#"{"eid":"EA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into(),
+    );
     assert!(add_watcher_message.is_err());
 
     // Nobody listen
@@ -130,7 +139,7 @@ pub fn test_resolve_oobi() -> Result<()> {
         .into();
 
     init_kel(root_path, None)?;
-    
+
     let resolve_result = resolve_oobi("".into());
     assert!(resolve_result.is_err());
 
@@ -139,7 +148,7 @@ pub fn test_resolve_oobi() -> Result<()> {
 
     let resolve_result = resolve_oobi(r#"random"#.into());
     assert!(resolve_result.is_err());
-    
+
     // Wrong identifier type, should be basic
     let resolve_result = resolve_oobi(r#"{"eid":"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
     assert!(resolve_result.is_err());
@@ -202,7 +211,6 @@ pub fn test_demo() -> Result<()> {
     println!("rotation: \n{}", rotation_event);
 
     finalize_event(controller.clone(), "random data".into(), signature.clone())?;
-
 
     finalize_event(controller.clone(), rotation_event, signature)?;
 

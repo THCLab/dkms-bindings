@@ -1,5 +1,7 @@
-
-use keri::{derivation::basic::Basic, prefix::{Prefix, BasicPrefix}};
+use keri::{
+    derivation::basic::Basic,
+    prefix::{BasicPrefix, Prefix},
+};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 
