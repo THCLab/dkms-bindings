@@ -153,6 +153,30 @@ class IncorrectOobiException implements Exception {
   String toString() => "IncorrectOobiException: $cause";
 }
 
+///An exception thrown when the dynamic library for a platform has not been implemented
+class LibraryNotImplementedException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  LibraryNotImplementedException(this.cause);
+
+  @override
+  String toString() => "LibraryNotImplementedException: $cause";
+}
+
+///An exception thrown when the dynamic library is not found
+class AttachmentException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  AttachmentException(this.cause);
+
+  @override
+  String toString() => "AttachmentException: $cause";
+}
+
 ///An exception thrown when the dynamic library is not found
 class LibraryNotFoundException implements Exception {
   ///The description for the exception.

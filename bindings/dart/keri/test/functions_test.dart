@@ -34,16 +34,6 @@ void main(){
         expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
       }
     });
-
-    test('The kel fails to init as you cannot initKel twice', () async{
-      try {
-        await Keri.initKel(inputAppDir: 'keritest');
-        await Keri.initKel(inputAppDir: 'keritest');
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
-      }
-    });
   });
 
   group("incept()", () {
@@ -634,12 +624,18 @@ void main(){
       vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
-      List<String> vec3 = [];
+      List<String> vec3 = ['{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'];
       var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
-      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      print(icp_event);
+      var signature = 'A3D27FC3B81BACD4DC121DE06D362551449A2350A4A8198C9E01E5CF3C37B037B6C0EECF580D55289224AF6408A877082657F34ECD7483383E1C4865F448FF08';
       var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      var oobiString = "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}]";
-      var res = await Keri.query(controller: controller, oobisJson: oobiString);
+      print(controller.identifier);
+      var watcher_event = await Keri.addWatcher(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), watcherOobi: "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}");
+      print(watcher_event);
+      var signature2 = 'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
+      var res = await Keri.finalizeEvent(identifier: controller, event: watcher_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+      var oobiString = '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
+      var res2 = await Keri.query(controller: controller, oobisJson: oobiString);
       expect(res, true);
     });
 
@@ -749,4 +745,16 @@ void main(){
     });
   });
 
+  group('getCurrentPublicKey()', (){
+    test('getting key fails, because attachment string is not a correct JSON', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      var attachment = 'fail';
+      try{
+        await Keri.getCurrentPublicKey(attachment: attachment);
+        fail("exception not thrown");
+      }catch (e) {
+        expect(e, const ex.isInstanceOf<AttachmentException>());
+      }
+    });
+  });
 }

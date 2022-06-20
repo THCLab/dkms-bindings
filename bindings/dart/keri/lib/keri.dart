@@ -11,16 +11,16 @@ import 'bridge_generated.dart';
 class Keri {
   static final examplePath = Directory.current.absolute.path;
   static const base = 'dartkeriox';
-  static const path = 'lib$base.so';
+  static const path = 'libb$base.so';
 
-  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("build/test/dartkeriox.dll").toFilePath()) :  Platform.isIOS
-      ? throw LibraryNotFoundException('Library for iOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
+  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("test/dartkeriox.dll").toFilePath()) :  Platform.isIOS
+      ? throw LibraryNotImplementedException('Library for iOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
       : Platform.isMacOS
-      ? throw LibraryNotFoundException('Library for MacOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
+      ? throw LibraryNotImplementedException('Library for MacOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
       : DynamicLibrary.open(path);
   static late final api = KeriDartImpl(dylib);
 
-
+  ///Initializes database for storing events.
   static Future<bool> initKel({required String inputAppDir, Config? optionalConfigs, dynamic hint}) async{
     if(optionalConfigs != null){
       try{
@@ -140,32 +140,40 @@ class Keri {
     }
   }
 
+  ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
   static Future<String> addWatcher(
       {required Controller controller,
         required String watcherOobi,
-        dynamic hint}) async{
-    try{
-      return await api.addWatcher(controller: controller, watcherOobi: watcherOobi);
-    }on FfiException catch(e){
-      if(e.message.contains('Can\'t parse oobi json:')){
-        throw IncorrectWatcherOobiException('Provided watcher oobi is not a correct string. Check it once again.');
+        dynamic hint}) async {
+    try {
+      return await api.addWatcher(
+          controller: controller, watcherOobi: watcherOobi);
+    } on FfiException catch (e) {
+      if (e.message.contains('Can\'t parse oobi json:')) {
+        throw IncorrectWatcherOobiException(
+            'Provided watcher oobi is not a correct string. Check it once again.');
       }
-      if(e.message.contains('unknown identifier')){
-        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      if (e.message.contains('unknown identifier')) {
+        throw IdentifierException(
+            'Unknown controller identifier. Check the confroller for identifier once again.');
       }
-      if(e.message.contains('Can\'t parse controller')){
-        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
+      if (e.message.contains('Can\'t parse controller')) {
+        throw IdentifierException(
+            'Can\'t parse controller prefix. Check the confroller for identifier once again.');
       }
-      if(e.message.contains('error sending request for url')){
-        throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
+      if (e.message.contains('error sending request for url')) {
+        throw OobiResolvingErrorException(
+            "No service is listening under the provided port number. Consider changing it.");
       }
-      if(e.message.contains('Deserialize error')){
-        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      if (e.message.contains('Deserialize error')) {
+        throw IdentifierException(
+            'The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
       rethrow;
     }
   }
 
+  ///Verifies provided signatures against event and saves it.
   static Future<bool> finalizeEvent(
       {required Controller identifier,
         required String event,
@@ -196,6 +204,7 @@ class Keri {
     }
   }
 
+  ///Checks and saves provided identifier's endpoint information.
   static Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async{
     try{
       return await api.resolveOobi(oobiJson: oobiJson);
@@ -213,6 +222,7 @@ class Keri {
     }
   }
 
+  ///Query designated watcher about other identifier's public keys data.
   static Future<bool> query(
       {required Controller controller,
         required String oobisJson,
@@ -280,10 +290,18 @@ class Keri {
     }
   }
 
-  /// Returns pairs: public key encoded in base64 and signature encoded in hex
+  /// Returns pairs: public key encoded in base64 and signature encoded in hex.
   static Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
       {required String attachment, dynamic hint}) async{
-    return await api.getCurrentPublicKey(attachment: attachment);
+    try{
+      return await api.getCurrentPublicKey(attachment: attachment);
+    }on FfiException catch(e){
+      print(e);
+      if(e.message.contains('Can\'t parse attachment')){
+        throw AttachmentException('Cannot parse provided attachment. Check the JSON string again.');
+      }
+      rethrow;
+    }
   }
 
 }
