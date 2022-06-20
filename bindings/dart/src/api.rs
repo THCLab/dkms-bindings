@@ -379,11 +379,18 @@ pub fn query(controller: Controller, oobis_json: String) -> Result<bool> {
     }
     let mut issuer_id: Option<String> = None;
     let oobis = serde_json::from_str::<Vec<Oobis>>(&oobis_json)
-        .map_err(|_| Error::OobiParseError(oobis_json))?;
+        .map_err(|_| Error::OobiParseError(oobis_json.clone()))?;
     for oobi in oobis {
-        if let Oobis::EndRole(ref er) = oobi {
-            issuer_id = Some(er.cid.to_str())
+        match &oobi {
+            Oobis::LocScheme(lc) => {
+                (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+                    .as_ref()
+                    .ok_or(Error::ControllerInitializationError)?
+                    .resolve_loc_schema(&lc)?;
+            }
+            Oobis::EndRole(er) => issuer_id = Some(er.cid.to_str()),
         };
+
         (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
             .as_ref()
             .ok_or(Error::ControllerInitializationError)?

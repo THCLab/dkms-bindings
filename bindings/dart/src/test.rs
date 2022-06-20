@@ -149,10 +149,6 @@ pub fn test_resolve_oobi() -> Result<()> {
     let resolve_result = resolve_oobi(r#"random"#.into());
     assert!(resolve_result.is_err());
 
-    // Wrong identifier type, should be basic
-    let resolve_result = resolve_oobi(r#"{"eid":"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
-    assert!(resolve_result.is_err());
-
     // Nobody listen
     let resolve_result = resolve_oobi(r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}"#.into());
     assert!(resolve_result.is_err());
