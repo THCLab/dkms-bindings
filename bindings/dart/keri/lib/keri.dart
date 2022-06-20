@@ -133,7 +133,7 @@ class Keri {
       if(e.message.contains('Improper witness prefix')){
         throw ImproperWitnessPrefixException("Improper witness prefix, should be basic prefix. Check the eid field.");
       }
-      if(e.message.contains('unknown identifier')){
+      if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
       }
       rethrow;
@@ -153,7 +153,7 @@ class Keri {
         throw IncorrectWatcherOobiException(
             'Provided watcher oobi is not a correct string. Check it once again.');
       }
-      if (e.message.contains('unknown identifier')) {
+      if (e.message.contains('Unknown id')) {
         throw IdentifierException(
             'Unknown controller identifier. Check the confroller for identifier once again.');
       }
@@ -185,7 +185,7 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
-      if(e.message.contains('unknown identifier')){
+      if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
       }
       if(e.message.contains('Can\'t parse controller')){
@@ -233,7 +233,7 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
-      if(e.message.contains('unknown identifier')){
+      if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
       }
       if(e.message.contains('Can\'t parse controller')){
@@ -244,6 +244,12 @@ class Keri {
       }
       if(e.message.contains('Controller wasn\'t initialized')){
         throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
+      }
+      if(e.message.contains('Signature verification failed')){
+        throw SignatureVerificationException('Signature verification failed - event signature does not match event keys.');
+      }
+      if(e.message.contains('Can\'t parse oobi json')){
+        throw IncorrectOobiException('Provided oobi is incorrect. Please check the JSON once again');
       }
       rethrow;
     }
@@ -262,7 +268,7 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
-      if(e.message.contains('unknown identifier')){
+      if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
       }
       if(e.message.contains('Can\'t parse controller')){
@@ -280,7 +286,7 @@ class Keri {
       if(e.message.contains('Deserialize error')){
         throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
       }
-      if(e.message.contains('unknown identifier')){
+      if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
       }
       if(e.message.contains('Can\'t parse controller')){
