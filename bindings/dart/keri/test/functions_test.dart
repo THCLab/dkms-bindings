@@ -790,6 +790,8 @@ void main(){
         expect(e, const ex.isInstanceOf<AttachmentException>());
       }
     });
+
+
   });
 
   group('anchor', () {
@@ -892,5 +894,33 @@ void main(){
     });
   });
 
+  test('Full use case', () async{
+    await Keri.initKel(inputAppDir: 'keritest');
+    List<PublicKey> vec1 = [];
+    vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+    List<PublicKey> vec2 = [];
+    vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+    List<String> vec3 = [];
+    var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+    var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+    var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+    //MOCK ROTATION
+    publicKey1 = publicKey2;
+    publicKey2 = publicKey3;
+    List<PublicKey> currentKeys = [];
+    List<PublicKey> newNextKeys = [];
+    currentKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+    newNextKeys.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+    var rotation_event = await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: [], witnessToRemove: [], witnessThreshold: 0);
+    var signature2 = 'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
+    var res = await Keri.finalizeEvent(identifier: controller, event: rotation_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+    List<String> sais = [];
+    var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
+    sais.add(sai);
+    var anchor_event = await Keri.anchor(controller: controller, sais: sais);
+    var signature3 = '21F0A4C11BCE9C018503AB53E91EB665CE3A08A0C9574A97D2073EF23AC69161CC3E5B028E522406AA7D34C748713D8812E1AF9EF96E27A51B83E77C6232380B';
+    var res2 = await Keri.finalizeEvent(identifier: controller, event: anchor_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature3));
+    expect(res2, true);
+  });
 
 }
