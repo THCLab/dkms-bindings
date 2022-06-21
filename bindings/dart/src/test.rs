@@ -1,12 +1,12 @@
 use anyhow::Result;
 use keri::{
-    derivation::{basic::Basic, self_signing::SelfSigning},
-    signer::{CryptoBox, KeyManager},
+    derivation::{basic::Basic, self_signing::SelfSigning, self_addressing::SelfAddressing},
+    signer::{CryptoBox, KeyManager}, prefix::Prefix,
 };
 
 use crate::api::{
     add_watcher, finalize_event, get_current_public_key, get_kel_by_str, init_kel, query,
-    resolve_oobi, rotate, Config, Controller,
+    resolve_oobi, rotate, Config, Controller, anchor,
 };
 
 #[test]
@@ -104,10 +104,6 @@ pub fn test_add_watcher() -> Result<()> {
     let add_watcher_message = add_watcher(controller.clone(), r#"[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}]"#.into());
     assert!(add_watcher_message.is_err());
 
-    // Wrong identifier type, should be basic
-    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
-    assert!(add_watcher_message.is_err());
-
     let add_watcher_message = add_watcher(
         controller.clone(),
         r#"{"eid":"EA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into(),
@@ -115,7 +111,7 @@ pub fn test_add_watcher() -> Result<()> {
     assert!(add_watcher_message.is_err());
 
     // Nobody listen
-    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:8888/"}"#.into());
     assert!(add_watcher_message.is_err());
 
     let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
@@ -206,48 +202,58 @@ pub fn test_demo() -> Result<()> {
 
     println!("rotation: \n{}", rotation_event);
 
-    finalize_event(controller.clone(), "random data".into(), signature.clone())?;
+    assert!(finalize_event(controller.clone(), "random data".into(), signature.clone()).is_err());
 
     finalize_event(controller.clone(), rotation_event, signature)?;
+   
+    let sai = SelfAddressing::Blake3_256.derive("some data".as_bytes()).to_str();
+    let ixn_event = anchor(controller.clone(), vec![sai])?;
+    println!("\nixn: {}", ixn_event);
+
+    let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
+    // sign rot event
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    finalize_event(controller.clone(), ixn_event, signature)?;
 
     let kel = get_kel(controller.clone())?;
     println!("\nCurrent controller kel: \n{}", kel);
 
-    let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
 
-    let add_watcher_message = add_watcher(controller.clone(), watcher_oobi)?;
-    println!(
-        "\nController generate end role message to add watcher: \n{}",
-        add_watcher_message
-    );
-    let hex_sig = hex::encode(key_manager.sign(add_watcher_message.as_bytes()).unwrap());
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_sig);
+    // let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
 
-    finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
+    // let add_watcher_message = add_watcher(controller.clone(), watcher_oobi)?;
+    // println!(
+    //     "\nController generate end role message to add watcher: \n{}",
+    //     add_watcher_message
+    // );
+    // let hex_sig = hex::encode(key_manager.sign(add_watcher_message.as_bytes()).unwrap());
+    // let signature = Signature::new(SignatureType::Ed25519Sha512, hex_sig);
 
-    let issuer_oobi: String = r#"[{"cid":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
+    // finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
 
-    println!("\nQuering about issuer kel...");
-    println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
-    query(controller.clone(), "random".into()).unwrap();
-    query(controller, issuer_oobi).unwrap();
+    // let issuer_oobi: String = r#"[{"cid":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
 
-    // Get acdc signed by issuer
-    let acdc = r#"{"issuer":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
-    let attachment_stream = r#"-FABEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI00AAAAAAAAAAAAAAAAAAAAAAAEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0-AABAAG3NikDFb-2C20mTxhKet-jt5os5D-8NDGTNgeHKgUPaRzBnIZC9csSgcDP4CmtEJVkNzAsrX4SFUq4SFzxCyAA"#;
+    // println!("\nQuering about issuer kel...");
+    // println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
+    // query(controller.clone(), "random".into()).unwrap();
+    // query(controller, issuer_oobi).unwrap();
 
-    let key_sig_pair = get_current_public_key(attachment_stream.into()).unwrap();
+    // // Get acdc signed by issuer
+    // let acdc = r#"{"issuer":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
+    // let attachment_stream = r#"-FABEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI00AAAAAAAAAAAAAAAAAAAAAAAEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0-AABAAG3NikDFb-2C20mTxhKet-jt5os5D-8NDGTNgeHKgUPaRzBnIZC9csSgcDP4CmtEJVkNzAsrX4SFUq4SFzxCyAA"#;
 
-    // Checking if key verify signature
-    let public_key_signature_pair = key_sig_pair.iter().collect::<Vec<_>>();
-    assert_eq!(public_key_signature_pair.len(), 1);
-    let key_signature_pair = public_key_signature_pair[0];
-    let pk_raw = base64::decode(&key_signature_pair.key.key).unwrap();
-    let key_bp = Basic::Ed25519.derive(keri::keys::PublicKey::new(pk_raw));
-    let sig =
-        SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
+    // let key_sig_pair = get_current_public_key(attachment_stream.into()).unwrap();
 
-    assert!(key_bp.verify(acdc.as_bytes(), &sig).unwrap());
+    // // Checking if key verify signature
+    // let public_key_signature_pair = key_sig_pair.iter().collect::<Vec<_>>();
+    // assert_eq!(public_key_signature_pair.len(), 1);
+    // let key_signature_pair = public_key_signature_pair[0];
+    // let pk_raw = base64::decode(&key_signature_pair.key.key).unwrap();
+    // let key_bp = Basic::Ed25519.derive(keri::keys::PublicKey::new(pk_raw));
+    // let sig =
+    //     SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
+
+    // assert!(key_bp.verify(acdc.as_bytes(), &sig).unwrap());
 
     Ok(())
 }

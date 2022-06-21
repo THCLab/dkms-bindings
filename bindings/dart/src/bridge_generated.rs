@@ -145,6 +145,26 @@ pub extern "C" fn wire_rotate(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_anchor(
+    port_: i64,
+    controller: *mut wire_Controller,
+    sais: *mut wire_StringList,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "anchor",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_controller = controller.wire2api();
+            let api_sais = sais.wire2api();
+            move |task_callback| anchor(api_controller, api_sais)
+        },
+    )
+}
+
+#[no_mangle]
 pub extern "C" fn wire_add_watcher(
     port_: i64,
     controller: *mut wire_Controller,
