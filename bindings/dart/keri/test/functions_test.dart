@@ -791,4 +791,106 @@ void main(){
       }
     });
   });
+
+  group('anchor', () {
+    test('anchor passes', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      List<String> sais = [];
+      var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
+      sais.add(sai);
+      var anchor_event = await Keri.anchor(controller: controller, sais: sais);
+      var signature2 = '12380BB2BC3481F285337EB32AA40B335032F34B27CD09A5BD0660A2039E0F7CB2AD3982F97C96645BA3EBC19260EB7201D8B3FC476EA083E047FE75354CBC0D';
+      var res = await Keri.finalizeEvent(identifier: controller, event: anchor_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
+      expect(res, true);
+    });
+
+    test('anchor fails, because the sai is incorrect', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      List<String> sais = [];
+      var sai = "fail";
+      sais.add(sai);
+      try{
+        var anchor_event = await Keri.anchor(controller: controller, sais: sais);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<SelfAddressingIndentifierException>());
+      }
+    });
+
+    test('anchor fails, because the controller is unknown', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      List<String> sais = [];
+      var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
+      sais.add(sai);
+      try{
+        var anchor_event = await Keri.anchor(controller: Controller(identifier: 'EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w'), sais: sais);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+
+    test('anchor fails, because the controller is incorrect', () async{
+      await Keri.initKel(inputAppDir: 'keritest');
+      List<PublicKey> vec1 = [];
+      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
+      List<PublicKey> vec2 = [];
+      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
+      List<String> vec3 = [];
+      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
+      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
+      List<String> sais = [];
+      var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
+      sais.add(sai);
+      try{
+        var anchor_event = await Keri.anchor(controller: Controller(identifier: 'fail'), sais: sais);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+
+    test('anchor fails, because the controller was not initialized', () async{
+      List<String> sais = [];
+      var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
+      sais.add(sai);
+      try{
+        var anchor_event = await Keri.anchor(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), sais: sais);
+        fail("exception not thrown");
+      }catch (e) {
+        print(e);
+        expect(e, const ex.isInstanceOf<IdentifierException>());
+      }
+    });
+  });
+
+
 }

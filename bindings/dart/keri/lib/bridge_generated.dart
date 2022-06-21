@@ -37,6 +37,11 @@ abstract class KeriDart {
       required int witnessThreshold,
       dynamic hint});
 
+  Future<String> anchor(
+      {required Controller controller,
+      required List<String> sais,
+      dynamic hint});
+
   Future<String> addWatcher(
       {required Controller controller,
       required String watcherOobi,
@@ -251,6 +256,24 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
           witnessToRemove,
           witnessThreshold
         ],
+        hint: hint,
+      ));
+
+  Future<String> anchor(
+          {required Controller controller,
+          required List<String> sais,
+          dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_anchor(
+            port_,
+            _api2wire_box_autoadd_controller(controller),
+            _api2wire_StringList(sais)),
+        parseSuccessData: _wire2api_String,
+        constMeta: const FlutterRustBridgeTaskConstMeta(
+          debugName: "anchor",
+          argNames: ["controller", "sais"],
+        ),
+        argValues: [controller, sais],
         hint: hint,
       ));
 
@@ -718,6 +741,26 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           ffi.Pointer<wire_StringList>,
           ffi.Pointer<wire_StringList>,
           int)>();
+
+  void wire_anchor(
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_StringList> sais,
+  ) {
+    return _wire_anchor(
+      port_,
+      controller,
+      sais,
+    );
+  }
+
+  late final _wire_anchorPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Controller>,
+              ffi.Pointer<wire_StringList>)>>('wire_anchor');
+  late final _wire_anchor = _wire_anchorPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Controller>, ffi.Pointer<wire_StringList>)>();
 
   void wire_add_watcher(
     int port_,

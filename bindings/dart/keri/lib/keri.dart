@@ -310,4 +310,32 @@ class Keri {
     }
   }
 
+  ///Creates new Interaction Event along with arbitrary data.
+  static Future<String> anchor(
+      {required Controller controller,
+        required List<String> sais,
+        dynamic hint}) async{
+    try{
+      return await api.anchor(controller: controller, sais: sais);
+    }on FfiException catch(e){
+      print(e);
+      if(e.message.contains('Unknown id')){
+        throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse controller')){
+        throw IdentifierException('Can\'t parse controller prefix. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Deserialize error')){
+        throw IdentifierException('The identifier provided to the controller is incorrect. Check the identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse self addressing identifier')){
+        throw SelfAddressingIndentifierException('The SAI provided to the anchor is incorrect. Check the list once again.');
+      }
+      if(e.message.contains('Controller wasn\'t initialized')){
+        throw ControllerNotInitializedException("Controller has not been initialized. Execute initKel() before incepting.");
+      }
+      rethrow;
+    }
+  }
+
 }

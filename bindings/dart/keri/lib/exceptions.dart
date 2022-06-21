@@ -188,3 +188,15 @@ class LibraryNotFoundException implements Exception {
   @override
   String toString() => "LibraryNotFoundException: $cause";
 }
+
+///An exception thrown when the SAI is incorrect
+class SelfAddressingIndentifierException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  SelfAddressingIndentifierException(this.cause);
+
+  @override
+  String toString() => "SelfAddressingIndentifierException: $cause";
+}

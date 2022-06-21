@@ -19,6 +19,7 @@ Currrently supported functions are:
 * `getKel` - Returns Key Event Log in the CESR representation for current Identifier when given a controller.
 * `getKelByStr` - Returns Key Event Log in the CESR representation for current Identifier when given a controller identifier.
 * `getCurrentPublicKey` - Returns pairs: public key encoded in base64 and signature encoded in hex.
+* `anchor` - Creates new Interaction Event along with arbitrary data.
 
 ## Glossary
 
