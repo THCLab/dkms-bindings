@@ -1,11 +1,11 @@
-use std::{path::PathBuf, sync::Mutex};
+use std::{path::PathBuf, sync::Mutex, slice};
 
-use flutter_rust_bridge::support::lazy_static;
+use flutter_rust_bridge::{support::lazy_static, frb};
 
 use anyhow::{anyhow, Result};
 use keri::{
     controller::{error::ControllerError, event_generator, utils::OptionalConfig},
-    derivation::{basic::Basic, self_signing::SelfSigning},
+    derivation::{basic::Basic, self_signing::SelfSigning, self_addressing::SelfAddressing},
     event_parsing::Attachment,
     oobi::{EndRole, LocationScheme, Role},
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix},
@@ -52,6 +52,18 @@ impl From<Basic> for KeyType {
     }
 }
 
+pub type DigestType = SelfAddressing;
+#[frb(mirror(DigestType))]
+pub enum _DigestType {
+    Blake3_256,
+    SHA3_256,
+    SHA2_256,
+    Blake3_512,
+    SHA3_512,
+    Blake2B512,
+    SHA2_512,
+}
+
 #[derive(Clone)]
 pub enum SignatureType {
     Ed25519Sha512,
@@ -59,9 +71,9 @@ pub enum SignatureType {
     Ed448,
 }
 
-impl Into<SelfSigning> for SignatureType {
-    fn into(self) -> SelfSigning {
-        match self {
+impl From<SignatureType> for SelfSigning {
+    fn from(sig: SignatureType) -> Self {
+         match sig {
             SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
             SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
             SignatureType::Ed448 => SelfSigning::Ed448,
@@ -146,6 +158,12 @@ pub enum Error {
     #[error("Can't parse controller prefix: {0}")]
     PrefixParseError(String),
 
+    #[error("Can't parse self addressing identifier: {0}")]
+    SaiParseError(String),
+
+    #[error("Can't parse witness identifier: {0}")]
+    WitnessParseError(String),
+
     #[error("Can't parse oobi json: {0}")]
     OobiParseError(String),
 
@@ -213,7 +231,8 @@ pub fn incept(
 ) -> Result<String> {
     let witnesses = witnesses
         .iter()
-        .map(|wit| serde_json::from_str::<LocationScheme>(wit))
+        .map(|wit| serde_json::from_str::<LocationScheme>(wit)
+        .map_err(|_e| Error::OobiParseError(wit.into())))
         .collect::<Result<Vec<_>, _>>()
         // improper json structure or improper prefix
         .map_err(|e| anyhow!(e.to_string()))?;
@@ -278,7 +297,7 @@ pub fn rotate(
         .iter()
         .map(|wit| {
             wit.parse::<BasicPrefix>()
-                .map_err(|_| Error::PrefixParseError(wit.into()))
+                .map_err(|_| Error::WitnessParseError(wit.into()))
         })
         .collect::<Result<Vec<_>, _>>()?;
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
@@ -300,13 +319,32 @@ pub fn rotate(
         )?)
 }
 
-pub fn anchor(controller: Controller, sais: Vec<String>) -> Result<String> {
+pub fn anchor(controller: Controller, data: String, algo: DigestType) -> Result<String> {
+    let id = controller
+        .get_id()
+        .parse::<IdentifierPrefix>()
+        .map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
+    let digest = algo.derive(data.as_bytes());
+    Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .anchor(id, slice::from_ref(&digest))?)
+}
+
+
+pub fn anchor_digest(controller: Controller, sais: Vec<String>) -> Result<String> {
     let sais = sais
         .iter()
-        .map(|sai| sai.parse::<SelfAddressingPrefix>().unwrap())
-        .collect::<Vec<_>>();
+        .map(|sai| {
+            sai.parse::<SelfAddressingPrefix>()
+                .map_err(|_e| Error::SaiParseError(sai.into()))
+        })
+        .collect::<Result<Vec<_>, Error>>()?;
 
-    let id = controller.get_id().parse::<IdentifierPrefix>()?;
+    let id = controller
+        .get_id()
+        .parse::<IdentifierPrefix>()
+        .map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -322,7 +360,7 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
             .ok_or(Error::ControllerInitializationError)?
             .resolve_loc_schema(&lc)?;
 
-        let id = &controller.identifier.parse()?;
+        let id = &controller.identifier.parse().map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
         let add_watcher = event_generator::generate_end_role(id, &lc.eid, Role::Watcher, true)?;
         Ok(String::from_utf8(add_watcher.serialize()?)?)
     } else {

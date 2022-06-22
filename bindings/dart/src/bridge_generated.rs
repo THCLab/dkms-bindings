@@ -148,7 +148,8 @@ pub extern "C" fn wire_rotate(
 pub extern "C" fn wire_anchor(
     port_: i64,
     controller: *mut wire_Controller,
-    sais: *mut wire_StringList,
+    data: *mut wire_uint_8_list,
+    algo: i32,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -158,8 +159,29 @@ pub extern "C" fn wire_anchor(
         },
         move || {
             let api_controller = controller.wire2api();
+            let api_data = data.wire2api();
+            let api_algo = algo.wire2api();
+            move |task_callback| anchor(api_controller, api_data, api_algo)
+        },
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn wire_anchor_digest(
+    port_: i64,
+    controller: *mut wire_Controller,
+    sais: *mut wire_StringList,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "anchor_digest",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_controller = controller.wire2api();
             let api_sais = sais.wire2api();
-            move |task_callback| anchor(api_controller, api_sais)
+            move |task_callback| anchor_digest(api_controller, api_sais)
         },
     )
 }
@@ -467,6 +489,21 @@ impl Wire2Api<Controller> for wire_Controller {
     fn wire2api(self) -> Controller {
         Controller {
             identifier: self.identifier.wire2api(),
+        }
+    }
+}
+
+impl Wire2Api<DigestType> for i32 {
+    fn wire2api(self) -> DigestType {
+        match self {
+            0 => DigestType::Blake3_256,
+            1 => DigestType::SHA3_256,
+            2 => DigestType::SHA2_256,
+            3 => DigestType::Blake3_512,
+            4 => DigestType::SHA3_512,
+            5 => DigestType::Blake2B512,
+            6 => DigestType::SHA2_512,
+            _ => unreachable!("Invalid variant for DigestType: {}", self),
         }
     }
 }

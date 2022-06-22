@@ -1,12 +1,13 @@
 use anyhow::Result;
 use keri::{
-    derivation::{basic::Basic, self_signing::SelfSigning, self_addressing::SelfAddressing},
-    signer::{CryptoBox, KeyManager}, prefix::Prefix,
+    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
+    prefix::Prefix,
+    signer::{CryptoBox, KeyManager},
 };
 
 use crate::api::{
-    add_watcher, finalize_event, get_current_public_key, get_kel_by_str, init_kel, query,
-    resolve_oobi, rotate, Config, Controller, anchor,
+    add_watcher, anchor_digest, finalize_event, get_current_public_key, get_kel_by_str, init_kel, query,
+    resolve_oobi, rotate, Config, Controller, anchor, DigestType,
 };
 
 #[test]
@@ -205,9 +206,19 @@ pub fn test_demo() -> Result<()> {
     assert!(finalize_event(controller.clone(), "random data".into(), signature.clone()).is_err());
 
     finalize_event(controller.clone(), rotation_event, signature)?;
-   
-    let sai = SelfAddressing::Blake3_256.derive("some data".as_bytes()).to_str();
-    let ixn_event = anchor(controller.clone(), vec![sai])?;
+
+    let sai = SelfAddressing::Blake3_256
+        .derive("some data".as_bytes())
+        .to_str();
+    let ixn_event = anchor_digest(controller.clone(), vec![sai])?;
+    println!("\nixn: {}", ixn_event);
+
+    let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
+    // sign rot event
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    finalize_event(controller.clone(), ixn_event, signature)?;
+
+    let ixn_event = anchor(controller.clone(), "some data".into(), DigestType::Blake3_256)?;
     println!("\nixn: {}", ixn_event);
 
     let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
@@ -217,7 +228,6 @@ pub fn test_demo() -> Result<()> {
 
     let kel = get_kel(controller.clone())?;
     println!("\nCurrent controller kel: \n{}", kel);
-
 
     // let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
 
