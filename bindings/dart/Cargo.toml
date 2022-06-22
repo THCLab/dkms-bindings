@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 flutter_rust_bridge = "1.23.0"
-keri = { git = "https://github.com/THCLab/keriox.git", branch = "controller_module", features = ["controller"] }
+keri = { git = "https://github.com/THCLab/keriox.git", features = ["controller"] }
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"
