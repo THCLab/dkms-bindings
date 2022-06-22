@@ -276,10 +276,10 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       ));
 
   Future<String> anchor(
-      {required Controller controller,
-        required String data,
-        required DigestType algo,
-        dynamic hint}) =>
+          {required Controller controller,
+          required String data,
+          required DigestType algo,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_anchor(
             port_,

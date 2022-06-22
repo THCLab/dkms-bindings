@@ -38,7 +38,7 @@ class _MyAppState extends State<MyApp> {
   String rotationEvent = '';
   String signature2 = '';
   bool finalizedEvent = false;
-  String sai = '';
+  String dataForAnchor = 'important data';
   String anchorEvent = '';
   String signature3 = '';
   bool finalizedAnchor = false;
@@ -181,26 +181,13 @@ class _MyAppState extends State<MyApp> {
                 finalizedEvent ? Text("Rotation event finalized", style: TextStyle(color: Colors.green),) : Container(),
                 finalizedEvent ? const Divider() : Container(),
 
+                finalizedEvent ? Text("Data for anchor", style: TextStyle(color: Colors.green),) : Container(),
+                finalizedEvent ? Text(dataForAnchor) : Container(),
+                finalizedEvent ? const Divider() : Container(),
+
                 finalizedEvent ? RawMaterialButton(
                     onPressed: () async {
-                      sai = 'EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I';
-                      setState(() {});
-                    },
-                    child: const Text('Get SAI'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)
-                    )
-                ) : Container(),
-                sai.isNotEmpty ? Text("SAI", style: TextStyle(color: Colors.green),) : Container(),
-                sai.isNotEmpty ? Text(sai) : Container(),
-                sai.isNotEmpty ? const Divider() : Container(),
-
-                sai.isNotEmpty ? RawMaterialButton(
-                    onPressed: () async {
-                      List<String> sais = [];
-                      sais.add(sai);
-                      anchorEvent = await Keri.anchor(controller: controller, sais: sais);
+                      anchorEvent = await Keri.anchor(controller: controller, data: dataForAnchor, algo: DigestType.Blake3_256);
                       setState(() {});
                     },
                     child: const Text('Anchor'),
