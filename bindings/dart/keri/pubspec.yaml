@@ -1,7 +1,7 @@
 name: keri
-description: A new Flutter project.
+description: Dart client for managing KERI based Identifiers.
 version: 0.0.1
-homepage:
+homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri
 
 environment:
   sdk: ">=2.17.1 <3.0.0"

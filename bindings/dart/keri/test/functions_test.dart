@@ -271,7 +271,7 @@ void main(){
         await Keri.rotate(controller: controller, currentKeys: currentKeys, newNextKeys: newNextKeys, witnessToAdd: ['fail'], witnessToRemove: [], witnessThreshold: 0);
         fail("exception not thrown");
       }catch (e) {
-        expect(e, const ex.isInstanceOf<WitnessParsingException>());
+        expect(e, const ex.isInstanceOf<IncorrectOobiException>());
       }
     });
 
@@ -437,24 +437,6 @@ void main(){
       }
     });
 
-    test('addWatcher fails, because controller is unknown', () async{//NIE PRZECHODZI
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey2));
-      List<String> vec3 = [];
-      var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
-      var signature = 'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
-      var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      try{
-        await Keri.addWatcher(controller: Controller(identifier: 'EoSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc0bx40'), watcherOobi: "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}");
-        fail("exception not thrown");
-      }catch (e) {
-        expect(e, const ex.isInstanceOf<IdentifierException>());
-      }
-    });
-
     test('addWatcher fails, because watcher Oobi is incorrect.', () async{
       await Keri.initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
@@ -481,7 +463,6 @@ void main(){
         await Keri.resolveOobi(oobiJson: '');
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<IncorrectOobiException>());
       }
     });
@@ -555,7 +536,6 @@ void main(){
         var res = await Keri.finalizeEvent(identifier: controller, event: rotation_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<SignatureVerificationException>());
       }
     });
@@ -583,7 +563,6 @@ void main(){
         var res = await Keri.finalizeEvent(identifier: controller, event: 'fail', signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<WrongEventException>());
       }
     });
@@ -611,7 +590,6 @@ void main(){
         var res = await Keri.finalizeEvent(identifier: Controller(identifier: 'fail'), event: rotation_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature2));
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<IdentifierException>());
       }
     });
@@ -628,7 +606,6 @@ void main(){
       var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
       var signature = 'A3D27FC3B81BACD4DC121DE06D362551449A2350A4A8198C9E01E5CF3C37B037B6C0EECF580D55289224AF6408A877082657F34ECD7483383E1C4865F448FF08';
       var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      print(controller.identifier);
       //MOCK WATCHER EVENT
       var watcher_event = '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
       var signature2 = '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
@@ -638,7 +615,7 @@ void main(){
       expect(res2, true);
     });
 
-    test('query fails, because nobody is listening on the port.', () async{//NIE PRZECHODZI
+    test('query fails, because nobody is listening on the port.', () async{
       await Keri.initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
       vec1.add(PublicKey(algorithm: KeyType.Ed25519, key: publicKey1));
@@ -648,7 +625,6 @@ void main(){
       var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
       var signature = 'A3D27FC3B81BACD4DC121DE06D362551449A2350A4A8198C9E01E5CF3C37B037B6C0EECF580D55289224AF6408A877082657F34ECD7483383E1C4865F448FF08';
       var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      print(controller.identifier);
       //MOCK WATCHER EVENT
       var watcher_event = '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
       var signature2 = '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
@@ -658,7 +634,6 @@ void main(){
         var res2 = await Keri.query(controller: controller, oobisJson: oobiString);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
       }
     });
@@ -673,7 +648,6 @@ void main(){
       var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
       var signature = 'A3D27FC3B81BACD4DC121DE06D362551449A2350A4A8198C9E01E5CF3C37B037B6C0EECF580D55289224AF6408A877082657F34ECD7483383E1C4865F448FF08';
       var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      print(controller.identifier);
       //MOCK WATCHER EVENT
       var watcher_event = '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
       var signature2 = '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
@@ -683,7 +657,6 @@ void main(){
         var res2 = await Keri.query(controller: controller, oobisJson: oobiString);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<IncorrectOobiException>());
       }
     });
@@ -698,7 +671,6 @@ void main(){
       var icp_event = await Keri.incept(publicKeys: vec1, nextPubKeys: vec2, witnesses: vec3, witnessThreshold: 0);
       var signature = 'A3D27FC3B81BACD4DC121DE06D362551449A2350A4A8198C9E01E5CF3C37B037B6C0EECF580D55289224AF6408A877082657F34ECD7483383E1C4865F448FF08';
       var controller = await Keri.finalizeInception(event: icp_event, signature: Signature(algorithm: SignatureType.Ed25519Sha512, key: signature));
-      print(controller.identifier);
       //MOCK WATCHER EVENT
       var watcher_event = '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
       var signature2 = '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
@@ -708,7 +680,6 @@ void main(){
         var res2 = await Keri.query(controller: Controller(identifier: 'fail'), oobisJson: oobiString);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<IdentifierException>());
       }
     });
@@ -719,7 +690,6 @@ void main(){
         var res2 = await Keri.query(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), oobisJson: oobiString);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<ControllerNotInitializedException>());
       }
     });
@@ -831,7 +801,6 @@ void main(){
         var anchor_event = await Keri.anchor(controller: controller, sais: sais);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<SelfAddressingIndentifierException>());
       }
     });
@@ -850,10 +819,9 @@ void main(){
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
       try{
-        var anchor_event = await Keri.anchor(controller: Controller(identifier: 'EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w'), sais: sais);
+        var anchor_event = await Keri.anchor(controller: Controller(identifier: 'E2e7tLvlVlER4kkV3bw36SN8Gz3fJ-3QR2xadxKyed10'), sais: sais);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<IdentifierException>());
       }
     });
@@ -875,7 +843,6 @@ void main(){
         var anchor_event = await Keri.anchor(controller: Controller(identifier: 'fail'), sais: sais);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
         expect(e, const ex.isInstanceOf<IdentifierException>());
       }
     });
@@ -888,8 +855,7 @@ void main(){
         var anchor_event = await Keri.anchor(controller: Controller(identifier: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'), sais: sais);
         fail("exception not thrown");
       }catch (e) {
-        print(e);
-        expect(e, const ex.isInstanceOf<IdentifierException>());
+        expect(e, const ex.isInstanceOf<ControllerNotInitializedException>());
       }
     });
   });

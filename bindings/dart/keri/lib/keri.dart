@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:keri/exceptions.dart';
-import 'package:path/path.dart' as p;
 
 import 'bridge_generated.dart';
 
@@ -13,7 +12,7 @@ class Keri {
   static const base = 'dartkeriox';
   static const path = 'lib$base.so';
 
-  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("test/dartkeriox.dll").toFilePath()) :  Platform.isIOS
+  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST') ? DynamicLibrary.open(Platform.script.resolve("test/dartkeriox.dll").toFilePath()) : Platform.isIOS
       ? throw LibraryNotImplementedException('Library for iOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
       : Platform.isMacOS
       ? throw LibraryNotImplementedException('Library for MacOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
@@ -26,7 +25,6 @@ class Keri {
       try{
         return await api.initKel(inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
       }on FfiException catch(e){
-        print(e.message);
         if(e.message.contains('Improper location scheme structure')){
           throw IncorrectOptionalConfigsException("The provided argument optionalConfigs contains incorrect data.");
         }
@@ -66,7 +64,7 @@ class Keri {
       if(e.message.contains('Base64Error')){
         throw IncorrectKeyFormatException("The provided key is not a Base64 string. Check the string once again.");
       }
-      if(e.message.contains('Can\'t parse witnesses oobis')){
+      if(e.message.contains('Can\'t parse oobi json')){
         throw IncorrectWitnessOobiException("The provided witness oobi is incorrect. Check the string once again.");
       }
       if(e.message.contains('Improper witness prefix')){
@@ -121,11 +119,8 @@ class Keri {
       if(e.message.contains('base64 decode error')){
         throw IncorrectKeyFormatException("The provided key is not a Base64 string. Check the string once again.");
       }
-      if(e.message.contains('parse witnesses to add oobis')) {
-        throw WitnessParsingException('Can\'t parse witnesses to add oobis. Check the wittnessToAdd field.');
-      }
-      if(e.message.contains('Can\'t parse witnesses to remove identifiers')){
-        throw WitnessParsingException('Can\'t parse witnesses to remove identifiers. Check the wittnessToRemove field.');
+      if(e.message.contains('Can\'t parse witness identifier')){
+        throw WitnessParsingException('Can\'t parse witness identifier. Check the wittnessToRemove field.');
       }
       if(e.message.contains('error sending request for url')){
         throw OobiResolvingErrorException("No service is listening under the provided port number. Consider changing it.");
@@ -135,6 +130,9 @@ class Keri {
       }
       if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      if(e.message.contains('Can\'t parse oobi json')){
+        throw IncorrectOobiException('Provided oobi is incorrect. Please check the JSON once again');
       }
       rethrow;
     }
@@ -302,7 +300,6 @@ class Keri {
     try{
       return await api.getCurrentPublicKey(attachment: attachment);
     }on FfiException catch(e){
-      print(e);
       if(e.message.contains('Can\'t parse attachment')){
         throw AttachmentException('Cannot parse provided attachment. Check the JSON string again.');
       }
@@ -318,7 +315,6 @@ class Keri {
     try{
       return await api.anchor(controller: controller, sais: sais);
     }on FfiException catch(e){
-      print(e);
       if(e.message.contains('Unknown id')){
         throw IdentifierException('Unknown controller identifier. Check the confroller for identifier once again.');
       }
