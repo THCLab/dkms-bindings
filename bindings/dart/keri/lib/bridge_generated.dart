@@ -39,6 +39,12 @@ abstract class KeriDart {
 
   Future<String> anchor(
       {required Controller controller,
+      required String data,
+      required DigestType algo,
+      dynamic hint});
+
+  Future<String> anchorDigest(
+      {required Controller controller,
       required List<String> sais,
       dynamic hint});
 
@@ -85,6 +91,16 @@ class Controller {
   Controller({
     required this.identifier,
   });
+}
+
+enum DigestType {
+  Blake3_256,
+  SHA3_256,
+  SHA2_256,
+  Blake3_512,
+  SHA3_512,
+  Blake2B512,
+  SHA2_512,
 }
 
 enum KeyType {
@@ -260,17 +276,37 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       ));
 
   Future<String> anchor(
+      {required Controller controller,
+        required String data,
+        required DigestType algo,
+        dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_anchor(
+            port_,
+            _api2wire_box_autoadd_controller(controller),
+            _api2wire_String(data),
+            _api2wire_digest_type(algo)),
+        parseSuccessData: _wire2api_String,
+        constMeta: const FlutterRustBridgeTaskConstMeta(
+          debugName: "anchor",
+          argNames: ["controller", "data", "algo"],
+        ),
+        argValues: [controller, data, algo],
+        hint: hint,
+      ));
+
+  Future<String> anchorDigest(
           {required Controller controller,
           required List<String> sais,
           dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_anchor(
+        callFfi: (port_) => inner.wire_anchor_digest(
             port_,
             _api2wire_box_autoadd_controller(controller),
             _api2wire_StringList(sais)),
         parseSuccessData: _wire2api_String,
         constMeta: const FlutterRustBridgeTaskConstMeta(
-          debugName: "anchor",
+          debugName: "anchor_digest",
           argNames: ["controller", "sais"],
         ),
         argValues: [controller, sais],
@@ -429,6 +465,10 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
     final ptr = inner.new_box_autoadd_signature();
     _api_fill_to_wire_signature(raw, ptr.ref);
     return ptr;
+  }
+
+  int _api2wire_digest_type(DigestType raw) {
+    return raw.index;
   }
 
   int _api2wire_key_type(KeyType raw) {
@@ -745,20 +785,42 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   void wire_anchor(
     int port_,
     ffi.Pointer<wire_Controller> controller,
-    ffi.Pointer<wire_StringList> sais,
+    ffi.Pointer<wire_uint_8_list> data,
+    int algo,
   ) {
     return _wire_anchor(
       port_,
       controller,
-      sais,
+      data,
+      algo,
     );
   }
 
   late final _wire_anchorPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Controller>,
-              ffi.Pointer<wire_StringList>)>>('wire_anchor');
+              ffi.Pointer<wire_uint_8_list>, ffi.Int32)>>('wire_anchor');
   late final _wire_anchor = _wire_anchorPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_Controller>,
+          ffi.Pointer<wire_uint_8_list>, int)>();
+
+  void wire_anchor_digest(
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_StringList> sais,
+  ) {
+    return _wire_anchor_digest(
+      port_,
+      controller,
+      sais,
+    );
+  }
+
+  late final _wire_anchor_digestPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Controller>,
+              ffi.Pointer<wire_StringList>)>>('wire_anchor_digest');
+  late final _wire_anchor_digest = _wire_anchor_digestPtr.asFunction<
       void Function(
           int, ffi.Pointer<wire_Controller>, ffi.Pointer<wire_StringList>)>();
 
