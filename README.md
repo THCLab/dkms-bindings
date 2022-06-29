@@ -11,6 +11,7 @@ With such a client one is able to:
 ## Available clients
 
 * [Node.JS](./bindings/node.js)
+* [Dart](./bindings/dart)
 
 # Development overview
 
