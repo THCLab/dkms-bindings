@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_rust_bridge: ^1.32.0
+  flutter_rust_bridge: 1.36.0
   path: ^1.8.1
   test: ^1.21.1
 
@@ -39,6 +39,8 @@ flutter:
       android:
         package: com.thclab.keri
         pluginClass: KeriPlugin
+      ios:
+        pluginClass: DartPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

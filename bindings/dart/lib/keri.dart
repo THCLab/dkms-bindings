@@ -15,8 +15,7 @@ class Keri {
       ? DynamicLibrary.open(
           Platform.script.resolve("test/dartkeriox.dll").toFilePath())
       : Platform.isIOS
-          ? throw LibraryNotImplementedException(
-              'Library for iOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
+          ? DynamicLibrary.process()
           : Platform.isMacOS
               ? throw LibraryNotImplementedException(
                   'Library for MacOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
