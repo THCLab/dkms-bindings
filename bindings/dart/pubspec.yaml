@@ -41,6 +41,8 @@ flutter:
         pluginClass: KeriPlugin
       ios:
         pluginClass: DartPlugin
+      macos:
+        pluginClass: DartPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

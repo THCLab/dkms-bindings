@@ -17,8 +17,7 @@ class Keri {
       : Platform.isIOS
           ? DynamicLibrary.process()
           : Platform.isMacOS
-              ? throw LibraryNotImplementedException(
-                  'Library for MacOS has not been implemented yet. Available platforms: Android, Windows (test mode)')
+              ? DynamicLibrary.executable()
               : DynamicLibrary.open(path);
   static late final api = KeriDartImpl(dylib);
 

@@ -48,6 +48,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initKel() async {
     var dir = await getLocalPath();
+    print(dir);
     var inited = await Keri.initKel(inputAppDir: dir);
   }
 
