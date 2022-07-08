@@ -7,7 +7,7 @@ Dart client for managing KERI based Identifiers. See top level [README](https://
 This plugin requires a third party key provider that derives public private key pairs and is able to sign a String using Ed25519 algorithm. For such a usecase, [Asymmetric crypto primitives](https://pub.dev/packages/asymmetric_crypto_primitives) plugin has been designed. The usage of its `signer` object along with KERI plugin has been provided as an example for this plugin.
 
 ## Usage
-Currrently supported functions are:
+Currently supported functions are:
 * `initKel` - Initializes database for storing events.
 * `incept` - Creates inception event that needs to be signed externally.
 * `finalizeInception` - Finalizes inception (bootstrapping an Identifier and its Key Event Log).
