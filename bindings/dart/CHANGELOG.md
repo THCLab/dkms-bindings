@@ -17,3 +17,7 @@ Fixed issues - part 2
 ## 0.2.3
 
 Fixed issues - part 3
+
+## 0.3.0
+
+Added support for MacOS

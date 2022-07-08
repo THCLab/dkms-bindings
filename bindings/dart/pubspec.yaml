@@ -1,6 +1,6 @@
 name: keri
 description: Dart client for managing KERI based Identifiers on various systems.
-version: 0.2.3
+version: 0.3.0
 homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart
 
 environment:

@@ -9,6 +9,6 @@ import keri
 import path_provider_macos
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  SwiftDartPlugin.register(with: registry.registrar(forPlugin: "SwiftDartPlugin"))
+  DartPlugin.register(with: registry.registrar(forPlugin: "DartPlugin"))
   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
 }
