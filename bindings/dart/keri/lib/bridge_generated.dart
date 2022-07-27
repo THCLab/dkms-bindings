@@ -24,10 +24,10 @@ abstract class KeriDart {
 
   Future<String> incept(
       {required List<PublicKey> publicKeys,
-        required List<PublicKey> nextPubKeys,
-        required List<String> witnesses,
-        required int witnessThreshold,
-        dynamic hint});
+      required List<PublicKey> nextPubKeys,
+      required List<String> witnesses,
+      required int witnessThreshold,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInceptConstMeta;
 
@@ -38,42 +38,42 @@ abstract class KeriDart {
 
   Future<String> rotate(
       {required Controller controller,
-        required List<PublicKey> currentKeys,
-        required List<PublicKey> newNextKeys,
-        required List<String> witnessToAdd,
-        required List<String> witnessToRemove,
-        required int witnessThreshold,
-        dynamic hint});
+      required List<PublicKey> currentKeys,
+      required List<PublicKey> newNextKeys,
+      required List<String> witnessToAdd,
+      required List<String> witnessToRemove,
+      required int witnessThreshold,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kRotateConstMeta;
 
   Future<String> anchor(
       {required Controller controller,
-        required String data,
-        required DigestType algo,
-        dynamic hint});
+      required String data,
+      required DigestType algo,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kAnchorConstMeta;
 
   Future<String> anchorDigest(
       {required Controller controller,
-        required List<String> sais,
-        dynamic hint});
+      required List<String> sais,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kAnchorDigestConstMeta;
 
   Future<String> addWatcher(
       {required Controller controller,
-        required String watcherOobi,
-        dynamic hint});
+      required String watcherOobi,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kAddWatcherConstMeta;
 
   Future<bool> finalizeEvent(
       {required Controller identifier,
-        required String event,
-        required Signature signature,
-        dynamic hint});
+      required String event,
+      required Signature signature,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kFinalizeEventConstMeta;
 
@@ -83,8 +83,8 @@ abstract class KeriDart {
 
   Future<bool> query(
       {required Controller controller,
-        required String oobisJson,
-        dynamic hint});
+      required String oobisJson,
+      dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kQueryConstMeta;
 
@@ -189,7 +189,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
   KeriDartImpl.raw(KeriDartWire inner) : super(inner);
 
   Future<Config> withInitialOobis(
-      {required Config config, required String oobisJson, dynamic hint}) =>
+          {required Config config, required String oobisJson, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_with_initial_oobis(port_,
             _api2wire_box_autoadd_config(config), _api2wire_String(oobisJson)),
@@ -206,9 +206,9 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<bool> initKel(
-      {required String inputAppDir,
-        Config? optionalConfigs,
-        dynamic hint}) =>
+          {required String inputAppDir,
+          Config? optionalConfigs,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_init_kel(
             port_,
@@ -227,11 +227,11 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<String> incept(
-      {required List<PublicKey> publicKeys,
-        required List<PublicKey> nextPubKeys,
-        required List<String> witnesses,
-        required int witnessThreshold,
-        dynamic hint}) =>
+          {required List<PublicKey> publicKeys,
+          required List<PublicKey> nextPubKeys,
+          required List<String> witnesses,
+          required int witnessThreshold,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_incept(
             port_,
@@ -257,9 +257,9 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<Controller> finalizeInception(
-      {required String event,
-        required Signature signature,
-        dynamic hint}) =>
+          {required String event,
+          required Signature signature,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_finalize_inception(
             port_,
@@ -278,13 +278,13 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<String> rotate(
-      {required Controller controller,
-        required List<PublicKey> currentKeys,
-        required List<PublicKey> newNextKeys,
-        required List<String> witnessToAdd,
-        required List<String> witnessToRemove,
-        required int witnessThreshold,
-        dynamic hint}) =>
+          {required Controller controller,
+          required List<PublicKey> currentKeys,
+          required List<PublicKey> newNextKeys,
+          required List<String> witnessToAdd,
+          required List<String> witnessToRemove,
+          required int witnessThreshold,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_rotate(
             port_,
@@ -321,10 +321,10 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<String> anchor(
-      {required Controller controller,
-        required String data,
-        required DigestType algo,
-        dynamic hint}) =>
+          {required Controller controller,
+          required String data,
+          required DigestType algo,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_anchor(
             port_,
@@ -344,9 +344,9 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<String> anchorDigest(
-      {required Controller controller,
-        required List<String> sais,
-        dynamic hint}) =>
+          {required Controller controller,
+          required List<String> sais,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_anchor_digest(
             port_,
@@ -365,9 +365,9 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<String> addWatcher(
-      {required Controller controller,
-        required String watcherOobi,
-        dynamic hint}) =>
+          {required Controller controller,
+          required String watcherOobi,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_add_watcher(
             port_,
@@ -386,10 +386,10 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<bool> finalizeEvent(
-      {required Controller identifier,
-        required String event,
-        required Signature signature,
-        dynamic hint}) =>
+          {required Controller identifier,
+          required String event,
+          required Signature signature,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_finalize_event(
             port_,
@@ -425,9 +425,9 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<bool> query(
-      {required Controller controller,
-        required String oobisJson,
-        dynamic hint}) =>
+          {required Controller controller,
+          required String oobisJson,
+          dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_query(
             port_,
@@ -494,7 +494,7 @@ class KeriDartImpl extends FlutterRustBridgeBase<KeriDartWire>
       );
 
   Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-      {required String attachment, dynamic hint}) =>
+          {required String attachment, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_get_current_public_key(
             port_, _api2wire_String(attachment)),
@@ -713,7 +713,7 @@ Uint8List _wire2api_uint_8_list(dynamic raw) {
 class KeriDartWire implements FlutterRustBridgeWireBase {
   /// Holds the symbol lookup function.
   final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-  _lookup;
+      _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
   KeriDartWire(ffi.DynamicLibrary dynamicLibrary)
@@ -722,14 +722,14 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   /// The symbols are looked up with [lookup].
   KeriDartWire.fromLookup(
       ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-      lookup)
+          lookup)
       : _lookup = lookup;
 
   void wire_with_initial_oobis(
-      int port_,
-      ffi.Pointer<wire_Config> config,
-      ffi.Pointer<wire_uint_8_list> oobis_json,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Config> config,
+    ffi.Pointer<wire_uint_8_list> oobis_json,
+  ) {
     return _wire_with_initial_oobis(
       port_,
       config,
@@ -746,10 +746,10 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int, ffi.Pointer<wire_Config>, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_init_kel(
-      int port_,
-      ffi.Pointer<wire_uint_8_list> input_app_dir,
-      ffi.Pointer<wire_Config> optional_configs,
-      ) {
+    int port_,
+    ffi.Pointer<wire_uint_8_list> input_app_dir,
+    ffi.Pointer<wire_Config> optional_configs,
+  ) {
     return _wire_init_kel(
       port_,
       input_app_dir,
@@ -766,12 +766,12 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Config>)>();
 
   void wire_incept(
-      int port_,
-      ffi.Pointer<wire_list_public_key> public_keys,
-      ffi.Pointer<wire_list_public_key> next_pub_keys,
-      ffi.Pointer<wire_StringList> witnesses,
-      int witness_threshold,
-      ) {
+    int port_,
+    ffi.Pointer<wire_list_public_key> public_keys,
+    ffi.Pointer<wire_list_public_key> next_pub_keys,
+    ffi.Pointer<wire_StringList> witnesses,
+    int witness_threshold,
+  ) {
     return _wire_incept(
       port_,
       public_keys,
@@ -798,10 +798,10 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int)>();
 
   void wire_finalize_inception(
-      int port_,
-      ffi.Pointer<wire_uint_8_list> event,
-      ffi.Pointer<wire_Signature> signature,
-      ) {
+    int port_,
+    ffi.Pointer<wire_uint_8_list> event,
+    ffi.Pointer<wire_Signature> signature,
+  ) {
     return _wire_finalize_inception(
       port_,
       event,
@@ -818,14 +818,14 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
 
   void wire_rotate(
-      int port_,
-      ffi.Pointer<wire_Controller> controller,
-      ffi.Pointer<wire_list_public_key> current_keys,
-      ffi.Pointer<wire_list_public_key> new_next_keys,
-      ffi.Pointer<wire_StringList> witness_to_add,
-      ffi.Pointer<wire_StringList> witness_to_remove,
-      int witness_threshold,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_list_public_key> current_keys,
+    ffi.Pointer<wire_list_public_key> new_next_keys,
+    ffi.Pointer<wire_StringList> witness_to_add,
+    ffi.Pointer<wire_StringList> witness_to_remove,
+    int witness_threshold,
+  ) {
     return _wire_rotate(
       port_,
       controller,
@@ -858,11 +858,11 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int)>();
 
   void wire_anchor(
-      int port_,
-      ffi.Pointer<wire_Controller> controller,
-      ffi.Pointer<wire_uint_8_list> data,
-      int algo,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_uint_8_list> data,
+    int algo,
+  ) {
     return _wire_anchor(
       port_,
       controller,
@@ -880,10 +880,10 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           ffi.Pointer<wire_uint_8_list>, int)>();
 
   void wire_anchor_digest(
-      int port_,
-      ffi.Pointer<wire_Controller> controller,
-      ffi.Pointer<wire_StringList> sais,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_StringList> sais,
+  ) {
     return _wire_anchor_digest(
       port_,
       controller,
@@ -900,10 +900,10 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int, ffi.Pointer<wire_Controller>, ffi.Pointer<wire_StringList>)>();
 
   void wire_add_watcher(
-      int port_,
-      ffi.Pointer<wire_Controller> controller,
-      ffi.Pointer<wire_uint_8_list> watcher_oobi,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_uint_8_list> watcher_oobi,
+  ) {
     return _wire_add_watcher(
       port_,
       controller,
@@ -920,11 +920,11 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int, ffi.Pointer<wire_Controller>, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_finalize_event(
-      int port_,
-      ffi.Pointer<wire_Controller> identifier,
-      ffi.Pointer<wire_uint_8_list> event,
-      ffi.Pointer<wire_Signature> signature,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> identifier,
+    ffi.Pointer<wire_uint_8_list> event,
+    ffi.Pointer<wire_Signature> signature,
+  ) {
     return _wire_finalize_event(
       port_,
       identifier,
@@ -945,9 +945,9 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
 
   void wire_resolve_oobi(
-      int port_,
-      ffi.Pointer<wire_uint_8_list> oobi_json,
-      ) {
+    int port_,
+    ffi.Pointer<wire_uint_8_list> oobi_json,
+  ) {
     return _wire_resolve_oobi(
       port_,
       oobi_json,
@@ -962,10 +962,10 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_query(
-      int port_,
-      ffi.Pointer<wire_Controller> controller,
-      ffi.Pointer<wire_uint_8_list> oobis_json,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> controller,
+    ffi.Pointer<wire_uint_8_list> oobis_json,
+  ) {
     return _wire_query(
       port_,
       controller,
@@ -982,9 +982,9 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           int, ffi.Pointer<wire_Controller>, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_process_stream(
-      int port_,
-      ffi.Pointer<wire_uint_8_list> stream,
-      ) {
+    int port_,
+    ffi.Pointer<wire_uint_8_list> stream,
+  ) {
     return _wire_process_stream(
       port_,
       stream,
@@ -999,9 +999,9 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_kel(
-      int port_,
-      ffi.Pointer<wire_Controller> cont,
-      ) {
+    int port_,
+    ffi.Pointer<wire_Controller> cont,
+  ) {
     return _wire_get_kel(
       port_,
       cont,
@@ -1016,9 +1016,9 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<void Function(int, ffi.Pointer<wire_Controller>)>();
 
   void wire_get_kel_by_str(
-      int port_,
-      ffi.Pointer<wire_uint_8_list> cont_id,
-      ) {
+    int port_,
+    ffi.Pointer<wire_uint_8_list> cont_id,
+  ) {
     return _wire_get_kel_by_str(
       port_,
       cont_id,
@@ -1033,9 +1033,9 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_current_public_key(
-      int port_,
-      ffi.Pointer<wire_uint_8_list> attachment,
-      ) {
+    int port_,
+    ffi.Pointer<wire_uint_8_list> attachment,
+  ) {
     return _wire_get_current_public_key(
       port_,
       attachment,
@@ -1050,15 +1050,15 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   ffi.Pointer<wire_StringList> new_StringList(
-      int len,
-      ) {
+    int len,
+  ) {
     return _new_StringList(
       len,
     );
   }
 
   late final _new_StringListPtr = _lookup<
-      ffi.NativeFunction<ffi.Pointer<wire_StringList> Function(ffi.Int32)>>(
+          ffi.NativeFunction<ffi.Pointer<wire_StringList> Function(ffi.Int32)>>(
       'new_StringList');
   late final _new_StringList = _new_StringListPtr
       .asFunction<ffi.Pointer<wire_StringList> Function(int)>();
@@ -1068,8 +1068,8 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   }
 
   late final _new_box_autoadd_configPtr =
-  _lookup<ffi.NativeFunction<ffi.Pointer<wire_Config> Function()>>(
-      'new_box_autoadd_config');
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_Config> Function()>>(
+          'new_box_autoadd_config');
   late final _new_box_autoadd_config = _new_box_autoadd_configPtr
       .asFunction<ffi.Pointer<wire_Config> Function()>();
 
@@ -1078,8 +1078,8 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   }
 
   late final _new_box_autoadd_controllerPtr =
-  _lookup<ffi.NativeFunction<ffi.Pointer<wire_Controller> Function()>>(
-      'new_box_autoadd_controller');
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_Controller> Function()>>(
+          'new_box_autoadd_controller');
   late final _new_box_autoadd_controller = _new_box_autoadd_controllerPtr
       .asFunction<ffi.Pointer<wire_Controller> Function()>();
 
@@ -1088,14 +1088,14 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   }
 
   late final _new_box_autoadd_signaturePtr =
-  _lookup<ffi.NativeFunction<ffi.Pointer<wire_Signature> Function()>>(
-      'new_box_autoadd_signature');
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_Signature> Function()>>(
+          'new_box_autoadd_signature');
   late final _new_box_autoadd_signature = _new_box_autoadd_signaturePtr
       .asFunction<ffi.Pointer<wire_Signature> Function()>();
 
   ffi.Pointer<wire_list_public_key> new_list_public_key(
-      int len,
-      ) {
+    int len,
+  ) {
     return _new_list_public_key(
       len,
     );
@@ -1109,8 +1109,8 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<ffi.Pointer<wire_list_public_key> Function(int)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list(
-      int len,
-      ) {
+    int len,
+  ) {
     return _new_uint_8_list(
       len,
     );
@@ -1124,30 +1124,30 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
 
   void free_WireSyncReturnStruct(
-      WireSyncReturnStruct val,
-      ) {
+    WireSyncReturnStruct val,
+  ) {
     return _free_WireSyncReturnStruct(
       val,
     );
   }
 
   late final _free_WireSyncReturnStructPtr =
-  _lookup<ffi.NativeFunction<ffi.Void Function(WireSyncReturnStruct)>>(
-      'free_WireSyncReturnStruct');
+      _lookup<ffi.NativeFunction<ffi.Void Function(WireSyncReturnStruct)>>(
+          'free_WireSyncReturnStruct');
   late final _free_WireSyncReturnStruct = _free_WireSyncReturnStructPtr
       .asFunction<void Function(WireSyncReturnStruct)>();
 
   void store_dart_post_cobject(
-      DartPostCObjectFnType ptr,
-      ) {
+    DartPostCObjectFnType ptr,
+  ) {
     return _store_dart_post_cobject(
       ptr,
     );
   }
 
   late final _store_dart_post_cobjectPtr =
-  _lookup<ffi.NativeFunction<ffi.Void Function(DartPostCObjectFnType)>>(
-      'store_dart_post_cobject');
+      _lookup<ffi.NativeFunction<ffi.Void Function(DartPostCObjectFnType)>>(
+          'store_dart_post_cobject');
   late final _store_dart_post_cobject = _store_dart_post_cobjectPtr
       .asFunction<void Function(DartPostCObjectFnType)>();
 }
