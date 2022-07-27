@@ -30,3 +30,7 @@ migrate_working_dir/
 build/
 
 test/dartkeriox.dll
+example/*
+!example/lib
+example/lib/*
+!example/lib/main.dart
