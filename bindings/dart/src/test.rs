@@ -157,6 +157,13 @@ pub fn test_resolve_oobi() -> Result<()> {
 }
 
 #[test]
+pub fn test_multisig() -> Result<()> {
+    
+
+    Ok(())
+}
+
+#[test]
 pub fn test_demo() -> Result<()> {
     use crate::api::{
         finalize_inception, get_kel, incept, init_kel, KeyType, PublicKey, Signature, SignatureType,

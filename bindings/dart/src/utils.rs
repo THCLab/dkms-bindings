@@ -1,6 +1,6 @@
 use crate::api::Error;
+use controller::error::ControllerError;
 use keri::{
-    controller::error::ControllerError,
     derivation::{basic::Basic, self_signing::SelfSigning},
     event_parsing::{attachment::attachment, Attachment},
     keys::PublicKey as KeriPK,

@@ -1,14 +1,14 @@
-use std::{path::PathBuf, sync::Mutex, slice};
+use std::{path::PathBuf, sync::{Mutex, Arc}, slice};
 
+use controller::{utils::OptionalConfig, error::ControllerError, identifier_controller::IdentifierController};
 use flutter_rust_bridge::{support::lazy_static, frb};
 
 use anyhow::{anyhow, Result};
 use keri::{
-    controller::{error::ControllerError, event_generator, utils::OptionalConfig},
     derivation::{basic::Basic, self_signing::SelfSigning, self_addressing::SelfAddressing},
     event_parsing::Attachment,
     oobi::{EndRole, LocationScheme, Role},
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix},
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix}, actor::event_generator,
 };
 
 use crate::utils::{
@@ -143,7 +143,7 @@ impl Config {
 }
 
 lazy_static! {
-    static ref KEL: Mutex<Option<keri::controller::Controller>> = Mutex::new(None);
+    static ref KEL: Mutex<Option<Arc<controller::Controller>>> = Mutex::new(None);
 }
 
 #[derive(Error, Debug)]
@@ -215,8 +215,8 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
     };
 
     if !is_initialized {
-        let controller = keri::controller::Controller::new(Some(config))?;
-        *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(controller);
+        let controller = controller::Controller::new(Some(config))?;
+        *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Arc::new(controller));
     }
 
     Ok(true)
@@ -260,10 +260,10 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Control
         .ok_or(Error::ControllerInitializationError)?
         .finalize_inception(
             event.as_bytes(),
-            vec![signature_prefix_from_hex(
+            &signature_prefix_from_hex(
                 &signature.key,
                 signature.algorithm.into(),
-            )?],
+            )?,
         )?;
     Ok(Controller {
         identifier: controller_id.to_str(),
@@ -369,18 +369,36 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
 }
 
 pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<bool> {
-    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
-        .ok_or(Error::ControllerInitializationError)?
-        .finalize_event(
-            &identifier.identifier.parse()?,
+        .ok_or(Error::ControllerInitializationError)?.clone();
+    let identifier = identifier.identifier.parse()?;
+    let identifier_controller = IdentifierController::new(identifier, controller);
+        identifier_controller.finalize_event(
             event.as_bytes(),
-            vec![signature_prefix_from_hex(
+            signature_prefix_from_hex(
                 &signature.key,
                 signature.algorithm.into(),
-            )?],
+            )?,
         )?;
     Ok(true)
+}
+
+pub struct GroupInception {
+    pub icp_event: String,
+    pub exchanges: Vec<String>,
+}
+
+pub fn incept_group(identifier: Controller, participants: Vec<String>, signature_threshold: u64, initial_witnesses: Vec<String>, witness_threshold: u64) -> Result<GroupInception> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?.clone();
+    let identifier = identifier.identifier.parse()?;
+    let participants = participants.iter().map(|id| id.parse()).collect::<Result<_,_>>()?;
+    let initial_witnesses = initial_witnesses.iter().map(|id| id.parse()).collect::<Result<_,_>>()?;
+    let identifier_controller = IdentifierController::new(identifier, controller);
+    let (icp_to_sign, exns_to_sign) = identifier_controller.incept_group(participants, signature_threshold, Some(initial_witnesses), Some(witness_threshold), None)?;
+    Ok(GroupInception { icp_event: icp_to_sign, exchanges: exns_to_sign })
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<bool> {

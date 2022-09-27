@@ -11,7 +11,8 @@ crate-type = ["dylib"]
 
 [dependencies]
 flutter_rust_bridge = "1.36.0"
-keri = { git = "https://github.com/THCLab/keriox.git", features = ["controller"] }
+keri = { git = "https://github.com/THCLab/keriox.git", branch = "interface_multisig_delegation", features = ["controller"] }
+controller = { git = "https://github.com/THCLab/keriox.git", branch = "interface_multisig_delegation" }
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"
