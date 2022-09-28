@@ -1,19 +1,25 @@
-use std::{path::PathBuf, sync::{Mutex, Arc}, slice};
+use std::{
+    path::PathBuf,
+    slice,
+    sync::{Arc, Mutex},
+};
 
-use controller::{utils::OptionalConfig, error::ControllerError, identifier_controller::IdentifierController};
-use flutter_rust_bridge::{support::lazy_static, frb};
+use controller::{error::ControllerError, identifier_controller::IdentifierController};
+use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
 use keri::{
-    derivation::{basic::Basic, self_signing::SelfSigning, self_addressing::SelfAddressing},
+    actor::event_generator,
+    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
     event_parsing::Attachment,
     oobi::{EndRole, LocationScheme, Role},
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix}, actor::event_generator,
+    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix},
 };
 
 use crate::utils::{
     join_keys_and_signatures, key_prefix_from_b64, parse_attachment, signature_prefix_from_hex,
 };
+pub use controller::utils::OptionalConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -73,7 +79,7 @@ pub enum SignatureType {
 
 impl From<SignatureType> for SelfSigning {
     fn from(sig: SignatureType) -> Self {
-         match sig {
+        match sig {
             SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
             SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
             SignatureType::Ed448 => SelfSigning::Ed448,
@@ -92,12 +98,12 @@ impl From<SelfSigning> for SignatureType {
 }
 
 pub struct PublicKey {
-    pub(crate) algorithm: KeyType,
+    pub algorithm: KeyType,
     /// base 64 string of public key
-    pub(crate) key: String,
+    pub key: String,
 }
 impl PublicKey {
-    pub fn new(algorithm: KeyType, key: String) -> Self {
+    pub fn new(algorithm: KeyType, key: String) -> PublicKey {
         Self {
             algorithm,
             key: key.to_string(),
@@ -112,7 +118,7 @@ pub struct Signature {
     pub(crate) key: String,
 }
 impl Signature {
-    pub fn new(algorithm: SignatureType, key: String) -> Self {
+    pub fn new(algorithm: SignatureType, key: String) -> Signature {
         Self {
             algorithm,
             key: key,
@@ -132,7 +138,7 @@ pub fn with_initial_oobis(config: Config, oobis_json: String) -> Config {
 }
 
 impl Config {
-    pub fn build(&self) -> Result<OptionalConfig> {
+    pub(crate) fn build(&self) -> Result<OptionalConfig> {
         let oobis: Vec<LocationScheme> = serde_json::from_str(&self.initial_oobis)
             .map_err(|_e| anyhow!("Improper location scheme structure"))?;
         Ok(OptionalConfig {
@@ -231,8 +237,10 @@ pub fn incept(
 ) -> Result<String> {
     let witnesses = witnesses
         .iter()
-        .map(|wit| serde_json::from_str::<LocationScheme>(wit)
-        .map_err(|_e| Error::OobiParseError(wit.into())))
+        .map(|wit| {
+            serde_json::from_str::<LocationScheme>(wit)
+                .map_err(|_e| Error::OobiParseError(wit.into()))
+        })
         .collect::<Result<Vec<_>, _>>()
         // improper json structure or improper prefix
         .map_err(|e| anyhow!(e.to_string()))?;
@@ -260,10 +268,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Control
         .ok_or(Error::ControllerInitializationError)?
         .finalize_inception(
             event.as_bytes(),
-            &signature_prefix_from_hex(
-                &signature.key,
-                signature.algorithm.into(),
-            )?,
+            &signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
         )?;
     Ok(Controller {
         identifier: controller_id.to_str(),
@@ -331,7 +336,6 @@ pub fn anchor(controller: Controller, data: String, algo: DigestType) -> Result<
         .anchor(id, slice::from_ref(&digest))?)
 }
 
-
 pub fn anchor_digest(controller: Controller, sais: Vec<String>) -> Result<String> {
     let sais = sais
         .iter()
@@ -360,7 +364,10 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
             .ok_or(Error::ControllerInitializationError)?
             .resolve_loc_schema(&lc)?;
 
-        let id = &controller.identifier.parse().map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
+        let id = &controller
+            .identifier
+            .parse()
+            .map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
         let add_watcher = event_generator::generate_end_role(id, &lc.eid, Role::Watcher, true)?;
         Ok(String::from_utf8(add_watcher.serialize()?)?)
     } else {
@@ -371,34 +378,90 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
 pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
-        .ok_or(Error::ControllerInitializationError)?.clone();
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
     let identifier = identifier.identifier.parse()?;
     let identifier_controller = IdentifierController::new(identifier, controller);
-        identifier_controller.finalize_event(
-            event.as_bytes(),
-            signature_prefix_from_hex(
-                &signature.key,
-                signature.algorithm.into(),
-            )?,
-        )?;
+    identifier_controller.finalize_event(
+        event.as_bytes(),
+        signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
+    )?;
     Ok(true)
 }
 
+/// Struct for collecting data that need to be signed: generated event and
+/// exchange messages that are needed to forward multisig request to other group
+/// participants.
 pub struct GroupInception {
     pub icp_event: String,
     pub exchanges: Vec<String>,
 }
 
-pub fn incept_group(identifier: Controller, participants: Vec<String>, signature_threshold: u64, initial_witnesses: Vec<String>, witness_threshold: u64) -> Result<GroupInception> {
+pub fn incept_group(
+    identifier: &Controller,
+    participants: Vec<String>,
+    signature_threshold: u64,
+    initial_witnesses: Vec<String>,
+    witness_threshold: u64,
+) -> Result<GroupInception> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
-        .ok_or(Error::ControllerInitializationError)?.clone();
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
     let identifier = identifier.identifier.parse()?;
-    let participants = participants.iter().map(|id| id.parse()).collect::<Result<_,_>>()?;
-    let initial_witnesses = initial_witnesses.iter().map(|id| id.parse()).collect::<Result<_,_>>()?;
+    let participants = participants
+        .iter()
+        .map(|id| id.parse())
+        .collect::<Result<_, _>>()?;
+    let initial_witnesses = initial_witnesses
+        .iter()
+        .map(|id| id.parse())
+        .collect::<Result<_, _>>()?;
     let identifier_controller = IdentifierController::new(identifier, controller);
-    let (icp_to_sign, exns_to_sign) = identifier_controller.incept_group(participants, signature_threshold, Some(initial_witnesses), Some(witness_threshold), None)?;
-    Ok(GroupInception { icp_event: icp_to_sign, exchanges: exns_to_sign })
+    let (icp_to_sign, exns_to_sign) = identifier_controller.incept_group(
+        participants,
+        signature_threshold,
+        Some(initial_witnesses),
+        Some(witness_threshold),
+        None,
+    )?;
+    Ok(GroupInception {
+        icp_event: icp_to_sign,
+        exchanges: exns_to_sign,
+    })
+}
+
+pub fn finalize_group_incept(
+    identifier: &Controller,
+    group_event: &str,
+    signature: Signature,
+    to_forward: Vec<(String, Signature)>,
+) -> Result<Controller> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+    let signature = signature_prefix_from_hex(&signature.key, signature.algorithm.into())?;
+    let exchanges = to_forward
+        .iter()
+        .map(|(exn, signature)| -> Result<_> {
+            Ok((
+                exn.as_bytes(),
+                signature_prefix_from_hex(&signature.key, signature.algorithm.clone().into())?,
+            ))
+        })
+        .collect::<Result<_>>()?;
+    let identifier = identifier.identifier.parse()?;
+
+    let mut identifier_controller = IdentifierController::new(identifier, controller);
+    let group_identifier = identifier_controller.finalize_group_incept(
+        group_event.as_bytes(),
+        signature,
+        exchanges,
+    )?;
+    Ok(Controller {
+        identifier: group_identifier.to_str(),
+    })
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<bool> {

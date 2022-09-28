@@ -1,13 +1,15 @@
 use anyhow::Result;
 use keri::{
-    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
+    derivation::{self_addressing::SelfAddressing},
     prefix::Prefix,
     signer::{CryptoBox, KeyManager},
 };
+use tempfile::Builder;
 
 use crate::api::{
-    add_watcher, anchor_digest, finalize_event, get_current_public_key, get_kel_by_str, init_kel, query,
-    resolve_oobi, rotate, Config, Controller, anchor, DigestType,
+    add_watcher, anchor, anchor_digest, finalize_event, finalize_group_incept,
+    get_kel_by_str, incept_group, init_kel, resolve_oobi, rotate,
+    Config, Controller, DigestType,
 };
 
 #[test]
@@ -158,7 +160,78 @@ pub fn test_resolve_oobi() -> Result<()> {
 
 #[test]
 pub fn test_multisig() -> Result<()> {
-    
+    use crate::api::{
+        finalize_inception, get_kel, incept, init_kel, KeyType, PublicKey, Signature, SignatureType,
+    };
+
+    // Create temporary db file.
+    let root_path = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .path()
+        .to_str()
+        .unwrap()
+        .into();
+
+    init_kel(root_path, None)?;
+
+    // Incept first group participant
+    let key_manager = CryptoBox::new().unwrap();
+    let current_b64key = base64::encode(key_manager.public_key().key());
+    let next_b64key = base64::encode(key_manager.next_public_key().key());
+
+    let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
+    let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
+    let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
+    let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
+
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    let controller = finalize_inception(icp_event, signature)?;
+
+    // Incept second group participant
+    let participants_key_manager = CryptoBox::new().unwrap();
+    let current_b64key = base64::encode(participants_key_manager.public_key().key());
+    let next_b64key = base64::encode(participants_key_manager.next_public_key().key());
+
+    let participant_pk = PublicKey::new(KeyType::Ed25519, current_b64key);
+    let participant_npk = PublicKey::new(KeyType::Ed25519, next_b64key);
+    let icp_event = incept(vec![participant_pk], vec![participant_npk], vec![], 0)?;
+    let hex_signature = hex::encode(participants_key_manager.sign(icp_event.as_bytes())?);
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+
+    let participant = finalize_inception(icp_event, signature)?;
+
+    // initiate group by first particiapnt. To accept event bouth participants signature must be provided.
+    let icp = incept_group(
+        &controller,
+        vec![participant.identifier.clone()],
+        2,
+        vec![],
+        0,
+    )?;
+    assert_eq!(icp.exchanges.len(), 1);
+
+    // sign group inception by first participant
+    let hex_signature = hex::encode(key_manager.sign(icp.icp_event.as_bytes())?);
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+
+    let group_controller =
+        finalize_group_incept(&controller, &icp.icp_event, signature.clone(), vec![])?;
+
+    // event wasn't fully signed, it shouldn't be accepted into kel.
+    let kel = get_kel(group_controller);
+    assert!(kel.is_err());
+
+    // sign icp event by participant
+    let hex_signature = hex::encode(participants_key_manager.sign(icp.icp_event.as_bytes())?);
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+
+    let group_controller = finalize_group_incept(&participant, &icp.icp_event, signature, vec![])?;
+
+    // Group inception should be accepted now.
+    let kel = get_kel(group_controller);
+    assert!(kel.is_ok());
 
     Ok(())
 }
@@ -225,7 +298,11 @@ pub fn test_demo() -> Result<()> {
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
     finalize_event(controller.clone(), ixn_event, signature)?;
 
-    let ixn_event = anchor(controller.clone(), "some data".into(), DigestType::Blake3_256)?;
+    let ixn_event = anchor(
+        controller.clone(),
+        "some data".into(),
+        DigestType::Blake3_256,
+    )?;
     println!("\nixn: {}", ixn_event);
 
     let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
