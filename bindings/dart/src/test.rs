@@ -1,6 +1,6 @@
 use anyhow::Result;
 use keri::{
-    derivation::{self_addressing::SelfAddressing},
+    derivation::self_addressing::SelfAddressing,
     prefix::Prefix,
     signer::{CryptoBox, KeyManager},
 };
@@ -8,8 +8,8 @@ use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, finalize_event, finalize_group_incept,
-    get_kel_by_str, incept_group, init_kel, resolve_oobi, rotate,
-    Config, Controller, DigestType,
+    finalize_mailbox_query, get_kel_by_str, incept_group, init_kel, query_group_mailbox,
+    query_own_mailbox, resolve_oobi, rotate, Action, Config, Controller, DigestType,
 };
 
 #[test]
@@ -176,6 +176,12 @@ pub fn test_multisig() -> Result<()> {
 
     init_kel(root_path, None)?;
 
+    // Tests assumses that witness DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA is listening on http://127.0.0.1:3232
+    // It can be run from keriox/components/witness using command:
+    // cargo run -- -c ./src/witness.json
+    let witness_id = "DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA".to_string();
+    let wit_location = r#"{"eid":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}"#.to_string();
+
     // Incept first group participant
     let key_manager = CryptoBox::new().unwrap();
     let current_b64key = base64::encode(key_manager.public_key().key());
@@ -183,11 +189,20 @@ pub fn test_multisig() -> Result<()> {
 
     let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
     let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
-    let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
+    let icp_event = incept(vec![pk], vec![npk], vec![wit_location.clone()], 1)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
     let controller = finalize_inception(icp_event, signature)?;
+
+    // Quering mailbox to get receipts
+    let query = query_own_mailbox(&controller, vec![witness_id.clone()])?;
+
+    for qry in query {
+        let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
+        let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+        finalize_mailbox_query(&controller, qry, signature)?;
+    }
 
     // Incept second group participant
     let participants_key_manager = CryptoBox::new().unwrap();
@@ -196,19 +211,33 @@ pub fn test_multisig() -> Result<()> {
 
     let participant_pk = PublicKey::new(KeyType::Ed25519, current_b64key);
     let participant_npk = PublicKey::new(KeyType::Ed25519, next_b64key);
-    let icp_event = incept(vec![participant_pk], vec![participant_npk], vec![], 0)?;
+    let icp_event = incept(
+        vec![participant_pk],
+        vec![participant_npk],
+        vec![wit_location.clone()],
+        1,
+    )?;
     let hex_signature = hex::encode(participants_key_manager.sign(icp_event.as_bytes())?);
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
 
     let participant = finalize_inception(icp_event, signature)?;
+
+    // Quering mailbox to get receipts
+    let query = query_own_mailbox(&participant, vec![witness_id.clone()])?;
+
+    for qry in query {
+        let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
+        let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+        finalize_mailbox_query(&participant, qry, signature)?;
+    }
 
     // initiate group by first particiapnt. To accept event bouth participants signature must be provided.
     let icp = incept_group(
         &controller,
         vec![participant.identifier.clone()],
         2,
-        vec![],
-        0,
+        vec![witness_id.clone()],
+        1,
     )?;
     assert_eq!(icp.exchanges.len(), 1);
 
@@ -216,18 +245,67 @@ pub fn test_multisig() -> Result<()> {
     let hex_signature = hex::encode(key_manager.sign(icp.icp_event.as_bytes())?);
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
 
-    let group_controller =
-        finalize_group_incept(&controller, &icp.icp_event, signature.clone(), vec![])?;
+    // sign exchanges to forward it to other participants
+    let exn_signature = hex::encode(key_manager.sign(icp.exchanges[0].as_bytes())?);
+    let exn_signature = Signature::new(SignatureType::Ed25519Sha512, exn_signature);
+
+    let group_controller = finalize_group_incept(
+        &controller,
+        &icp.icp_event,
+        signature.clone(),
+        vec![(icp.exchanges[0].clone(), exn_signature)],
+    )?;
 
     // event wasn't fully signed, it shouldn't be accepted into kel.
-    let kel = get_kel(group_controller);
+    let kel = get_kel(group_controller.clone());
     assert!(kel.is_err());
 
-    // sign icp event by participant
-    let hex_signature = hex::encode(participants_key_manager.sign(icp.icp_event.as_bytes())?);
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    // Second participants query about mailbox, to get forwarded group event.
+    // Quering mailbox to get receipts
+    let query = query_own_mailbox(&participant, vec![witness_id.clone()])?;
+    assert_eq!(query.len(), 1);
 
-    let group_controller = finalize_group_incept(&participant, &icp.icp_event, signature, vec![])?;
+    let qry = query[0].clone();
+    let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    let action_required = finalize_mailbox_query(&participant, qry, signature)?;
+    assert_eq!((&action_required).len(), 1);
+
+    let action = &action_required[0];
+    match action.action {
+        Action::MultisigRequest => {
+            // sign icp event by participant
+            let hex_signature = hex::encode(participants_key_manager.sign(action.data.as_bytes())?);
+            let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+
+            let exn_signature =
+                hex::encode(participants_key_manager.sign(action.additiona_data.as_bytes())?);
+            let exn_signature = Signature::new(SignatureType::Ed25519Sha512, exn_signature);
+
+            let group_controller = finalize_group_incept(
+                &participant,
+                &action.data.clone(),
+                signature,
+                vec![(action.additiona_data.clone(), exn_signature)],
+            )?;
+
+            // Group inception should not be accepted yet. Lack of receipt.
+            let kel = get_kel(group_controller);
+            assert!(kel.is_err());
+        }
+        Action::DelegationRequest => todo!(),
+    };
+
+    // Quering group mailbox to get receipts of group icp
+    // TODO identifier doesn't remember his groups
+    let query = query_group_mailbox(&controller, vec![witness_id.clone()])?;
+    assert_eq!(query.len(), 1);
+
+    let qry = query[0].clone();
+    let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
+    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    let action_required = finalize_mailbox_query(&participant, qry, signature)?;
+    assert_eq!((&action_required).len(), 0);
 
     // Group inception should be accepted now.
     let kel = get_kel(group_controller);

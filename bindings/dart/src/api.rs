@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 use keri::{
     actor::event_generator,
     derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
-    event_parsing::Attachment,
+    event_parsing::{message::query_message, Attachment, EventType},
     oobi::{EndRole, LocationScheme, Role},
     prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix},
 };
@@ -187,6 +187,9 @@ pub enum Error {
 
     #[error("Utils error: {0}")]
     UtilsError(String),
+
+    #[error("Improper event type")]
+    EventTypeError,
 
     #[error(transparent)]
     KelError(#[from] ControllerError),
@@ -459,9 +462,109 @@ pub fn finalize_group_incept(
         signature,
         exchanges,
     )?;
+
     Ok(Controller {
         identifier: group_identifier.to_str(),
     })
+}
+
+pub fn query_own_mailbox(identifier: &Controller, witness: Vec<String>) -> Result<Vec<String>> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+
+    let identifier = identifier.identifier.parse()?;
+
+    let identifier_controller = IdentifierController::new(identifier, controller);
+    let witnesses: Vec<_> = witness
+        .iter()
+        .map(|wit| wit.parse::<BasicPrefix>().unwrap())
+        .collect();
+    let query = identifier_controller
+        .query_own_mailbox(&witnesses)?
+        .iter()
+        .map(|qry| String::from_utf8(qry.serialize().unwrap()).unwrap())
+        .collect::<Vec<_>>();
+
+    Ok(query)
+}
+
+pub fn query_group_mailbox(identifier: &Controller, witness: Vec<String>) -> Result<Vec<String>> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+
+    let identifier = identifier.identifier.parse()?;
+
+    let identifier_controller = IdentifierController::new(identifier, controller);
+    let witnesses: Vec<_> = witness
+        .iter()
+        .map(|wit| wit.parse::<BasicPrefix>().unwrap())
+        .collect();
+    let query = identifier_controller
+        .query_group_mailbox(&witnesses)?
+        .iter()
+        .map(|qry| String::from_utf8(qry.serialize().unwrap()).unwrap())
+        .collect::<Vec<_>>();
+
+    Ok(query)
+}
+
+pub enum Action {
+    MultisigRequest,
+    DelegationRequest,
+}
+
+pub struct ActionRequired {
+    pub action: Action,
+    pub data: String,
+    pub additiona_data: String,
+}
+
+pub fn finalize_mailbox_query(
+    identifier: &Controller,
+    query_event: String,
+    signature: Signature,
+) -> Result<Vec<ActionRequired>> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+    let signature = signature_prefix_from_hex(&signature.key, signature.algorithm.into())?;
+    let identifier = identifier.identifier.parse()?;
+    let query = query_message(query_event.as_bytes()).unwrap().1;
+    let mut identifier_controller = IdentifierController::new(identifier, controller);
+
+    match query {
+        EventType::Qry(ref qry) => {
+            let ar =
+                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature)])?;
+
+            let out = ar
+                .iter()
+                .map(|ar| -> Result<_> {
+                    match ar {
+                        controller::mailbox_updating::ActionRequired::MultisigRequest(
+                            data,
+                            exchanges,
+                        ) => Ok(ActionRequired {
+                            action: Action::MultisigRequest,
+                            data: String::from_utf8(data.serialize()?).unwrap(),
+                            additiona_data: String::from_utf8(exchanges.serialize()?).unwrap(),
+                        }),
+                        _ => {
+                            todo!()
+                        }
+                    }
+                })
+                .collect();
+
+            out
+        }
+        _ => Err(Error::EventTypeError.into()),
+    }
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
