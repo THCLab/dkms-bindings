@@ -195,12 +195,14 @@ pub enum Error {
     KelError(#[from] ControllerError),
 }
 
+// TODO create id from string in dart
 #[derive(Clone)]
-pub struct Controller {
+pub struct Identifier {
+    // TODO use IdentifierPrefix
     pub identifier: String,
 }
 
-impl Controller {
+impl Identifier {
     pub fn get_id(&self) -> String {
         self.identifier.clone()
     }
@@ -265,7 +267,7 @@ pub fn incept(
     Ok(icp)
 }
 
-pub fn finalize_inception(event: String, signature: Signature) -> Result<Controller> {
+pub fn finalize_inception(event: String, signature: Signature) -> Result<Identifier> {
     let controller_id = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -273,13 +275,13 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Control
             event.as_bytes(),
             &signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
         )?;
-    Ok(Controller {
+    Ok(Identifier {
         identifier: controller_id.to_str(),
     })
 }
 
 pub fn rotate(
-    controller: Controller,
+    controller: Identifier,
     current_keys: Vec<PublicKey>,
     new_next_keys: Vec<PublicKey>,
     // location schema json of witnesses
@@ -327,7 +329,7 @@ pub fn rotate(
         )?)
 }
 
-pub fn anchor(controller: Controller, data: String, algo: DigestType) -> Result<String> {
+pub fn anchor(controller: Identifier, data: String, algo: DigestType) -> Result<String> {
     let id = controller
         .get_id()
         .parse::<IdentifierPrefix>()
@@ -339,7 +341,7 @@ pub fn anchor(controller: Controller, data: String, algo: DigestType) -> Result<
         .anchor(id, slice::from_ref(&digest))?)
 }
 
-pub fn anchor_digest(controller: Controller, sais: Vec<String>) -> Result<String> {
+pub fn anchor_digest(controller: Identifier, sais: Vec<String>) -> Result<String> {
     let sais = sais
         .iter()
         .map(|sai| {
@@ -358,7 +360,7 @@ pub fn anchor_digest(controller: Controller, sais: Vec<String>) -> Result<String
         .anchor(id, &sais)?)
 }
 
-pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<String> {
+pub fn add_watcher(controller: Identifier, watcher_oobi: String) -> Result<String> {
     let lc: LocationScheme =
         serde_json::from_str(&watcher_oobi).map_err(|_| Error::OobiParseError(watcher_oobi))?;
     if let IdentifierPrefix::Basic(_bp) = &lc.eid {
@@ -378,7 +380,7 @@ pub fn add_watcher(controller: Controller, watcher_oobi: String) -> Result<Strin
     }
 }
 
-pub fn finalize_event(identifier: Controller, event: String, signature: Signature) -> Result<bool> {
+pub fn finalize_event(identifier: Identifier, event: String, signature: Signature) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -401,7 +403,7 @@ pub struct GroupInception {
 }
 
 pub fn incept_group(
-    identifier: &Controller,
+    identifier: &Identifier,
     participants: Vec<String>,
     signature_threshold: u64,
     initial_witnesses: Vec<String>,
@@ -435,11 +437,11 @@ pub fn incept_group(
 }
 
 pub fn finalize_group_incept(
-    identifier: &Controller,
+    identifier: &Identifier,
     group_event: &str,
     signature: Signature,
     to_forward: Vec<(String, Signature)>,
-) -> Result<Controller> {
+) -> Result<Identifier> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -463,12 +465,12 @@ pub fn finalize_group_incept(
         exchanges,
     )?;
 
-    Ok(Controller {
+    Ok(Identifier {
         identifier: group_identifier.to_str(),
     })
 }
 
-pub fn query_own_mailbox(identifier: &Controller, witness: Vec<String>) -> Result<Vec<String>> {
+pub fn query_own_mailbox(identifier: &Identifier, witness: Vec<String>) -> Result<Vec<String>> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -490,7 +492,7 @@ pub fn query_own_mailbox(identifier: &Controller, witness: Vec<String>) -> Resul
     Ok(query)
 }
 
-pub fn query_group_mailbox(identifier: &Controller, witness: Vec<String>) -> Result<Vec<String>> {
+pub fn query_group_mailbox(identifier: &Identifier, witness: Vec<String>) -> Result<Vec<String>> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -524,7 +526,7 @@ pub struct ActionRequired {
 }
 
 pub fn finalize_mailbox_query(
-    identifier: &Controller,
+    identifier: &Identifier,
     query_event: String,
     signature: Signature,
 ) -> Result<Vec<ActionRequired>> {
@@ -578,7 +580,7 @@ pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
     Ok(true)
 }
 
-fn query_by_id(controller: Controller, query_id: String) -> Result<bool> {
+fn query_by_id(controller: Identifier, query_id: String) -> Result<bool> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -592,7 +594,7 @@ fn query_by_id(controller: Controller, query_id: String) -> Result<bool> {
     Ok(true)
 }
 
-pub fn query(controller: Controller, oobis_json: String) -> Result<bool> {
+pub fn query(controller: Identifier, oobis_json: String) -> Result<bool> {
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     enum Oobis {
@@ -635,7 +637,7 @@ pub fn process_stream(stream: String) -> Result<bool> {
     Ok(true)
 }
 
-pub fn get_kel(cont: Controller) -> Result<String> {
+pub fn get_kel(cont: Identifier) -> Result<String> {
     let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?

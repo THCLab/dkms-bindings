@@ -9,7 +9,7 @@ use tempfile::Builder;
 use crate::api::{
     add_watcher, anchor, anchor_digest, finalize_event, finalize_group_incept,
     finalize_mailbox_query, get_kel_by_str, incept_group, init_kel, query_group_mailbox,
-    query_own_mailbox, resolve_oobi, rotate, Action, Config, Controller, DigestType,
+    query_own_mailbox, resolve_oobi, rotate, Action, Config, Identifier, DigestType,
 };
 
 #[test]
@@ -97,7 +97,7 @@ pub fn test_add_watcher() -> Result<()> {
         .into();
 
     init_kel(root_path, None)?;
-    let controller = Controller {
+    let controller = Identifier {
         identifier: "EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".into(),
     };
 
@@ -193,15 +193,16 @@ pub fn test_multisig() -> Result<()> {
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-    let controller = finalize_inception(icp_event, signature)?;
+    let identifier = finalize_inception(icp_event, signature)?;
 
     // Quering mailbox to get receipts
-    let query = query_own_mailbox(&controller, vec![witness_id.clone()])?;
+    // TODO always qry mailbox
+    let query = query_own_mailbox(&identifier, vec![witness_id.clone()])?;
 
     for qry in query {
         let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
         let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-        finalize_mailbox_query(&controller, qry, signature)?;
+        finalize_mailbox_query(&identifier, qry, signature)?;
     }
 
     // Incept second group participant
@@ -233,7 +234,7 @@ pub fn test_multisig() -> Result<()> {
 
     // initiate group by first particiapnt. To accept event bouth participants signature must be provided.
     let icp = incept_group(
-        &controller,
+        &identifier,
         vec![participant.identifier.clone()],
         2,
         vec![witness_id.clone()],
@@ -250,7 +251,7 @@ pub fn test_multisig() -> Result<()> {
     let exn_signature = Signature::new(SignatureType::Ed25519Sha512, exn_signature);
 
     let group_controller = finalize_group_incept(
-        &controller,
+        &identifier,
         &icp.icp_event,
         signature.clone(),
         vec![(icp.exchanges[0].clone(), exn_signature)],
@@ -298,7 +299,7 @@ pub fn test_multisig() -> Result<()> {
 
     // Quering group mailbox to get receipts of group icp
     // TODO identifier doesn't remember his groups
-    let query = query_group_mailbox(&controller, vec![witness_id.clone()])?;
+    let query = query_group_mailbox(&identifier, vec![witness_id.clone()])?;
     assert_eq!(query.len(), 1);
 
     let qry = query[0].clone();
