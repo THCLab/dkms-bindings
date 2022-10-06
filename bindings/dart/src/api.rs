@@ -10,16 +10,14 @@ use flutter_rust_bridge::{frb, support::lazy_static};
 use anyhow::{anyhow, Result};
 pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix};
 use keri::{
-    actor::event_generator,
+    actor::{event_generator, prelude::Message},
     derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
     event_parsing::{message::query_message, Attachment, EventType},
     oobi::{EndRole, LocationScheme, Role},
     prefix::Prefix,
 };
 
-use crate::utils::{
-    join_keys_and_signatures, key_prefix_from_b64, parse_attachment, signature_prefix_from_hex,
-};
+use crate::utils::{join_keys_and_signatures, parse_attachment};
 pub use controller::utils::OptionalConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -79,6 +77,7 @@ pub struct _SelfAddressingPrefix {
     pub data: Vec<u8>,
 }
 
+#[derive(Clone)]
 pub struct Signature(SelfSigningPrefix);
 impl Signature {
     pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
@@ -91,7 +90,7 @@ impl Signature {
 }
 #[frb(mirror(SelfSigningPrefix))]
 pub struct _SelfSigningPrefix {
-    pub(crate) algorithm: SignatureType,
+    pub algorithm: SignatureType,
     pub signature: Vec<u8>,
 }
 
@@ -182,6 +181,19 @@ pub enum Error {
 
     #[error(transparent)]
     KelError(#[from] ControllerError),
+}
+
+/// Helper function for tests. Enable to switch to use other database. Used to
+/// simulate using multiple devices.
+pub(crate) fn change_controller(db_path: String) -> Result<bool> {
+    let config = OptionalConfig {
+        db_path: Some(PathBuf::from(db_path)),
+        initial_oobis: None,
+    };
+    let controller = controller::Controller::new(Some(config))?;
+
+    *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Arc::new(controller));
+    Ok(true)
 }
 
 pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<bool> {
@@ -403,7 +415,11 @@ pub fn finalize_group_incept(
     Ok(Identifier(group_identifier))
 }
 
-pub fn query_mailbox(who_ask: Identifier, about_who: Identifier, witness: Vec<String>) -> Result<Vec<String>> {
+pub fn query_mailbox(
+    who_ask: Identifier,
+    about_who: Identifier,
+    witness: Vec<String>,
+) -> Result<Vec<String>> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -450,10 +466,7 @@ pub fn finalize_mailbox_query(
 
     match query {
         EventType::Qry(ref qry) => {
-            println!("\nhere! 1");
-            let ar =
-                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature.0)]);
-            println!("\nhere! 2: ar: {:?}", ar);
+            let ar = identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature.0)]);
 
             let out = ar?
                 .iter()
@@ -541,8 +554,12 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .storage
-        .get_kel(&identifier.0)?
-        .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?;
+        .get_kel_messages_with_receipts(&identifier.0)?
+        .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?
+        .into_iter()
+        .map(|event| Message::Notice(event).to_cesr().unwrap())
+        .flatten()
+        .collect();
     Ok(String::from_utf8(signed_event).unwrap())
 }
 
