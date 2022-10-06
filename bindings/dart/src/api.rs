@@ -8,12 +8,13 @@ use controller::{error::ControllerError, identifier_controller::IdentifierContro
 use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
+pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix};
 use keri::{
     actor::event_generator,
     derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
     event_parsing::{message::query_message, Attachment, EventType},
     oobi::{EndRole, LocationScheme, Role},
-    prefix::{BasicPrefix, IdentifierPrefix, Prefix, SelfAddressingPrefix},
+    prefix::Prefix,
 };
 
 use crate::utils::{
@@ -23,39 +24,14 @@ pub use controller::utils::OptionalConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub enum KeyType {
+pub type KeyType = Basic;
+#[frb(mirror(KeyType))]
+pub enum _KeyType {
     ECDSAsecp256k1,
     Ed25519,
     Ed448,
     X25519,
     X448,
-}
-
-impl Into<Basic> for KeyType {
-    fn into(self) -> Basic {
-        match self {
-            KeyType::ECDSAsecp256k1 => Basic::ECDSAsecp256k1NT,
-            KeyType::Ed25519 => Basic::Ed25519NT,
-            KeyType::Ed448 => Basic::Ed448NT,
-            KeyType::X25519 => Basic::X25519,
-            KeyType::X448 => Basic::X448,
-        }
-    }
-}
-
-impl From<Basic> for KeyType {
-    fn from(kd: Basic) -> Self {
-        match kd {
-            Basic::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
-            Basic::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
-            Basic::Ed25519NT => KeyType::Ed25519,
-            Basic::Ed25519 => KeyType::Ed25519,
-            Basic::Ed448NT => KeyType::Ed448,
-            Basic::Ed448 => KeyType::Ed448,
-            Basic::X25519 => KeyType::X25519,
-            Basic::X448 => KeyType::X448,
-        }
-    }
 }
 
 pub type DigestType = SelfAddressing;
@@ -70,60 +46,73 @@ pub enum _DigestType {
     SHA2_512,
 }
 
-#[derive(Clone)]
-pub enum SignatureType {
+pub type SignatureType = SelfSigning;
+#[frb(mirror(SignatureType))]
+pub enum _SignatureType {
     Ed25519Sha512,
     ECDSAsecp256k1Sha256,
     Ed448,
 }
 
-impl From<SignatureType> for SelfSigning {
-    fn from(sig: SignatureType) -> Self {
-        match sig {
-            SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
-            SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
-            SignatureType::Ed448 => SelfSigning::Ed448,
-        }
-    }
-}
-
-impl From<SelfSigning> for SignatureType {
-    fn from(sd: SelfSigning) -> Self {
-        match sd {
-            SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
-            SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
-            SelfSigning::Ed448 => SignatureType::Ed448,
-        }
-    }
-}
-
-pub struct PublicKey {
-    pub algorithm: KeyType,
-    /// base 64 string of public key
-    pub key: String,
-}
+pub struct PublicKey(BasicPrefix);
 impl PublicKey {
-    pub fn new(algorithm: KeyType, key: String) -> PublicKey {
-        Self {
-            algorithm,
-            key: key.to_string(),
-        }
+    pub fn new(kt: KeyType, key_b64: String) -> PublicKey {
+        PublicKey(kt.derive(keri::keys::PublicKey::new(base64::decode(key_b64).unwrap())))
     }
+}
+
+#[frb(mirror(BasicPrefix))]
+pub struct _BasicPrefix {
+    pub algorithm: KeyType,
+    pub key: Vec<u8>,
+}
+
+pub struct Digest(SelfAddressingPrefix);
+impl Digest {
+    pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
+        Digest(dt.derive(&digest_data))
+    }
+}
+#[frb(mirror(SelfAddressingPrefix))]
+pub struct _SelfAddressingPrefix {
+    pub algorithm: DigestType,
+    pub data: Vec<u8>,
+}
+
+pub struct Signature(SelfSigningPrefix);
+impl Signature {
+    pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
+        Signature(st.derive(hex::decode(signature).unwrap()))
+    }
+
+    pub fn new_from_b64(st: SignatureType, signature: String) -> Signature {
+        Signature(st.derive(base64::decode(signature).unwrap()))
+    }
+}
+#[frb(mirror(SelfSigningPrefix))]
+pub struct _SelfSigningPrefix {
+    pub(crate) algorithm: SignatureType,
+    pub signature: Vec<u8>,
 }
 
 #[derive(Clone)]
-pub struct Signature {
-    pub(crate) algorithm: SignatureType,
-    /// hex string of signature
-    pub(crate) key: String,
-}
-impl Signature {
-    pub fn new(algorithm: SignatureType, key: String) -> Signature {
-        Self {
-            algorithm,
-            key: key,
-        }
+pub struct Identifier(IdentifierPrefix);
+impl Identifier {
+    pub fn from_str(id_str: String) -> Result<Identifier> {
+        let id: IdentifierPrefix = id_str.parse()?;
+        Ok(Identifier(id))
     }
+
+    pub fn to_str(&self) -> String {
+        self.0.to_str()
+    }
+}
+
+#[frb(mirror(IdentifierPrefix))]
+pub enum _IdentifierPrefix {
+    Basic(BasicPrefix),
+    SelfAddressing(SelfAddressingPrefix),
+    SelfSigning(SelfSigningPrefix),
 }
 
 pub struct Config {
@@ -195,19 +184,6 @@ pub enum Error {
     KelError(#[from] ControllerError),
 }
 
-// TODO create id from string in dart
-#[derive(Clone)]
-pub struct Identifier {
-    // TODO use IdentifierPrefix
-    pub identifier: String,
-}
-
-impl Identifier {
-    pub fn get_id(&self) -> String {
-        self.identifier.clone()
-    }
-}
-
 pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<bool> {
     let config = if let Some(config) = optional_configs {
         config
@@ -249,21 +225,12 @@ pub fn incept(
         .collect::<Result<Vec<_>, _>>()
         // improper json structure or improper prefix
         .map_err(|e| anyhow!(e.to_string()))?;
+    let public_keys = public_keys.into_iter().map(|pk| pk.0).collect();
+    let next_pub_keys = next_pub_keys.into_iter().map(|pk| pk.0).collect();
     let icp = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .incept(
-            public_keys
-                .into_iter()
-                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-                .collect(),
-            next_pub_keys
-                .into_iter()
-                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()).unwrap())
-                .collect(),
-            witnesses,
-            witness_threshold,
-        )?;
+        .incept(public_keys, next_pub_keys, witnesses, witness_threshold)?;
     Ok(icp)
 }
 
@@ -271,17 +238,12 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
     let controller_id = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .finalize_inception(
-            event.as_bytes(),
-            &signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
-        )?;
-    Ok(Identifier {
-        identifier: controller_id.to_str(),
-    })
+        .finalize_inception(event.as_bytes(), &signature.0)?;
+    Ok(Identifier(controller_id))
 }
 
 pub fn rotate(
-    controller: Identifier,
+    identifier: Identifier,
     current_keys: Vec<PublicKey>,
     new_next_keys: Vec<PublicKey>,
     // location schema json of witnesses
@@ -291,10 +253,8 @@ pub fn rotate(
     witness_to_remove: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
-    let id = controller
-        .identifier
-        .parse()
-        .map_err(|_e| Error::PrefixParseError(controller.identifier))?;
+    let current_keys = current_keys.into_iter().map(|pk| pk.0).collect();
+    let new_next_keys = new_next_keys.into_iter().map(|pk| pk.0).collect();
     // Parse location schema from string
     let witnesses_to_add = witness_to_add
         .iter()
@@ -314,34 +274,24 @@ pub fn rotate(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .rotate(
-            id,
-            current_keys
-                .into_iter()
-                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()))
-                .collect::<Result<Vec<_>, _>>()?,
-            new_next_keys
-                .into_iter()
-                .map(|pk| key_prefix_from_b64(&pk.key, pk.algorithm.into()))
-                .collect::<Result<Vec<_>, _>>()?,
+            identifier.0,
+            current_keys,
+            new_next_keys,
             witnesses_to_add,
             witnesses_to_remove,
             witness_threshold,
         )?)
 }
 
-pub fn anchor(controller: Identifier, data: String, algo: DigestType) -> Result<String> {
-    let id = controller
-        .get_id()
-        .parse::<IdentifierPrefix>()
-        .map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
+pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
     let digest = algo.derive(data.as_bytes());
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .anchor(id, slice::from_ref(&digest))?)
+        .anchor(identifier.0, slice::from_ref(&digest))?)
 }
 
-pub fn anchor_digest(controller: Identifier, sais: Vec<String>) -> Result<String> {
+pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String> {
     let sais = sais
         .iter()
         .map(|sai| {
@@ -350,17 +300,13 @@ pub fn anchor_digest(controller: Identifier, sais: Vec<String>) -> Result<String
         })
         .collect::<Result<Vec<_>, Error>>()?;
 
-    let id = controller
-        .get_id()
-        .parse::<IdentifierPrefix>()
-        .map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .anchor(id, &sais)?)
+        .anchor(identifier.0, &sais)?)
 }
 
-pub fn add_watcher(controller: Identifier, watcher_oobi: String) -> Result<String> {
+pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<String> {
     let lc: LocationScheme =
         serde_json::from_str(&watcher_oobi).map_err(|_| Error::OobiParseError(watcher_oobi))?;
     if let IdentifierPrefix::Basic(_bp) = &lc.eid {
@@ -369,11 +315,8 @@ pub fn add_watcher(controller: Identifier, watcher_oobi: String) -> Result<Strin
             .ok_or(Error::ControllerInitializationError)?
             .resolve_loc_schema(&lc)?;
 
-        let id = &controller
-            .identifier
-            .parse()
-            .map_err(|_e| Error::PrefixParseError(controller.get_id()))?;
-        let add_watcher = event_generator::generate_end_role(id, &lc.eid, Role::Watcher, true)?;
+        let add_watcher =
+            event_generator::generate_end_role(&identifier.0, &lc.eid, Role::Watcher, true)?;
         Ok(String::from_utf8(add_watcher.serialize()?)?)
     } else {
         Err(ControllerError::WrongWitnessPrefixError.into())
@@ -385,12 +328,8 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let identifier = identifier.identifier.parse()?;
-    let identifier_controller = IdentifierController::new(identifier, controller);
-    identifier_controller.finalize_event(
-        event.as_bytes(),
-        signature_prefix_from_hex(&signature.key, signature.algorithm.into())?,
-    )?;
+    let identifier_controller = IdentifierController::new(identifier.0, controller);
+    identifier_controller.finalize_event(event.as_bytes(), signature.0)?;
     Ok(true)
 }
 
@@ -403,8 +342,8 @@ pub struct GroupInception {
 }
 
 pub fn incept_group(
-    identifier: &Identifier,
-    participants: Vec<String>,
+    identifier: Identifier,
+    participants: Vec<Identifier>,
     signature_threshold: u64,
     initial_witnesses: Vec<String>,
     witness_threshold: u64,
@@ -413,18 +352,13 @@ pub fn incept_group(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let identifier = identifier.identifier.parse()?;
-    let participants = participants
-        .iter()
-        .map(|id| id.parse())
-        .collect::<Result<_, _>>()?;
     let initial_witnesses = initial_witnesses
         .iter()
         .map(|id| id.parse())
         .collect::<Result<_, _>>()?;
-    let identifier_controller = IdentifierController::new(identifier, controller);
+    let identifier_controller = IdentifierController::new(identifier.0, controller);
     let (icp_to_sign, exns_to_sign) = identifier_controller.incept_group(
-        participants,
+        participants.into_iter().map(|id| id.0).collect(),
         signature_threshold,
         Some(initial_witnesses),
         Some(witness_threshold),
@@ -436,55 +370,52 @@ pub fn incept_group(
     })
 }
 
+pub struct DataAndSignature {
+    pub data: String,
+    pub signature: Signature,
+}
+
 pub fn finalize_group_incept(
-    identifier: &Identifier,
-    group_event: &str,
+    identifier: Identifier,
+    group_event: String,
     signature: Signature,
-    to_forward: Vec<(String, Signature)>,
+    to_forward: Vec<DataAndSignature>,
 ) -> Result<Identifier> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let signature = signature_prefix_from_hex(&signature.key, signature.algorithm.into())?;
-    let exchanges = to_forward
-        .iter()
-        .map(|(exn, signature)| -> Result<_> {
-            Ok((
-                exn.as_bytes(),
-                signature_prefix_from_hex(&signature.key, signature.algorithm.clone().into())?,
-            ))
-        })
-        .collect::<Result<_>>()?;
-    let identifier = identifier.identifier.parse()?;
 
-    let mut identifier_controller = IdentifierController::new(identifier, controller);
+    let mut identifier_controller = IdentifierController::new(identifier.0, controller);
     let group_identifier = identifier_controller.finalize_group_incept(
         group_event.as_bytes(),
-        signature,
-        exchanges,
+        signature.0,
+        to_forward
+            .iter()
+            .map(
+                |DataAndSignature {
+                     data: exn,
+                     signature,
+                 }| { (exn.as_bytes(), signature.0.clone()) },
+            )
+            .collect::<Vec<_>>(),
     )?;
-
-    Ok(Identifier {
-        identifier: group_identifier.to_str(),
-    })
+    Ok(Identifier(group_identifier))
 }
 
-pub fn query_own_mailbox(identifier: &Identifier, witness: Vec<String>) -> Result<Vec<String>> {
+pub fn query_mailbox(who_ask: Identifier, about_who: Identifier, witness: Vec<String>) -> Result<Vec<String>> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
 
-    let identifier = identifier.identifier.parse()?;
-
-    let identifier_controller = IdentifierController::new(identifier, controller);
+    let identifier_controller = IdentifierController::new(who_ask.0, controller);
     let witnesses: Vec<_> = witness
         .iter()
         .map(|wit| wit.parse::<BasicPrefix>().unwrap())
         .collect();
     let query = identifier_controller
-        .query_own_mailbox(&witnesses)?
+        .query_mailbox(&about_who.0, &witnesses)?
         .iter()
         .map(|qry| String::from_utf8(qry.serialize().unwrap()).unwrap())
         .collect::<Vec<_>>();
@@ -492,33 +423,13 @@ pub fn query_own_mailbox(identifier: &Identifier, witness: Vec<String>) -> Resul
     Ok(query)
 }
 
-pub fn query_group_mailbox(identifier: &Identifier, witness: Vec<String>) -> Result<Vec<String>> {
-    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-        .as_ref()
-        .ok_or(Error::ControllerInitializationError)?
-        .clone();
-
-    let identifier = identifier.identifier.parse()?;
-
-    let identifier_controller = IdentifierController::new(identifier, controller);
-    let witnesses: Vec<_> = witness
-        .iter()
-        .map(|wit| wit.parse::<BasicPrefix>().unwrap())
-        .collect();
-    let query = identifier_controller
-        .query_group_mailbox(&witnesses)?
-        .iter()
-        .map(|qry| String::from_utf8(qry.serialize().unwrap()).unwrap())
-        .collect::<Vec<_>>();
-
-    Ok(query)
-}
-
+#[derive(Debug)]
 pub enum Action {
     MultisigRequest,
     DelegationRequest,
 }
 
+#[derive(Debug)]
 pub struct ActionRequired {
     pub action: Action,
     pub data: String,
@@ -526,7 +437,7 @@ pub struct ActionRequired {
 }
 
 pub fn finalize_mailbox_query(
-    identifier: &Identifier,
+    identifier: Identifier,
     query_event: String,
     signature: Signature,
 ) -> Result<Vec<ActionRequired>> {
@@ -534,17 +445,17 @@ pub fn finalize_mailbox_query(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let signature = signature_prefix_from_hex(&signature.key, signature.algorithm.into())?;
-    let identifier = identifier.identifier.parse()?;
     let query = query_message(query_event.as_bytes()).unwrap().1;
-    let mut identifier_controller = IdentifierController::new(identifier, controller);
+    let mut identifier_controller = IdentifierController::new(identifier.0, controller);
 
     match query {
         EventType::Qry(ref qry) => {
+            println!("\nhere! 1");
             let ar =
-                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature)])?;
+                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature.0)]);
+            println!("\nhere! 2: ar: {:?}", ar);
 
-            let out = ar
+            let out = ar?
                 .iter()
                 .map(|ar| -> Result<_> {
                     match ar {
@@ -580,21 +491,15 @@ pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
     Ok(true)
 }
 
-fn query_by_id(controller: Identifier, query_id: String) -> Result<bool> {
+fn query_by_id(identifier: Identifier, query_id: String) -> Result<bool> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .query(
-            &controller
-                .identifier
-                .parse()
-                .map_err(|_e| Error::PrefixParseError(controller.identifier))?,
-            &query_id,
-        )?;
+        .query(&identifier.0, &query_id)?;
     Ok(true)
 }
 
-pub fn query(controller: Identifier, oobis_json: String) -> Result<bool> {
+pub fn query(identifier: Identifier, oobis_json: String) -> Result<bool> {
     #[derive(Serialize, Deserialize)]
     #[serde(untagged)]
     enum Oobis {
@@ -618,15 +523,9 @@ pub fn query(controller: Identifier, oobis_json: String) -> Result<bool> {
         (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
             .as_ref()
             .ok_or(Error::ControllerInitializationError)?
-            .send_oobi_to_watcher(
-                &controller
-                    .identifier
-                    .parse()
-                    .map_err(|_| Error::PrefixParseError((&controller.identifier).into()))?,
-                &serde_json::to_string(&oobi)?,
-            )?;
+            .send_oobi_to_watcher(&identifier.0, &serde_json::to_string(&oobi)?)?;
     }
-    query_by_id(controller, issuer_id.ok_or(Error::MissingIssuerOobi)?)
+    query_by_id(identifier, issuer_id.ok_or(Error::MissingIssuerOobi)?)
 }
 
 pub fn process_stream(stream: String) -> Result<bool> {
@@ -637,31 +536,12 @@ pub fn process_stream(stream: String) -> Result<bool> {
     Ok(true)
 }
 
-pub fn get_kel(cont: Identifier) -> Result<String> {
+pub fn get_kel(identifier: Identifier) -> Result<String> {
     let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .storage
-        .get_kel(
-            &cont
-                .identifier
-                .parse()
-                .map_err(|_e| Error::PrefixParseError(cont.identifier))?,
-        )?
-        .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?;
-    Ok(String::from_utf8(signed_event).unwrap())
-}
-
-pub fn get_kel_by_str(cont_id: String) -> Result<String> {
-    let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-        .as_ref()
-        .ok_or(Error::ControllerInitializationError)?
-        .storage
-        .get_kel(
-            &cont_id
-                .parse()
-                .map_err(|_e| Error::PrefixParseError(cont_id))?,
-        )?
+        .get_kel(&identifier.0)?
         .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?;
     Ok(String::from_utf8(signed_event).unwrap())
 }
@@ -694,8 +574,8 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
             .flatten()
             .flatten()
             .map(|(bp, sp)| PublicKeySignaturePair {
-                key: PublicKey::new(bp.derivation.into(), base64::encode(bp.public_key.key())),
-                signature: Signature::new(sp.derivation.into(), hex::encode(sp.signature.clone())),
+                key: PublicKey(bp),
+                signature: Signature(sp),
             })
             .collect::<Vec<_>>())
     } else {

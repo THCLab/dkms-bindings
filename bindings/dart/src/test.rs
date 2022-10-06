@@ -6,11 +6,11 @@ use keri::{
 };
 use tempfile::Builder;
 
-use crate::api::{
+use crate::{api::{
     add_watcher, anchor, anchor_digest, finalize_event, finalize_group_incept,
-    finalize_mailbox_query, get_kel_by_str, incept_group, init_kel, query_group_mailbox,
-    query_own_mailbox, resolve_oobi, rotate, Action, Config, Identifier, DigestType,
-};
+    finalize_mailbox_query, incept_group, init_kel,
+    query_mailbox, resolve_oobi, rotate, Action, Config, Identifier, DigestType, DataAndSignature, get_kel,
+}, utils::key_prefix_from_b64};
 
 #[test]
 pub fn test_api() -> Result<()> {
@@ -21,18 +21,20 @@ pub fn test_api() -> Result<()> {
 
     // Create temporary db file.
     let root = Builder::new().prefix("test-db").tempdir().unwrap();
-    let public_key = "6UMthURGxkWVEKxJ/m3OpgV3Be/STsM//4tONKaiTrA=";
-    let next_public_key = "xeIGdSW6mJsPqFysR6diH0/4lXXgyy36Hb9BzcLOp+s=";
+    let public_key = "6UMthURGxkWVEKxJ/m3OpgV3Be/STsM//4tONKaiTrA=".to_string();
+    let next_public_key = "xeIGdSW6mJsPqFysR6diH0/4lXXgyy36Hb9BzcLOp+s=".to_string();
 
     init_kel(root.path().to_str().unwrap().into(), None)?;
 
-    let pk = PublicKey::new(KeyType::Ed25519, public_key.into());
-    let npk = PublicKey::new(KeyType::Ed25519, next_public_key.into());
+    let pk = PublicKey::new(KeyType::Ed25519NT, public_key);
+    let npk = PublicKey::new(KeyType::Ed25519NT, next_public_key.into());
+    // println!("pk: {:?}", key_prefix_from_b64(&pk.key, pk.algorithm).unwrap().to_str());
     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
+    println!("icp: {}", icp_event);
 
     // sign icp event
     let signature = "F426738DFEC3EED52D36CB2B825ADFB3D06D98B3AF986EAE2F70B8E536C60C1C7DC41E49D30199D107AB57BD43D458A14064AB3A963A51450DBDE253CD94BB0C".to_string();
-    let signature = Signature::new(SignatureType::Ed25519Sha512, signature);
+    let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, signature);
 
     let controller = finalize_inception(icp_event, signature)?;
     let kel = get_kel(controller)?;
@@ -53,7 +55,8 @@ pub fn test_process() -> Result<()> {
     let test_kel = r#"{"v":"KERI10JSON0001e7_","t":"icp","d":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","i":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","s":"0","kt":"2","k":["DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","DVcuJOOJF1IE8svqEtrSuyQjGTd2HhfAkt9y2QkUtFJI","DT1iAhBWCkvChxNWsby2J0pJyxBIxbAtbLA0Ljx-Grh8"],"nt":"2","n":["E_IkdcjsIFrFba-LS1sJDjpec_4vM3XtIPa6D51GcUIw","EU28GjHFKeXzncPxgwlHQZ0iO7f09Y89vy-3VkZ23bBI","E2PRzip7UZ5UTA_1ucb5eoAzxeRS3sIThrSbZhdRaZY8"],"bt":"0","b":[],"c":[],"a":[]}-AADAAzclB26m4VWp5R8ANlTU2qhqE6GA9siAK_vhtqtNNR6qhVed-xEoXRadnL5Jc0kxPZi8XUqSk5KSaOnke_SxXDAABX--x4JGI0Dp0Ran-t1LMg3NEgizu1Jb85LTImofYqD6jz9w5TTPNAmj7rfIFvd4mfJ_ioH0Z0mzLWuIvTIFCBAACQTiHacY3flY9y_Wup66bNzcyQvJUT-WGkv4CPgqkMwq5mOEFf2ps74bur1AE9OSGgrEBlcOQ9HWuTcr80FMKCg{"v":"KERI10JSON00021c_","t":"rot","d":"EcR5L1yzQeSOFBdFwmWouiEMzCFC6GhJ28Q2RWta4GxQ","i":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","s":"1","p":"EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg","kt":"2","k":["DKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","D1kcBE7h0ImWW6_Sp7MQxGYSshZZz6XM7OiUE5DXm0dU","D4JDgo3WNSUpt-NG14Ni31_GCmrU0r38yo7kgDuyGkQM"],"nt":"2","n":["E2PRzip7UZ5UTA_1ucb5eoAzxeRS3sIThrSbZhdRaZY8","Ea450np2ffBYk-mkVaxPk9h17OykLKqEkGrBFKomwe1A","EcNDEzyAJJsUOCa2YIBE3N-8KtpsZBShxxXhddAGVFko"],"bt":"0","br":[],"ba":[],"a":[]}-AADAAZte0g5dCVxAD4qxbBf-Y8uLqMu-4NlrqoVi1FR2JxmZuHAXU-8BUhEJ7z8nxPycvTBJW7kXR30Wyk19GVm-fBwAB8NydT0xIWiYLPuavDpzlZZrYVF_nFgBgf-joxH0FSmyTuDEDhwz9H6b0EY47PhQeJ6cy6PtH8AXK_HVZ2yojDwACeHxfXD8MNjnqjkl0JmpFHNwlif7V0_DjUx3VHkGjDcMfW2bCt16jRW0Sefh45sb4ZXHfMNZ1vmwhPv1L5lNGDA"#;
 
     process_stream(test_kel.to_string())?;
-    let kel = get_kel_by_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".into())?;
+    let identifier = Identifier::from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string())?;
+    let kel = get_kel(identifier)?;
     println!("kel: {}", kel);
 
     Ok(())
@@ -97,27 +100,25 @@ pub fn test_add_watcher() -> Result<()> {
         .into();
 
     init_kel(root_path, None)?;
-    let controller = Identifier {
-        identifier: "EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".into(),
-    };
+    let identifier = Identifier::from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string())?;
 
-    let add_watcher_message = add_watcher(controller.clone(), "[{}]".into());
+    let add_watcher_message = add_watcher(identifier.clone(), "[{}]".into());
     assert!(add_watcher_message.is_err());
 
-    let add_watcher_message = add_watcher(controller.clone(), r#"[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}]"#.into());
+    let add_watcher_message = add_watcher(identifier.clone(), r#"[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}]"#.into());
     assert!(add_watcher_message.is_err());
 
     let add_watcher_message = add_watcher(
-        controller.clone(),
+        identifier.clone(),
         r#"{"eid":"EA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into(),
     );
     assert!(add_watcher_message.is_err());
 
     // Nobody listen
-    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:8888/"}"#.into());
+    let add_watcher_message = add_watcher(identifier.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw4tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:8888/"}"#.into());
     assert!(add_watcher_message.is_err());
 
-    let add_watcher_message = add_watcher(controller.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
+    let add_watcher_message = add_watcher(identifier.clone(), r#"{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}"#.into());
     assert!(add_watcher_message.is_ok());
 
     Ok(())
@@ -192,17 +193,17 @@ pub fn test_multisig() -> Result<()> {
     let icp_event = incept(vec![pk], vec![npk], vec![wit_location.clone()], 1)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
     let identifier = finalize_inception(icp_event, signature)?;
 
-    // Quering mailbox to get receipts
+    // Quering own mailbox to get receipts
     // TODO always qry mailbox
-    let query = query_own_mailbox(&identifier, vec![witness_id.clone()])?;
+    let query = query_mailbox(identifier.clone(), identifier.clone(), vec![witness_id.clone()])?;
 
     for qry in query {
         let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
-        let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-        finalize_mailbox_query(&identifier, qry, signature)?;
+        let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
+        finalize_mailbox_query(identifier.clone(), qry, signature)?;
     }
 
     // Incept second group participant
@@ -219,23 +220,29 @@ pub fn test_multisig() -> Result<()> {
         1,
     )?;
     let hex_signature = hex::encode(participants_key_manager.sign(icp_event.as_bytes())?);
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
 
     let participant = finalize_inception(icp_event, signature)?;
 
-    // Quering mailbox to get receipts
-    let query = query_own_mailbox(&participant, vec![witness_id.clone()])?;
+
+    // Quering own mailbox to get receipts
+    let query = query_mailbox(participant.clone(), participant.clone(), vec![witness_id.clone()])?;
 
     for qry in query {
         let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
-        let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-        finalize_mailbox_query(&participant, qry, signature)?;
+        let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
+        finalize_mailbox_query(participant.clone(), qry, signature)?;
     }
+
+    let patricipant_kel = get_kel(participant.clone())?;
+    println!("\nparticipant's kel: {}", patricipant_kel);
+    let initiator_kel = get_kel(identifier.clone())?;
+    println!("\ninitiator's kel: {}", initiator_kel);
 
     // initiate group by first particiapnt. To accept event bouth participants signature must be provided.
     let icp = incept_group(
-        &identifier,
-        vec![participant.identifier.clone()],
+        identifier.clone(),
+        vec![participant.clone()],
         2,
         vec![witness_id.clone()],
         1,
@@ -244,32 +251,33 @@ pub fn test_multisig() -> Result<()> {
 
     // sign group inception by first participant
     let hex_signature = hex::encode(key_manager.sign(icp.icp_event.as_bytes())?);
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+    let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
 
     // sign exchanges to forward it to other participants
     let exn_signature = hex::encode(key_manager.sign(icp.exchanges[0].as_bytes())?);
-    let exn_signature = Signature::new(SignatureType::Ed25519Sha512, exn_signature);
+    let exn_signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, exn_signature);
 
-    let group_controller = finalize_group_incept(
-        &identifier,
-        &icp.icp_event,
-        signature.clone(),
-        vec![(icp.exchanges[0].clone(), exn_signature)],
+    let group_identifier = finalize_group_incept(
+        identifier.clone(),
+        icp.icp_event,
+        signature,
+        vec![DataAndSignature {data: icp.exchanges[0].clone(), signature: exn_signature}],
     )?;
 
     // event wasn't fully signed, it shouldn't be accepted into kel.
-    let kel = get_kel(group_controller.clone());
+    let kel = get_kel(group_identifier.clone());
     assert!(kel.is_err());
 
-    // Second participants query about mailbox, to get forwarded group event.
+    // Second participants query about own mailbox, to get forwarded group event.
     // Quering mailbox to get receipts
-    let query = query_own_mailbox(&participant, vec![witness_id.clone()])?;
+    let query = query_mailbox(participant.clone(), participant.clone(), vec![witness_id.clone()])?;
     assert_eq!(query.len(), 1);
 
     let qry = query[0].clone();
     let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-    let action_required = finalize_mailbox_query(&participant, qry, signature)?;
+    let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
+    // here second time the same multisig icp is processed
+    let action_required = finalize_mailbox_query(participant.clone(), qry, signature)?;
     assert_eq!((&action_required).len(), 1);
 
     let action = &action_required[0];
@@ -277,17 +285,17 @@ pub fn test_multisig() -> Result<()> {
         Action::MultisigRequest => {
             // sign icp event by participant
             let hex_signature = hex::encode(participants_key_manager.sign(action.data.as_bytes())?);
-            let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+            let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
 
             let exn_signature =
                 hex::encode(participants_key_manager.sign(action.additiona_data.as_bytes())?);
-            let exn_signature = Signature::new(SignatureType::Ed25519Sha512, exn_signature);
+            let exn_signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, exn_signature);
 
             let group_controller = finalize_group_incept(
-                &participant,
-                &action.data.clone(),
+                participant.clone(),
+                action.data.clone(),
                 signature,
-                vec![(action.additiona_data.clone(), exn_signature)],
+                vec![DataAndSignature { data: action.additiona_data.clone(), signature: exn_signature}],
             )?;
 
             // Group inception should not be accepted yet. Lack of receipt.
@@ -299,134 +307,135 @@ pub fn test_multisig() -> Result<()> {
 
     // Quering group mailbox to get receipts of group icp
     // TODO identifier doesn't remember his groups
-    let query = query_group_mailbox(&identifier, vec![witness_id.clone()])?;
+    let query = query_mailbox(identifier.clone(), group_identifier.clone(), vec![witness_id.clone()])?;
     assert_eq!(query.len(), 1);
 
     let qry = query[0].clone();
     let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-    let action_required = finalize_mailbox_query(&participant, qry, signature)?;
-    assert_eq!((&action_required).len(), 0);
+    let signature = Signature::new_from_hex(SignatureType::Ed25519Sha512, hex_signature);
+    let action_required = finalize_mailbox_query(identifier, qry, signature);
+    println!("ar: {:?}", action_required);
+    assert_eq!((&action_required?).len(), 0);
 
     // Group inception should be accepted now.
-    let kel = get_kel(group_controller);
+    let kel = get_kel(group_identifier);
     assert!(kel.is_ok());
 
     Ok(())
 }
 
-#[test]
-pub fn test_demo() -> Result<()> {
-    use crate::api::{
-        finalize_inception, get_kel, incept, init_kel, KeyType, PublicKey, Signature, SignatureType,
-    };
-    use tempfile::Builder;
+// #[test]
+// pub fn test_demo() -> Result<()> {
+//     use crate::api::{
+//         finalize_inception, get_kel, incept, init_kel, KeyType, PublicKey, Signature, SignatureType,
+//     };
+//     use tempfile::Builder;
 
-    // Create temporary db file.
-    let root_path = Builder::new()
-        .prefix("test-db")
-        .tempdir()
-        .unwrap()
-        .path()
-        .to_str()
-        .unwrap()
-        .into();
+//     // Create temporary db file.
+//     let root_path = Builder::new()
+//         .prefix("test-db")
+//         .tempdir()
+//         .unwrap()
+//         .path()
+//         .to_str()
+//         .unwrap()
+//         .into();
 
-    let mut key_manager = CryptoBox::new().unwrap();
-    let current_b64key = base64::encode(key_manager.public_key().key());
-    let next_b64key = base64::encode(key_manager.next_public_key().key());
+//     let mut key_manager = CryptoBox::new().unwrap();
+//     let current_b64key = base64::encode(key_manager.public_key().key());
+//     let next_b64key = base64::encode(key_manager.next_public_key().key());
 
-    init_kel(root_path, None)?;
+//     init_kel(root_path, None)?;
 
-    let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
-    let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
-    let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
-    let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
+//     let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
+//     let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
+//     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
+//     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
-    // sign icp event
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+//     // sign icp event
+//     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
 
-    let controller = finalize_inception(icp_event, signature)?;
+//     let controller = finalize_inception(icp_event, signature)?;
 
-    key_manager.rotate()?;
-    let current_b64key = base64::encode(key_manager.public_key().key());
-    let next_b64key = base64::encode(key_manager.next_public_key().key());
-    let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
-    let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
-    let rotation_event = rotate(controller.clone(), vec![pk], vec![npk], vec![], vec![], 0)?;
+//     key_manager.rotate()?;
+//     let current_b64key = base64::encode(key_manager.public_key().key());
+//     let next_b64key = base64::encode(key_manager.next_public_key().key());
+//     let pk = PublicKey::new(KeyType::Ed25519, current_b64key);
+//     let npk = PublicKey::new(KeyType::Ed25519, next_b64key);
+//     let rotation_event = rotate(controller.clone(), vec![pk], vec![npk], vec![], vec![], 0)?;
 
-    let hex_signature = hex::encode(key_manager.sign(rotation_event.as_bytes())?);
+//     let hex_signature = hex::encode(key_manager.sign(rotation_event.as_bytes())?);
 
-    // sign rot event
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+//     // sign rot event
+//     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
 
-    println!("rotation: \n{}", rotation_event);
+//     println!("rotation: \n{}", rotation_event);
 
-    assert!(finalize_event(controller.clone(), "random data".into(), signature.clone()).is_err());
+//     assert!(finalize_event(controller.clone(), "random data".into(), signature.clone()).is_err());
 
-    finalize_event(controller.clone(), rotation_event, signature)?;
+//     finalize_event(controller.clone(), rotation_event, signature)?;
 
-    let sai = SelfAddressing::Blake3_256
-        .derive("some data".as_bytes())
-        .to_str();
-    let ixn_event = anchor_digest(controller.clone(), vec![sai])?;
-    println!("\nixn: {}", ixn_event);
+//     let sai = SelfAddressing::Blake3_256
+//         .derive("some data".as_bytes())
+//         .to_str();
+//     let ixn_event = anchor_digest(controller.clone(), vec![sai])?;
+//     println!("\nixn: {}", ixn_event);
 
-    let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
-    // sign rot event
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-    finalize_event(controller.clone(), ixn_event, signature)?;
+//     let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
+//     // sign rot event
+//     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+//     finalize_event(controller.clone(), ixn_event, signature)?;
 
-    let ixn_event = anchor(
-        controller.clone(),
-        "some data".into(),
-        DigestType::Blake3_256,
-    )?;
-    println!("\nixn: {}", ixn_event);
+//     let ixn_event = anchor(
+//         controller.clone(),
+//         "some data".into(),
+//         DigestType::Blake3_256,
+//     )?;
+//     println!("\nixn: {}", ixn_event);
 
-    let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
-    // sign rot event
-    let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
-    finalize_event(controller.clone(), ixn_event, signature)?;
+//     let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
+//     // sign rot event
+//     let signature = Signature::new(SignatureType::Ed25519Sha512, hex_signature);
+//     finalize_event(controller.clone(), ixn_event, signature)?;
 
-    let kel = get_kel(controller.clone())?;
-    println!("\nCurrent controller kel: \n{}", kel);
+//     let kel = get_kel(controller.clone())?;
+//     println!("\nCurrent controller kel: \n{}", kel);
 
-    // let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
+//     // let watcher_oobi = r#"{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
 
-    // let add_watcher_message = add_watcher(controller.clone(), watcher_oobi)?;
-    // println!(
-    //     "\nController generate end role message to add watcher: \n{}",
-    //     add_watcher_message
-    // );
-    // let hex_sig = hex::encode(key_manager.sign(add_watcher_message.as_bytes()).unwrap());
-    // let signature = Signature::new(SignatureType::Ed25519Sha512, hex_sig);
+//     // let add_watcher_message = add_watcher(controller.clone(), watcher_oobi)?;
+//     // println!(
+//     //     "\nController generate end role message to add watcher: \n{}",
+//     //     add_watcher_message
+//     // );
+//     // let hex_sig = hex::encode(key_manager.sign(add_watcher_message.as_bytes()).unwrap());
+//     // let signature = Signature::new(SignatureType::Ed25519Sha512, hex_sig);
 
-    // finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
+//     // finalize_event(controller.clone(), add_watcher_message, signature).unwrap();
 
-    // let issuer_oobi: String = r#"[{"cid":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
+//     // let issuer_oobi: String = r#"[{"cid":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"},{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://localhost:3232/"}]"#.into();
 
-    // println!("\nQuering about issuer kel...");
-    // println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
-    // query(controller.clone(), "random".into()).unwrap();
-    // query(controller, issuer_oobi).unwrap();
+//     // println!("\nQuering about issuer kel...");
+//     // println!("\nSending issuer oobi to watcher: \n{}", issuer_oobi);
+//     // query(controller.clone(), "random".into()).unwrap();
+//     // query(controller, issuer_oobi).unwrap();
 
-    // // Get acdc signed by issuer
-    // let acdc = r#"{"issuer":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
-    // let attachment_stream = r#"-FABEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI00AAAAAAAAAAAAAAAAAAAAAAAEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0-AABAAG3NikDFb-2C20mTxhKet-jt5os5D-8NDGTNgeHKgUPaRzBnIZC9csSgcDP4CmtEJVkNzAsrX4SFUq4SFzxCyAA"#;
+//     // // Get acdc signed by issuer
+//     // let acdc = r#"{"issuer":"EWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0","data":"EjLNcJrUEs8PX0LLFFowS-_e9dpX3SEf3C4U1CdhJFUE"}"#;
+//     // let attachment_stream = r#"-FABEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI00AAAAAAAAAAAAAAAAAAAAAAAEWln-QVizE_qYcfv_S4mc_Dbzc3zyCApYomojukM8YI0-AABAAG3NikDFb-2C20mTxhKet-jt5os5D-8NDGTNgeHKgUPaRzBnIZC9csSgcDP4CmtEJVkNzAsrX4SFUq4SFzxCyAA"#;
 
-    // let key_sig_pair = get_current_public_key(attachment_stream.into()).unwrap();
+//     // let key_sig_pair = get_current_public_key(attachment_stream.into()).unwrap();
 
-    // // Checking if key verify signature
-    // let public_key_signature_pair = key_sig_pair.iter().collect::<Vec<_>>();
-    // assert_eq!(public_key_signature_pair.len(), 1);
-    // let key_signature_pair = public_key_signature_pair[0];
-    // let pk_raw = base64::decode(&key_signature_pair.key.key).unwrap();
-    // let key_bp = Basic::Ed25519.derive(keri::keys::PublicKey::new(pk_raw));
-    // let sig =
-    //     SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
+//     // // Checking if key verify signature
+//     // let public_key_signature_pair = key_sig_pair.iter().collect::<Vec<_>>();
+//     // assert_eq!(public_key_signature_pair.len(), 1);
+//     // let key_signature_pair = public_key_signature_pair[0];
+//     // let pk_raw = base64::decode(&key_signature_pair.key.key).unwrap();
+//     // let key_bp = Basic::Ed25519.derive(keri::keys::PublicKey::new(pk_raw));
+//     // let sig =
+//     //     SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
 
-    // assert!(key_bp.verify(acdc.as_bytes(), &sig).unwrap());
+//     // assert!(key_bp.verify(acdc.as_bytes(), &sig).unwrap());
 
-    Ok(())
-}
+//     Ok(())
+// }
