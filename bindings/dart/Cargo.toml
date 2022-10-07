@@ -11,8 +11,8 @@ crate-type = ["dylib", "staticlib"]
 
 [dependencies]
 flutter_rust_bridge = "1"
-keri = { git = "https://github.com/THCLab/keriox.git", branch = "interface_multisig_delegation" }
-controller = { git = "https://github.com/THCLab/keriox.git", branch = "interface_multisig_delegation" }
+keri = { git = "https://github.com/THCLab/keriox.git", branch = "fix_partially_signed_escrow" }
+controller = { git = "https://github.com/THCLab/keriox.git", branch = "fix_partially_signed_escrow" }
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"
