@@ -8,10 +8,9 @@ use controller::{error::ControllerError, identifier_controller::IdentifierContro
 use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
-pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix};
+pub use keri::{prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix}, derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning}};
 use keri::{
     actor::{event_generator, prelude::Message},
-    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
     event_parsing::{message::query_message, Attachment, EventType},
     oobi::{EndRole, LocationScheme, Role},
     prefix::Prefix,
@@ -25,12 +24,16 @@ use thiserror::Error;
 pub type KeyType = Basic;
 #[frb(mirror(KeyType))]
 pub enum _KeyType {
+    ECDSAsecp256k1NT,
     ECDSAsecp256k1,
+    Ed25519NT,
     Ed25519,
+    Ed448NT,
     Ed448,
     X25519,
     X448,
 }
+
 
 pub type DigestType = SelfAddressing;
 #[frb(mirror(DigestType))]
@@ -42,6 +45,8 @@ pub enum _DigestType {
     SHA3_512,
     Blake2B512,
     SHA2_512,
+    Blake2B256(Vec<u8>),
+    Blake2S256(Vec<u8>),
 }
 
 pub type SignatureType = SelfSigning;
@@ -52,7 +57,7 @@ pub enum _SignatureType {
     Ed448,
 }
 
-pub struct PublicKey(BasicPrefix);
+pub struct PublicKey(pub BasicPrefix);
 impl PublicKey {
     pub fn new(kt: KeyType, key_b64: String) -> PublicKey {
         PublicKey(kt.derive(keri::keys::PublicKey::new(base64::decode(key_b64).unwrap())))
@@ -61,11 +66,11 @@ impl PublicKey {
 
 #[frb(mirror(BasicPrefix))]
 pub struct _BasicPrefix {
-    pub algorithm: KeyType,
-    pub key: Vec<u8>,
+    pub derivation: KeyType,
+    pub public_key: Vec<u8>,
 }
 
-pub struct Digest(SelfAddressingPrefix);
+pub struct Digest(pub SelfAddressingPrefix);
 impl Digest {
     pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
         Digest(dt.derive(&digest_data))
@@ -73,12 +78,12 @@ impl Digest {
 }
 #[frb(mirror(SelfAddressingPrefix))]
 pub struct _SelfAddressingPrefix {
-    pub algorithm: DigestType,
-    pub data: Vec<u8>,
+    pub derivation: DigestType,
+    pub digest: Vec<u8>,
 }
 
 #[derive(Clone)]
-pub struct Signature(SelfSigningPrefix);
+pub struct Signature(pub SelfSigningPrefix);
 impl Signature {
     pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
         Signature(st.derive(hex::decode(signature).unwrap()))
@@ -88,14 +93,20 @@ impl Signature {
         Signature(st.derive(base64::decode(signature).unwrap()))
     }
 }
+
+impl Default for Signature {
+    fn default() -> Self {
+        Self(SignatureType::Ed25519Sha512.derive(vec![]))
+    }
+}
 #[frb(mirror(SelfSigningPrefix))]
 pub struct _SelfSigningPrefix {
-    pub algorithm: SignatureType,
+    pub derivation: SignatureType,
     pub signature: Vec<u8>,
 }
 
-#[derive(Clone)]
-pub struct Identifier(IdentifierPrefix);
+#[derive(Clone, Default)]
+pub struct Identifier(pub IdentifierPrefix);
 impl Identifier {
     pub fn from_str(id_str: String) -> Result<Identifier> {
         let id: IdentifierPrefix = id_str.parse()?;
@@ -382,6 +393,7 @@ pub fn incept_group(
     })
 }
 
+#[derive(Default)]
 pub struct DataAndSignature {
     pub data: String,
     pub signature: Signature,
