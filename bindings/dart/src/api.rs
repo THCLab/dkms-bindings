@@ -9,6 +9,7 @@ use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
 pub use keri::{prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix}, derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning}};
+pub use keri::keys::PublicKey as KeriPublicKey;
 use keri::{
     actor::{event_generator, prelude::Message},
     event_parsing::{message::query_message, Attachment, EventType},
@@ -22,8 +23,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub type KeyType = Basic;
-#[frb(mirror(KeyType))]
-pub enum _KeyType {
+#[frb(mirror(Basic))]
+pub enum _Basic {
     ECDSAsecp256k1NT,
     ECDSAsecp256k1,
     Ed25519NT,
@@ -57,19 +58,32 @@ pub enum _SignatureType {
     Ed448,
 }
 
+#[derive(Clone)]
 pub struct PublicKey(pub BasicPrefix);
 impl PublicKey {
-    pub fn new(kt: KeyType, key_b64: String) -> PublicKey {
+    pub fn new(kt: Basic, key_b64: String) -> PublicKey {
         PublicKey(kt.derive(keri::keys::PublicKey::new(base64::decode(key_b64).unwrap())))
     }
 }
 
-#[frb(mirror(BasicPrefix))]
-pub struct _BasicPrefix {
-    pub derivation: KeyType,
-    pub public_key: Vec<u8>,
+impl Default for PublicKey {
+    fn default() -> Self {
+        PublicKey::new(Basic::Ed25519, "".into())
+    }
 }
 
+#[frb(mirror(KeriPublicKey))]
+pub struct _KeriPublicKey {
+    pub public_key: Vec<u8>
+}
+
+#[frb(mirror(BasicPrefix))]
+pub struct _BasicPrefix {
+    pub derivation: Basic,
+    pub public_key: KeriPublicKey,
+}
+
+#[derive(Clone)]
 pub struct Digest(pub SelfAddressingPrefix);
 impl Digest {
     pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
@@ -105,24 +119,50 @@ pub struct _SelfSigningPrefix {
     pub signature: Vec<u8>,
 }
 
-#[derive(Clone, Default)]
-pub struct Identifier(pub IdentifierPrefix);
 impl Identifier {
     pub fn from_str(id_str: String) -> Result<Identifier> {
-        let id: IdentifierPrefix = id_str.parse()?;
-        Ok(Identifier(id))
+        let id= match id_str.parse::<IdentifierPrefix>()? {
+            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey(bp)),
+            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest(sa)),
+            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature(ss)),
+        };
+        Ok(id)
     }
 
     pub fn to_str(&self) -> String {
-        self.0.to_str()
+        match self {
+            Identifier::Basic(bp) => bp.0.to_str(),
+            Identifier::SelfAddressing(sa) => sa.0.to_str(),
+            Identifier::SelfSigning(ss) => ss.0.to_str(),
+        }
     }
 }
 
-#[frb(mirror(IdentifierPrefix))]
-pub enum _IdentifierPrefix {
-    Basic(BasicPrefix),
-    SelfAddressing(SelfAddressingPrefix),
-    SelfSigning(SelfSigningPrefix),
+#[derive(Clone)]
+pub enum Identifier {
+    Basic(PublicKey),
+    SelfAddressing(Digest),
+    SelfSigning(Signature),
+}
+
+impl From<IdentifierPrefix> for Identifier {
+    fn from(id: IdentifierPrefix) -> Self {
+        match id {
+            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey(bp)),
+            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest(sa)),
+            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature(ss)),
+        }
+    }
+}
+
+impl Into<IdentifierPrefix> for Identifier {
+    fn into(self) -> IdentifierPrefix {
+        match self {
+            Identifier::Basic(bp) => IdentifierPrefix::Basic(bp.0),
+            Identifier::SelfAddressing(sa) => IdentifierPrefix::SelfAddressing(sa.0),
+            Identifier::SelfSigning(ss) => IdentifierPrefix::SelfSigning(ss.0),
+        }
+    }
 }
 
 pub struct Config {
@@ -262,7 +302,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .finalize_inception(event.as_bytes(), &signature.0)?;
-    Ok(Identifier(controller_id))
+    Ok(Identifier::from(controller_id))
 }
 
 pub fn rotate(
@@ -297,7 +337,7 @@ pub fn rotate(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .rotate(
-            identifier.0,
+            identifier.into(),
             current_keys,
             new_next_keys,
             witnesses_to_add,
@@ -311,7 +351,7 @@ pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .anchor(identifier.0, slice::from_ref(&digest))?)
+        .anchor(identifier.into(), slice::from_ref(&digest))?)
 }
 
 pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String> {
@@ -326,7 +366,7 @@ pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .anchor(identifier.0, &sais)?)
+        .anchor(identifier.into(), &sais)?)
 }
 
 pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<String> {
@@ -339,7 +379,7 @@ pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<Strin
             .resolve_loc_schema(&lc)?;
 
         let add_watcher =
-            event_generator::generate_end_role(&identifier.0, &lc.eid, Role::Watcher, true)?;
+            event_generator::generate_end_role(&identifier.into(), &lc.eid, Role::Watcher, true)?;
         Ok(String::from_utf8(add_watcher.serialize()?)?)
     } else {
         Err(ControllerError::WrongWitnessPrefixError.into())
@@ -351,7 +391,7 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let identifier_controller = IdentifierController::new(identifier.0, controller);
+    let identifier_controller = IdentifierController::new(identifier.into(), controller);
     identifier_controller.finalize_event(event.as_bytes(), signature.0)?;
     Ok(true)
 }
@@ -379,9 +419,9 @@ pub fn incept_group(
         .iter()
         .map(|id| id.parse())
         .collect::<Result<_, _>>()?;
-    let identifier_controller = IdentifierController::new(identifier.0, controller);
+    let identifier_controller = IdentifierController::new(identifier.into(), controller);
     let (icp_to_sign, exns_to_sign) = identifier_controller.incept_group(
-        participants.into_iter().map(|id| id.0).collect(),
+        participants.into_iter().map(|id| id.into()).collect(),
         signature_threshold,
         Some(initial_witnesses),
         Some(witness_threshold),
@@ -410,7 +450,7 @@ pub fn finalize_group_incept(
         .ok_or(Error::ControllerInitializationError)?
         .clone();
 
-    let mut identifier_controller = IdentifierController::new(identifier.0, controller);
+    let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
     let group_identifier = identifier_controller.finalize_group_incept(
         group_event.as_bytes(),
         signature.0,
@@ -424,7 +464,7 @@ pub fn finalize_group_incept(
             )
             .collect::<Vec<_>>(),
     )?;
-    Ok(Identifier(group_identifier))
+    Ok(Identifier::from(group_identifier))
 }
 
 pub fn query_mailbox(
@@ -437,13 +477,13 @@ pub fn query_mailbox(
         .ok_or(Error::ControllerInitializationError)?
         .clone();
 
-    let identifier_controller = IdentifierController::new(who_ask.0, controller);
+    let identifier_controller = IdentifierController::new(who_ask.into(), controller);
     let witnesses: Vec<_> = witness
         .iter()
         .map(|wit| wit.parse::<BasicPrefix>().unwrap())
         .collect();
     let query = identifier_controller
-        .query_mailbox(&about_who.0, &witnesses)?
+        .query_mailbox(&about_who.into(), &witnesses)?
         .iter()
         .map(|qry| String::from_utf8(qry.serialize().unwrap()).unwrap())
         .collect::<Vec<_>>();
@@ -474,7 +514,7 @@ pub fn finalize_mailbox_query(
         .ok_or(Error::ControllerInitializationError)?
         .clone();
     let query = query_message(query_event.as_bytes()).unwrap().1;
-    let mut identifier_controller = IdentifierController::new(identifier.0, controller);
+    let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
 
     match query {
         EventType::Qry(ref qry) => {
@@ -520,7 +560,7 @@ fn query_by_id(identifier: Identifier, query_id: String) -> Result<bool> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .query(&identifier.0, &query_id)?;
+        .query(&identifier.into(), &query_id)?;
     Ok(true)
 }
 
@@ -534,6 +574,7 @@ pub fn query(identifier: Identifier, oobis_json: String) -> Result<bool> {
     let mut issuer_id: Option<String> = None;
     let oobis = serde_json::from_str::<Vec<Oobis>>(&oobis_json)
         .map_err(|_| Error::OobiParseError(oobis_json.clone()))?;
+        let identifier_prefix: IdentifierPrefix = identifier.clone().into();
     for oobi in oobis {
         match &oobi {
             Oobis::LocScheme(lc) => {
@@ -548,7 +589,7 @@ pub fn query(identifier: Identifier, oobis_json: String) -> Result<bool> {
         (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
             .as_ref()
             .ok_or(Error::ControllerInitializationError)?
-            .send_oobi_to_watcher(&identifier.0, &serde_json::to_string(&oobi)?)?;
+            .send_oobi_to_watcher(&identifier_prefix, &serde_json::to_string(&oobi)?)?;
     }
     query_by_id(identifier, issuer_id.ok_or(Error::MissingIssuerOobi)?)
 }
@@ -566,7 +607,7 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .storage
-        .get_kel_messages_with_receipts(&identifier.0)?
+        .get_kel_messages_with_receipts(&identifier.into())?
         .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?
         .into_iter()
         .map(|event| Message::Notice(event).to_cesr().unwrap())
