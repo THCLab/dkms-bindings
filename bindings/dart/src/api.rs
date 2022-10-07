@@ -37,8 +37,8 @@ pub enum _Basic {
 
 
 pub type DigestType = SelfAddressing;
-#[frb(mirror(DigestType))]
-pub enum _DigestType {
+#[frb(mirror(SelfAddressing))]
+pub enum _SelfAddressing {
     Blake3_256,
     SHA3_256,
     SHA2_256,
@@ -51,18 +51,18 @@ pub enum _DigestType {
 }
 
 pub type SignatureType = SelfSigning;
-#[frb(mirror(SignatureType))]
-pub enum _SignatureType {
+#[frb(mirror(SelfSigning))]
+pub enum _SelfSigning {
     Ed25519Sha512,
     ECDSAsecp256k1Sha256,
     Ed448,
 }
 
 #[derive(Clone)]
-pub struct PublicKey(pub BasicPrefix);
+pub struct PublicKey(pub Box<BasicPrefix>);
 impl PublicKey {
     pub fn new(kt: Basic, key_b64: String) -> PublicKey {
-        PublicKey(kt.derive(keri::keys::PublicKey::new(base64::decode(key_b64).unwrap())))
+        PublicKey(Box::new(kt.derive(keri::keys::PublicKey::new(base64::decode(key_b64).unwrap()))))
     }
 }
 
@@ -83,48 +83,43 @@ pub struct _BasicPrefix {
     pub public_key: KeriPublicKey,
 }
 
-#[derive(Clone)]
-pub struct Digest(pub SelfAddressingPrefix);
+#[derive(Clone, Default)]
+pub struct Digest(pub Box<SelfAddressingPrefix>);
 impl Digest {
-    pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
-        Digest(dt.derive(&digest_data))
+    pub fn new(dt: SelfAddressing, digest_data: Vec<u8>) -> Digest {
+        Digest(Box::new(dt.derive(&digest_data)))
     }
 }
 #[frb(mirror(SelfAddressingPrefix))]
 pub struct _SelfAddressingPrefix {
-    pub derivation: DigestType,
+    pub derivation: SelfAddressing,
     pub digest: Vec<u8>,
 }
 
 #[derive(Clone)]
-pub struct Signature(pub SelfSigningPrefix);
+pub struct Signature(pub Box<SelfSigningPrefix>);
 impl Signature {
-    pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
-        Signature(st.derive(hex::decode(signature).unwrap()))
+    pub fn new_from_hex(st: SelfSigning, signature: String) -> Signature {
+        Signature(Box::new(st.derive(hex::decode(signature).unwrap())))
     }
 
-    pub fn new_from_b64(st: SignatureType, signature: String) -> Signature {
-        Signature(st.derive(base64::decode(signature).unwrap()))
+    pub fn new_from_b64(st: SelfSigning, signature: String) -> Signature {
+        Signature(Box::new(st.derive(base64::decode(signature).unwrap())))
     }
 }
 
-impl Default for Signature {
-    fn default() -> Self {
-        Self(SignatureType::Ed25519Sha512.derive(vec![]))
-    }
-}
 #[frb(mirror(SelfSigningPrefix))]
 pub struct _SelfSigningPrefix {
-    pub derivation: SignatureType,
+    pub derivation: SelfSigning,
     pub signature: Vec<u8>,
 }
 
 impl Identifier {
     pub fn from_str(id_str: String) -> Result<Identifier> {
         let id= match id_str.parse::<IdentifierPrefix>()? {
-            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey(bp)),
-            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest(sa)),
-            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature(ss)),
+            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey(Box::new(bp))),
+            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest(Box::new(sa))),
+            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature(Box::new(ss))),
         };
         Ok(id)
     }
@@ -148,9 +143,9 @@ pub enum Identifier {
 impl From<IdentifierPrefix> for Identifier {
     fn from(id: IdentifierPrefix) -> Self {
         match id {
-            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey(bp)),
-            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest(sa)),
-            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature(ss)),
+            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey(Box::new(bp))),
+            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest(Box::new(sa))),
+            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature(Box::new(ss))),
         }
     }
 }
@@ -158,9 +153,9 @@ impl From<IdentifierPrefix> for Identifier {
 impl Into<IdentifierPrefix> for Identifier {
     fn into(self) -> IdentifierPrefix {
         match self {
-            Identifier::Basic(bp) => IdentifierPrefix::Basic(bp.0),
-            Identifier::SelfAddressing(sa) => IdentifierPrefix::SelfAddressing(sa.0),
-            Identifier::SelfSigning(ss) => IdentifierPrefix::SelfSigning(ss.0),
+            Identifier::Basic(bp) => IdentifierPrefix::Basic(*bp.0),
+            Identifier::SelfAddressing(sa) => IdentifierPrefix::SelfAddressing(*sa.0),
+            Identifier::SelfSigning(ss) => IdentifierPrefix::SelfSigning(*ss.0),
         }
     }
 }
@@ -288,8 +283,8 @@ pub fn incept(
         .collect::<Result<Vec<_>, _>>()
         // improper json structure or improper prefix
         .map_err(|e| anyhow!(e.to_string()))?;
-    let public_keys = public_keys.into_iter().map(|pk| pk.0).collect();
-    let next_pub_keys = next_pub_keys.into_iter().map(|pk| pk.0).collect();
+    let public_keys = public_keys.into_iter().map(|pk| *pk.0).collect();
+    let next_pub_keys = next_pub_keys.into_iter().map(|pk| *pk.0).collect();
     let icp = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -316,8 +311,8 @@ pub fn rotate(
     witness_to_remove: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
-    let current_keys = current_keys.into_iter().map(|pk| pk.0).collect();
-    let new_next_keys = new_next_keys.into_iter().map(|pk| pk.0).collect();
+    let current_keys = current_keys.into_iter().map(|pk| *pk.0).collect();
+    let new_next_keys = new_next_keys.into_iter().map(|pk| *pk.0).collect();
     // Parse location schema from string
     let witnesses_to_add = witness_to_add
         .iter()
@@ -346,7 +341,7 @@ pub fn rotate(
         )?)
 }
 
-pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
+pub fn anchor(identifier: Identifier, data: String, algo: SelfAddressing) -> Result<String> {
     let digest = algo.derive(data.as_bytes());
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
@@ -392,7 +387,7 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
         .ok_or(Error::ControllerInitializationError)?
         .clone();
     let identifier_controller = IdentifierController::new(identifier.into(), controller);
-    identifier_controller.finalize_event(event.as_bytes(), signature.0)?;
+    identifier_controller.finalize_event(event.as_bytes(), *signature.0)?;
     Ok(true)
 }
 
@@ -433,7 +428,6 @@ pub fn incept_group(
     })
 }
 
-#[derive(Default)]
 pub struct DataAndSignature {
     pub data: String,
     pub signature: Signature,
@@ -453,14 +447,14 @@ pub fn finalize_group_incept(
     let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
     let group_identifier = identifier_controller.finalize_group_incept(
         group_event.as_bytes(),
-        signature.0,
+        *signature.0,
         to_forward
             .iter()
             .map(
                 |DataAndSignature {
                      data: exn,
                      signature,
-                 }| { (exn.as_bytes(), signature.0.clone()) },
+                 }| { (exn.as_bytes(), *signature.0.clone()) },
             )
             .collect::<Vec<_>>(),
     )?;
@@ -518,7 +512,7 @@ pub fn finalize_mailbox_query(
 
     match query {
         EventType::Qry(ref qry) => {
-            let ar = identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature.0)]);
+            let ar = identifier_controller.finalize_mailbox_query(vec![(qry.clone(), *signature.0)]);
 
             let out = ar?
                 .iter()
@@ -644,8 +638,8 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
             .flatten()
             .flatten()
             .map(|(bp, sp)| PublicKeySignaturePair {
-                key: PublicKey(bp),
-                signature: Signature(sp),
+                key: PublicKey(Box::new(bp)),
+                signature: Signature(Box::new(sp)),
             })
             .collect::<Vec<_>>())
     } else {
