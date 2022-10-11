@@ -214,6 +214,11 @@ pub enum Identifier {
 
 
 impl Identifier {
+
+    pub fn new(id_str: String) -> Result<Identifier> {
+        Identifier::from_str(id_str)
+    }
+
     pub fn from_str(id_str: String) -> Result<Identifier> {
         let id= match id_str.parse::<IdentifierPrefix>()? {
             IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey { derivation: bp.derivation.into(), key: bp.public_key.key() }),

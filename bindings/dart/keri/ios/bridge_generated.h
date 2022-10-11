@@ -17,7 +17,7 @@ typedef struct wire_Config {
 
 typedef struct wire_PublicKey {
   int32_t *derivation;
-  struct wire_uint_8_list *public_key;
+  struct wire_uint_8_list *key;
 } wire_PublicKey;
 
 typedef struct wire_list_public_key {
@@ -234,6 +234,8 @@ void wire_new_from_b64__static_method__Signature(int64_t port_,
                                                  int32_t st,
                                                  struct wire_uint_8_list *signature);
 
+void wire_new__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
+
 void wire_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
 
 void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
@@ -308,6 +310,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__Digest);
     dummy_var ^= ((int64_t) (void*) wire_new_from_hex__static_method__Signature);
     dummy_var ^= ((int64_t) (void*) wire_new_from_b64__static_method__Signature);
+    dummy_var ^= ((int64_t) (void*) wire_new__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);
