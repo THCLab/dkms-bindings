@@ -230,7 +230,7 @@ impl Identifier {
                 bp.to_str()
             } ,
             Identifier::SelfAddressing(sa) => {
-                let sa: SelfAddressingPrefix = sa.into();
+                let sa: SelfAddressingPrefix = sa.clone().into();
                 sa.to_str()
             },
             Identifier::SelfSigning(ss) => {
@@ -379,7 +379,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
     let controller_id = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .finalize_inception(event.as_bytes(), &(&signature).into())?;
+        .finalize_inception(event.as_bytes(), &signature.into())?;
     println!("\ninception event: {}", event);
     println!("\nController incepted id: {}", controller_id.clone().to_str());
     Ok(Identifier::from(controller_id))

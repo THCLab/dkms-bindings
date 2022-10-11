@@ -1,4 +1,4 @@
-use keri::{prefix::{IdentifierPrefix, BasicPrefix, SelfAddressingPrefix, SelfSigningPrefix}, derivation::{self_signing::SelfSigning, basic::Basic, self_addressing::SelfAddressing}};
+use keri::{prefix::{IdentifierPrefix, BasicPrefix, SelfAddressingPrefix, SelfSigningPrefix}, derivation::{self_signing::SelfSigning, basic::Basic}};
 
 use crate::api::{Identifier, PublicKey, Signature, Digest};
 
@@ -16,7 +16,7 @@ impl Into<IdentifierPrefix> for Identifier {
     fn into(self) -> IdentifierPrefix {
         match self {
             Identifier::Basic(bp) => IdentifierPrefix::Basic((&bp).into()),
-            Identifier::SelfAddressing(sa) => IdentifierPrefix::SelfAddressing((&sa).into()),
+            Identifier::SelfAddressing(sa) => IdentifierPrefix::SelfAddressing(sa.into()),
             Identifier::SelfSigning(ss) => IdentifierPrefix::SelfSigning(ss.into()),
         }
     }
@@ -55,10 +55,12 @@ impl Default for PublicKey {
 }
 
 
-impl From<&Digest> for SelfAddressingPrefix {
-    fn from(bp: &Digest) -> Self {
-        let der: SelfAddressing = (*bp.derivation.clone()).into();
-		der.derive(&bp.digest)
+impl From<Digest> for SelfAddressingPrefix {
+    fn from(bp: Digest) -> Self {
+        Self {
+        derivation: (*bp.derivation).into(),
+            digest: bp.digest,
+        }
     }
 }
 
