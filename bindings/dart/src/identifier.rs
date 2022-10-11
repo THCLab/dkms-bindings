@@ -30,14 +30,14 @@ impl Default for Signature {
 
 impl From<BasicPrefix> for PublicKey {
     fn from(bp: BasicPrefix) -> Self {
-        PublicKey { derivation:bp.derivation.into(), public_key: bp.public_key.key() }
+        PublicKey { derivation:bp.derivation.into(), key: bp.public_key.key() }
     }
 }
 
 impl From<&PublicKey> for BasicPrefix {
     fn from(bp: &PublicKey) -> Self {
         let der: Basic = (*bp.derivation).into();
-		der.derive(keri::keys::PublicKey::new(bp.public_key.clone()))
+		der.derive(keri::keys::PublicKey::new(bp.key.clone()))
     }
 }
 

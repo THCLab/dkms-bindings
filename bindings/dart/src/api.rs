@@ -22,9 +22,9 @@ pub use controller::utils::OptionalConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-// pub type KeyType = Basic;
-#[frb(mirror(Basic))]
-pub enum _Basic {
+pub type KeyType = Basic;
+#[frb(mirror(KeyType))]
+pub enum _KeyType {
     ECDSAsecp256k1NT,
     ECDSAsecp256k1,
     Ed25519NT,
@@ -36,9 +36,9 @@ pub enum _Basic {
 }
 
 
-// pub type DigestType = SelfAddressing;
-#[frb(mirror(SelfAddressing))]
-pub enum _SelfAddressing {
+pub type DigestType = SelfAddressing;
+#[frb(mirror(DigestType))]
+pub enum _DigestType {
     Blake3_256,
     SHA3_256,
     SHA2_256,
@@ -50,9 +50,9 @@ pub enum _SelfAddressing {
     Blake2S256(Vec<u8>),
 }
 
-// pub type SignatureType = SelfSigning;
-#[frb(mirror(SelfSigning))]
-pub enum _SelfSigning {
+pub type SignatureType = SelfSigning;
+#[frb(mirror(SignatureType))]
+pub enum _SignatureType {
     Ed25519Sha512,
     ECDSAsecp256k1Sha256,
     Ed448,
@@ -165,23 +165,23 @@ pub enum _SelfSigning {
 
 #[derive(Clone, Debug)]
 pub struct PublicKey {
-    pub derivation: Box<Basic>,
-    pub public_key: Vec<u8>,
+    pub derivation: Box<KeyType>,
+    pub key: Vec<u8>,
 }
 impl PublicKey {
-    pub fn new(kt: Basic, key_b64: String) -> PublicKey {
-        PublicKey { derivation: Box::new(kt), public_key: base64::decode(key_b64).unwrap()}
+    pub fn new(kt: KeyType, key_b64: String) -> PublicKey {
+        PublicKey { derivation: Box::new(kt), key: base64::decode(key_b64).unwrap()}
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Digest {
-    pub derivation: Box<SelfAddressing>,
+    pub derivation: Box<DigestType>,
     pub digest: Vec<u8>,
 }
 
 impl Digest {
-    pub fn new(dt: SelfAddressing, digest_data: Vec<u8>) -> Digest {
+    pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
         Digest {derivation: Box::new(dt), digest: digest_data}
     }
 }
@@ -189,17 +189,17 @@ impl Digest {
 
 
 #[derive(Clone, Debug)]
-pub struct  Signature {
-    pub derivation: Box<SelfSigning>,
+pub struct Signature {
+    pub derivation: Box<SignatureType>,
     pub signature: Vec<u8>,
 }
 
 impl Signature {
-    pub fn new_from_hex(st: SelfSigning, signature: String) -> Signature {
+    pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
         Signature {derivation: Box::new(st), signature: hex::decode(signature).unwrap()}
     }
 
-    pub fn new_from_b64(st: SelfSigning, signature: String) -> Signature {
+    pub fn new_from_b64(st: SignatureType, signature: String) -> Signature {
         Signature {derivation: Box::new(st), signature: base64::decode(signature).unwrap()}
     }
 }
@@ -216,7 +216,7 @@ pub enum Identifier {
 impl Identifier {
     pub fn from_str(id_str: String) -> Result<Identifier> {
         let id= match id_str.parse::<IdentifierPrefix>()? {
-            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey { derivation: bp.derivation.into(), public_key: bp.public_key.key() }),
+            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey { derivation: bp.derivation.into(), key: bp.public_key.key() }),
             IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest {derivation: sa.derivation.into(), digest: sa.digest}),
             IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature { derivation:ss.derivation.into(), signature: ss.signature}),
         };
@@ -426,7 +426,7 @@ pub fn rotate(
         )?)
 }
 
-pub fn anchor(identifier: Identifier, data: String, algo: SelfAddressing) -> Result<String> {
+pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
     let dig_type: SelfAddressing = algo.into();
     let digest = dig_type.derive(data.as_bytes());
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
