@@ -71,7 +71,7 @@ pub extern "C" fn wire_anchor(
     port_: i64,
     identifier: *mut wire_Identifier,
     data: *mut wire_uint_8_list,
-    algo: *mut wire_SelfAddressing,
+    algo: *mut wire_DigestType,
 ) {
     wire_anchor_impl(port_, identifier, data, algo)
 }
@@ -195,7 +195,7 @@ pub extern "C" fn wire_new__static_method__PublicKey(
 #[no_mangle]
 pub extern "C" fn wire_new__static_method__Digest(
     port_: i64,
-    dt: *mut wire_SelfAddressing,
+    dt: *mut wire_DigestType,
     digest_data: *mut wire_uint_8_list,
 ) {
     wire_new__static_method__Digest_impl(port_, dt, digest_data)
@@ -217,6 +217,11 @@ pub extern "C" fn wire_new_from_b64__static_method__Signature(
     signature: *mut wire_uint_8_list,
 ) {
     wire_new_from_b64__static_method__Signature_impl(port_, st, signature)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_new__static_method__Identifier(port_: i64, id_str: *mut wire_uint_8_list) {
+    wire_new__static_method__Identifier_impl(port_, id_str)
 }
 
 #[no_mangle]
@@ -263,6 +268,11 @@ pub extern "C" fn new_box_autoadd_digest_0() -> *mut wire_Digest {
 }
 
 #[no_mangle]
+pub extern "C" fn new_box_autoadd_digest_type_0() -> *mut wire_DigestType {
+    support::new_leak_box_ptr(wire_DigestType::new_with_null_ptr())
+}
+
+#[no_mangle]
 pub extern "C" fn new_box_autoadd_identifier_0() -> *mut wire_Identifier {
     support::new_leak_box_ptr(wire_Identifier::new_with_null_ptr())
 }
@@ -273,33 +283,28 @@ pub extern "C" fn new_box_autoadd_public_key_0() -> *mut wire_PublicKey {
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_autoadd_self_addressing_0() -> *mut wire_SelfAddressing {
-    support::new_leak_box_ptr(wire_SelfAddressing::new_with_null_ptr())
-}
-
-#[no_mangle]
 pub extern "C" fn new_box_autoadd_signature_0() -> *mut wire_Signature {
     support::new_leak_box_ptr(wire_Signature::new_with_null_ptr())
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_basic_0(value: i32) -> *mut i32 {
-    support::new_leak_box_ptr(value)
+pub extern "C" fn new_box_digest_type_0() -> *mut wire_DigestType {
+    support::new_leak_box_ptr(wire_DigestType::new_with_null_ptr())
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_self_addressing_0() -> *mut wire_SelfAddressing {
-    support::new_leak_box_ptr(wire_SelfAddressing::new_with_null_ptr())
-}
-
-#[no_mangle]
-pub extern "C" fn new_box_self_signing_0(value: i32) -> *mut i32 {
+pub extern "C" fn new_box_key_type_0(value: i32) -> *mut i32 {
     support::new_leak_box_ptr(value)
 }
 
 #[no_mangle]
 pub extern "C" fn new_box_signature_0() -> *mut wire_Signature {
     support::new_leak_box_ptr(wire_Signature::new_with_null_ptr())
+}
+
+#[no_mangle]
+pub extern "C" fn new_box_signature_type_0(value: i32) -> *mut i32 {
+    support::new_leak_box_ptr(value)
 }
 
 #[no_mangle]
@@ -355,7 +360,6 @@ impl Wire2Api<Vec<String>> for *mut wire_StringList {
         vec.into_iter().map(Wire2Api::wire2api).collect()
     }
 }
-
 impl Wire2Api<Config> for *mut wire_Config {
     fn wire2api(self) -> Config {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
@@ -366,6 +370,12 @@ impl Wire2Api<Digest> for *mut wire_Digest {
     fn wire2api(self) -> Digest {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
         Wire2Api::<Digest>::wire2api(*wrap).into()
+    }
+}
+impl Wire2Api<DigestType> for *mut wire_DigestType {
+    fn wire2api(self) -> DigestType {
+        let wrap = unsafe { support::box_from_leak_ptr(self) };
+        Wire2Api::<DigestType>::wire2api(*wrap).into()
     }
 }
 impl Wire2Api<Identifier> for *mut wire_Identifier {
@@ -380,40 +390,34 @@ impl Wire2Api<PublicKey> for *mut wire_PublicKey {
         Wire2Api::<PublicKey>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<SelfAddressing> for *mut wire_SelfAddressing {
-    fn wire2api(self) -> SelfAddressing {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<SelfAddressing>::wire2api(*wrap).into()
-    }
-}
 impl Wire2Api<Signature> for *mut wire_Signature {
     fn wire2api(self) -> Signature {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
         Wire2Api::<Signature>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<Box<Basic>> for *mut i32 {
-    fn wire2api(self) -> Box<Basic> {
+impl Wire2Api<Box<DigestType>> for *mut wire_DigestType {
+    fn wire2api(self) -> Box<DigestType> {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<Basic>::wire2api(*wrap).into()
+        Wire2Api::<DigestType>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<Box<SelfAddressing>> for *mut wire_SelfAddressing {
-    fn wire2api(self) -> Box<SelfAddressing> {
+impl Wire2Api<Box<KeyType>> for *mut i32 {
+    fn wire2api(self) -> Box<KeyType> {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<SelfAddressing>::wire2api(*wrap).into()
-    }
-}
-impl Wire2Api<Box<SelfSigning>> for *mut i32 {
-    fn wire2api(self) -> Box<SelfSigning> {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<SelfSigning>::wire2api(*wrap).into()
+        Wire2Api::<KeyType>::wire2api(*wrap).into()
     }
 }
 impl Wire2Api<Box<Signature>> for *mut wire_Signature {
     fn wire2api(self) -> Box<Signature> {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
         Wire2Api::<Signature>::wire2api(*wrap).into()
+    }
+}
+impl Wire2Api<Box<SignatureType>> for *mut i32 {
+    fn wire2api(self) -> Box<SignatureType> {
+        let wrap = unsafe { support::box_from_leak_ptr(self) };
+        Wire2Api::<SignatureType>::wire2api(*wrap).into()
     }
 }
 impl Wire2Api<Config> for wire_Config {
@@ -436,6 +440,30 @@ impl Wire2Api<Digest> for wire_Digest {
         Digest {
             derivation: self.derivation.wire2api(),
             digest: self.digest.wire2api(),
+        }
+    }
+}
+impl Wire2Api<DigestType> for wire_DigestType {
+    fn wire2api(self) -> DigestType {
+        match self.tag {
+            0 => DigestType::Blake3_256,
+            1 => DigestType::SHA3_256,
+            2 => DigestType::SHA2_256,
+            3 => DigestType::Blake3_512,
+            4 => DigestType::SHA3_512,
+            5 => DigestType::Blake2B512,
+            6 => DigestType::SHA2_512,
+            7 => unsafe {
+                let ans = support::box_from_leak_ptr(self.kind);
+                let ans = support::box_from_leak_ptr(ans.Blake2B256);
+                DigestType::Blake2B256(ans.field0.wire2api())
+            },
+            8 => unsafe {
+                let ans = support::box_from_leak_ptr(self.kind);
+                let ans = support::box_from_leak_ptr(ans.Blake2S256);
+                DigestType::Blake2S256(ans.field0.wire2api())
+            },
+            _ => unreachable!(),
         }
     }
 }
@@ -462,6 +490,7 @@ impl Wire2Api<Identifier> for wire_Identifier {
         }
     }
 }
+
 impl Wire2Api<Vec<DataAndSignature>> for *mut wire_list_data_and_signature {
     fn wire2api(self) -> Vec<DataAndSignature> {
         let vec = unsafe {
@@ -494,35 +523,10 @@ impl Wire2Api<PublicKey> for wire_PublicKey {
     fn wire2api(self) -> PublicKey {
         PublicKey {
             derivation: self.derivation.wire2api(),
-            public_key: self.public_key.wire2api(),
+            key: self.key.wire2api(),
         }
     }
 }
-impl Wire2Api<SelfAddressing> for wire_SelfAddressing {
-    fn wire2api(self) -> SelfAddressing {
-        match self.tag {
-            0 => SelfAddressing::Blake3_256,
-            1 => SelfAddressing::SHA3_256,
-            2 => SelfAddressing::SHA2_256,
-            3 => SelfAddressing::Blake3_512,
-            4 => SelfAddressing::SHA3_512,
-            5 => SelfAddressing::Blake2B512,
-            6 => SelfAddressing::SHA2_512,
-            7 => unsafe {
-                let ans = support::box_from_leak_ptr(self.kind);
-                let ans = support::box_from_leak_ptr(ans.Blake2B256);
-                SelfAddressing::Blake2B256(ans.field0.wire2api())
-            },
-            8 => unsafe {
-                let ans = support::box_from_leak_ptr(self.kind);
-                let ans = support::box_from_leak_ptr(ans.Blake2S256);
-                SelfAddressing::Blake2S256(ans.field0.wire2api())
-            },
-            _ => unreachable!(),
-        }
-    }
-}
-
 impl Wire2Api<Signature> for wire_Signature {
     fn wire2api(self) -> Signature {
         Signature {
@@ -565,7 +569,7 @@ pub struct wire_DataAndSignature {
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_Digest {
-    derivation: *mut wire_SelfAddressing,
+    derivation: *mut wire_DigestType,
     digest: *mut wire_uint_8_list,
 }
 
@@ -594,7 +598,7 @@ pub struct wire_list_public_key {
 #[derive(Clone)]
 pub struct wire_PublicKey {
     derivation: *mut i32,
-    public_key: *mut wire_uint_8_list,
+    key: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
@@ -609,6 +613,66 @@ pub struct wire_Signature {
 pub struct wire_uint_8_list {
     ptr: *mut u8,
     len: i32,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType {
+    tag: i32,
+    kind: *mut DigestTypeKind,
+}
+
+#[repr(C)]
+pub union DigestTypeKind {
+    Blake3_256: *mut wire_DigestType_Blake3_256,
+    SHA3_256: *mut wire_DigestType_SHA3_256,
+    SHA2_256: *mut wire_DigestType_SHA2_256,
+    Blake3_512: *mut wire_DigestType_Blake3_512,
+    SHA3_512: *mut wire_DigestType_SHA3_512,
+    Blake2B512: *mut wire_DigestType_Blake2B512,
+    SHA2_512: *mut wire_DigestType_SHA2_512,
+    Blake2B256: *mut wire_DigestType_Blake2B256,
+    Blake2S256: *mut wire_DigestType_Blake2S256,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_Blake3_256 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_SHA3_256 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_SHA2_256 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_Blake3_512 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_SHA3_512 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_Blake2B512 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_SHA2_512 {}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_Blake2B256 {
+    field0: *mut wire_uint_8_list,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_DigestType_Blake2S256 {
+    field0: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
@@ -641,66 +705,6 @@ pub struct wire_Identifier_SelfAddressing {
 #[derive(Clone)]
 pub struct wire_Identifier_SelfSigning {
     field0: *mut wire_Signature,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing {
-    tag: i32,
-    kind: *mut SelfAddressingKind,
-}
-
-#[repr(C)]
-pub union SelfAddressingKind {
-    Blake3_256: *mut wire_SelfAddressing_Blake3_256,
-    SHA3_256: *mut wire_SelfAddressing_SHA3_256,
-    SHA2_256: *mut wire_SelfAddressing_SHA2_256,
-    Blake3_512: *mut wire_SelfAddressing_Blake3_512,
-    SHA3_512: *mut wire_SelfAddressing_SHA3_512,
-    Blake2B512: *mut wire_SelfAddressing_Blake2B512,
-    SHA2_512: *mut wire_SelfAddressing_SHA2_512,
-    Blake2B256: *mut wire_SelfAddressing_Blake2B256,
-    Blake2S256: *mut wire_SelfAddressing_Blake2S256,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_Blake3_256 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_SHA3_256 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_SHA2_256 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_Blake3_512 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_SHA3_512 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_Blake2B512 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_SHA2_512 {}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_Blake2B256 {
-    field0: *mut wire_uint_8_list,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_SelfAddressing_Blake2S256 {
-    field0: *mut wire_uint_8_list,
 }
 
 // Section: impl NewWithNullPtr
@@ -739,6 +743,33 @@ impl NewWithNullPtr for wire_Digest {
             digest: core::ptr::null_mut(),
         }
     }
+}
+
+impl NewWithNullPtr for wire_DigestType {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            tag: -1,
+            kind: core::ptr::null_mut(),
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn inflate_DigestType_Blake2B256() -> *mut DigestTypeKind {
+    support::new_leak_box_ptr(DigestTypeKind {
+        Blake2B256: support::new_leak_box_ptr(wire_DigestType_Blake2B256 {
+            field0: core::ptr::null_mut(),
+        }),
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn inflate_DigestType_Blake2S256() -> *mut DigestTypeKind {
+    support::new_leak_box_ptr(DigestTypeKind {
+        Blake2S256: support::new_leak_box_ptr(wire_DigestType_Blake2S256 {
+            field0: core::ptr::null_mut(),
+        }),
+    })
 }
 
 impl NewWithNullPtr for wire_Identifier {
@@ -781,36 +812,9 @@ impl NewWithNullPtr for wire_PublicKey {
     fn new_with_null_ptr() -> Self {
         Self {
             derivation: core::ptr::null_mut(),
-            public_key: core::ptr::null_mut(),
+            key: core::ptr::null_mut(),
         }
     }
-}
-
-impl NewWithNullPtr for wire_SelfAddressing {
-    fn new_with_null_ptr() -> Self {
-        Self {
-            tag: -1,
-            kind: core::ptr::null_mut(),
-        }
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn inflate_SelfAddressing_Blake2B256() -> *mut SelfAddressingKind {
-    support::new_leak_box_ptr(SelfAddressingKind {
-        Blake2B256: support::new_leak_box_ptr(wire_SelfAddressing_Blake2B256 {
-            field0: core::ptr::null_mut(),
-        }),
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn inflate_SelfAddressing_Blake2S256() -> *mut SelfAddressingKind {
-    support::new_leak_box_ptr(SelfAddressingKind {
-        Blake2S256: support::new_leak_box_ptr(wire_SelfAddressing_Blake2S256 {
-            field0: core::ptr::null_mut(),
-        }),
-    })
 }
 
 impl NewWithNullPtr for wire_Signature {

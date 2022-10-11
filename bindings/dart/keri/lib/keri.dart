@@ -308,7 +308,7 @@ class Keri {
   }
 
   //CZY JEST POTRZEBNA?
-  Future<void> processStream({required String stream, dynamic hint}) async {
+  static Future<void> processStream({required String stream, dynamic hint}) async {
     await api.processStream(stream: stream);
   }
 
@@ -383,7 +383,7 @@ class Keri {
   static Future<String> anchor(
       {required Identifier controller,
       required String data,
-      required SelfAddressing algo,
+      required DigestType algo,
       dynamic hint}) async {
     try {
       return await api.anchor(identifier: controller, data: data, algo: algo);
@@ -406,5 +406,52 @@ class Keri {
       }
       rethrow;
     }
+  }
+
+  static Future<Identifier> newIdentifier(
+      {required String idStr, dynamic hint}) async{
+    return await api.newStaticMethodIdentifier(idStr: idStr);
+  }
+
+  static Future<List<String>> queryMailbox(
+      {required Identifier whoAsk,
+        required Identifier aboutWho,
+        required List<String> witness,
+        dynamic hint}) async{
+    return await api.queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
+  }
+
+  static Future<List<ActionRequired>> finalizeMailboxQuery(
+      {required Identifier identifier,
+        required String queryEvent,
+        required Signature signature,
+        dynamic hint}) async{
+    return await api.finalizeMailboxQuery(identifier: identifier, queryEvent: queryEvent, signature: signature);
+  }
+
+  static Future<Signature> signatureFromHex(
+      {required SignatureType st,
+        required String signature,
+    dynamic hint}) async{
+    return await api.newFromHexStaticMethodSignature(st: st, signature: signature);
+  }
+
+  static Future<GroupInception> inceptGroup(
+      {required Identifier identifier,
+        required List<Identifier> participants,
+        required int signatureThreshold,
+        required List<String> initialWitnesses,
+        required int witnessThreshold,
+        dynamic hint}) async{
+    return await api.inceptGroup(identifier: identifier, participants: participants, signatureThreshold: signatureThreshold, initialWitnesses: initialWitnesses, witnessThreshold: witnessThreshold);
+  }
+
+  static Future<Identifier> finalizeGroupIncept(
+      {required Identifier identifier,
+        required String groupEvent,
+        required Signature signature,
+        required List<DataAndSignature> toForward,
+        dynamic hint}) async{
+    return await api.finalizeGroupIncept(identifier: identifier, groupEvent: groupEvent, signature: signature, toForward: toForward);
   }
 }

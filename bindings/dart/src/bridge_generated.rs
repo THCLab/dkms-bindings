@@ -141,7 +141,7 @@ fn wire_anchor_impl(
     port_: MessagePort,
     identifier: impl Wire2Api<Identifier> + UnwindSafe,
     data: impl Wire2Api<String> + UnwindSafe,
-    algo: impl Wire2Api<SelfAddressing> + UnwindSafe,
+    algo: impl Wire2Api<DigestType> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -391,7 +391,7 @@ fn wire_get_current_public_key_impl(
 }
 fn wire_new__static_method__PublicKey_impl(
     port_: MessagePort,
-    kt: impl Wire2Api<Basic> + UnwindSafe,
+    kt: impl Wire2Api<KeyType> + UnwindSafe,
     key_b64: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
@@ -409,7 +409,7 @@ fn wire_new__static_method__PublicKey_impl(
 }
 fn wire_new__static_method__Digest_impl(
     port_: MessagePort,
-    dt: impl Wire2Api<SelfAddressing> + UnwindSafe,
+    dt: impl Wire2Api<DigestType> + UnwindSafe,
     digest_data: impl Wire2Api<Vec<u8>> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
@@ -427,7 +427,7 @@ fn wire_new__static_method__Digest_impl(
 }
 fn wire_new_from_hex__static_method__Signature_impl(
     port_: MessagePort,
-    st: impl Wire2Api<SelfSigning> + UnwindSafe,
+    st: impl Wire2Api<SignatureType> + UnwindSafe,
     signature: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
@@ -445,7 +445,7 @@ fn wire_new_from_hex__static_method__Signature_impl(
 }
 fn wire_new_from_b64__static_method__Signature_impl(
     port_: MessagePort,
-    st: impl Wire2Api<SelfSigning> + UnwindSafe,
+    st: impl Wire2Api<SignatureType> + UnwindSafe,
     signature: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
@@ -458,6 +458,22 @@ fn wire_new_from_b64__static_method__Signature_impl(
             let api_st = st.wire2api();
             let api_signature = signature.wire2api();
             move |task_callback| Ok(Signature::new_from_b64(api_st, api_signature))
+        },
+    )
+}
+fn wire_new__static_method__Identifier_impl(
+    port_: MessagePort,
+    id_str: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "new__static_method__Identifier",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_id_str = id_str.wire2api();
+            move |task_callback| Identifier::new(api_id_str)
         },
     )
 }
@@ -514,46 +530,46 @@ fn wire_new__static_method__DataAndSignature_impl(
 // Section: wrapper structs
 
 #[derive(Clone)]
-struct mirror_Basic(Basic);
+struct mirror_DigestType(DigestType);
 
 #[derive(Clone)]
-struct mirror_SelfAddressing(SelfAddressing);
+struct mirror_KeyType(KeyType);
 
 #[derive(Clone)]
-struct mirror_SelfSigning(SelfSigning);
+struct mirror_SignatureType(SignatureType);
 
 // Section: static checks
 
 const _: fn() = || {
-    match None::<Basic>.unwrap() {
-        Basic::ECDSAsecp256k1NT => {}
-        Basic::ECDSAsecp256k1 => {}
-        Basic::Ed25519NT => {}
-        Basic::Ed25519 => {}
-        Basic::Ed448NT => {}
-        Basic::Ed448 => {}
-        Basic::X25519 => {}
-        Basic::X448 => {}
-    }
-    match None::<SelfAddressing>.unwrap() {
-        SelfAddressing::Blake3_256 => {}
-        SelfAddressing::SHA3_256 => {}
-        SelfAddressing::SHA2_256 => {}
-        SelfAddressing::Blake3_512 => {}
-        SelfAddressing::SHA3_512 => {}
-        SelfAddressing::Blake2B512 => {}
-        SelfAddressing::SHA2_512 => {}
-        SelfAddressing::Blake2B256(field0) => {
+    match None::<DigestType>.unwrap() {
+        DigestType::Blake3_256 => {}
+        DigestType::SHA3_256 => {}
+        DigestType::SHA2_256 => {}
+        DigestType::Blake3_512 => {}
+        DigestType::SHA3_512 => {}
+        DigestType::Blake2B512 => {}
+        DigestType::SHA2_512 => {}
+        DigestType::Blake2B256(field0) => {
             let _: Vec<u8> = field0;
         }
-        SelfAddressing::Blake2S256(field0) => {
+        DigestType::Blake2S256(field0) => {
             let _: Vec<u8> = field0;
         }
     }
-    match None::<SelfSigning>.unwrap() {
-        SelfSigning::Ed25519Sha512 => {}
-        SelfSigning::ECDSAsecp256k1Sha256 => {}
-        SelfSigning::Ed448 => {}
+    match None::<KeyType>.unwrap() {
+        KeyType::ECDSAsecp256k1NT => {}
+        KeyType::ECDSAsecp256k1 => {}
+        KeyType::Ed25519NT => {}
+        KeyType::Ed25519 => {}
+        KeyType::Ed448NT => {}
+        KeyType::Ed448 => {}
+        KeyType::X25519 => {}
+        KeyType::X448 => {}
+    }
+    match None::<SignatureType>.unwrap() {
+        SignatureType::Ed25519Sha512 => {}
+        SignatureType::ECDSAsecp256k1Sha256 => {}
+        SignatureType::Ed448 => {}
     }
 };
 // Section: allocate functions
@@ -573,39 +589,38 @@ where
     }
 }
 
-impl Wire2Api<Basic> for i32 {
-    fn wire2api(self) -> Basic {
-        match self {
-            0 => Basic::ECDSAsecp256k1NT,
-            1 => Basic::ECDSAsecp256k1,
-            2 => Basic::Ed25519NT,
-            3 => Basic::Ed25519,
-            4 => Basic::Ed448NT,
-            5 => Basic::Ed448,
-            6 => Basic::X25519,
-            7 => Basic::X448,
-            _ => unreachable!("Invalid variant for Basic: {}", self),
-        }
-    }
-}
-
 impl Wire2Api<i32> for i32 {
     fn wire2api(self) -> i32 {
         self
     }
 }
 
-impl Wire2Api<SelfSigning> for i32 {
-    fn wire2api(self) -> SelfSigning {
+impl Wire2Api<KeyType> for i32 {
+    fn wire2api(self) -> KeyType {
         match self {
-            0 => SelfSigning::Ed25519Sha512,
-            1 => SelfSigning::ECDSAsecp256k1Sha256,
-            2 => SelfSigning::Ed448,
-            _ => unreachable!("Invalid variant for SelfSigning: {}", self),
+            0 => KeyType::ECDSAsecp256k1NT,
+            1 => KeyType::ECDSAsecp256k1,
+            2 => KeyType::Ed25519NT,
+            3 => KeyType::Ed25519,
+            4 => KeyType::Ed448NT,
+            5 => KeyType::Ed448,
+            6 => KeyType::X25519,
+            7 => KeyType::X448,
+            _ => unreachable!("Invalid variant for KeyType: {}", self),
         }
     }
 }
 
+impl Wire2Api<SignatureType> for i32 {
+    fn wire2api(self) -> SignatureType {
+        match self {
+            0 => SignatureType::Ed25519Sha512,
+            1 => SignatureType::ECDSAsecp256k1Sha256,
+            2 => SignatureType::Ed448,
+            _ => unreachable!("Invalid variant for SignatureType: {}", self),
+        }
+    }
+}
 impl Wire2Api<u64> for u64 {
     fn wire2api(self) -> u64 {
         self
@@ -640,22 +655,6 @@ impl support::IntoDart for ActionRequired {
 }
 impl support::IntoDartExceptPrimitive for ActionRequired {}
 
-impl support::IntoDart for mirror_Basic {
-    fn into_dart(self) -> support::DartAbi {
-        match self.0 {
-            Basic::ECDSAsecp256k1NT => 0,
-            Basic::ECDSAsecp256k1 => 1,
-            Basic::Ed25519NT => 2,
-            Basic::Ed25519 => 3,
-            Basic::Ed448NT => 4,
-            Basic::Ed448 => 5,
-            Basic::X25519 => 6,
-            Basic::X448 => 7,
-        }
-        .into_dart()
-    }
-}
-
 impl support::IntoDart for Config {
     fn into_dart(self) -> support::DartAbi {
         vec![self.initial_oobis.into_dart()].into_dart()
@@ -673,7 +672,7 @@ impl support::IntoDartExceptPrimitive for DataAndSignature {}
 impl support::IntoDart for Digest {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_SelfAddressing((*self.derivation)).into_dart(),
+            mirror_DigestType((*self.derivation)).into_dart(),
             self.digest.into_dart(),
         ]
         .into_dart()
@@ -681,6 +680,23 @@ impl support::IntoDart for Digest {
 }
 impl support::IntoDartExceptPrimitive for Digest {}
 
+impl support::IntoDart for mirror_DigestType {
+    fn into_dart(self) -> support::DartAbi {
+        match self.0 {
+            DigestType::Blake3_256 => vec![0.into_dart()],
+            DigestType::SHA3_256 => vec![1.into_dart()],
+            DigestType::SHA2_256 => vec![2.into_dart()],
+            DigestType::Blake3_512 => vec![3.into_dart()],
+            DigestType::SHA3_512 => vec![4.into_dart()],
+            DigestType::Blake2B512 => vec![5.into_dart()],
+            DigestType::SHA2_512 => vec![6.into_dart()],
+            DigestType::Blake2B256(field0) => vec![7.into_dart(), field0.into_dart()],
+            DigestType::Blake2S256(field0) => vec![8.into_dart(), field0.into_dart()],
+        }
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for mirror_DigestType {}
 impl support::IntoDart for GroupInception {
     fn into_dart(self) -> support::DartAbi {
         vec![self.icp_event.into_dart(), self.exchanges.into_dart()].into_dart()
@@ -699,12 +715,27 @@ impl support::IntoDart for Identifier {
     }
 }
 impl support::IntoDartExceptPrimitive for Identifier {}
+impl support::IntoDart for mirror_KeyType {
+    fn into_dart(self) -> support::DartAbi {
+        match self.0 {
+            KeyType::ECDSAsecp256k1NT => 0,
+            KeyType::ECDSAsecp256k1 => 1,
+            KeyType::Ed25519NT => 2,
+            KeyType::Ed25519 => 3,
+            KeyType::Ed448NT => 4,
+            KeyType::Ed448 => 5,
+            KeyType::X25519 => 6,
+            KeyType::X448 => 7,
+        }
+        .into_dart()
+    }
+}
 
 impl support::IntoDart for PublicKey {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_Basic((*self.derivation)).into_dart(),
-            self.public_key.into_dart(),
+            mirror_KeyType((*self.derivation)).into_dart(),
+            self.key.into_dart(),
         ]
         .into_dart()
     }
@@ -718,43 +749,27 @@ impl support::IntoDart for PublicKeySignaturePair {
 }
 impl support::IntoDartExceptPrimitive for PublicKeySignaturePair {}
 
-impl support::IntoDart for mirror_SelfAddressing {
-    fn into_dart(self) -> support::DartAbi {
-        match self.0 {
-            SelfAddressing::Blake3_256 => vec![0.into_dart()],
-            SelfAddressing::SHA3_256 => vec![1.into_dart()],
-            SelfAddressing::SHA2_256 => vec![2.into_dart()],
-            SelfAddressing::Blake3_512 => vec![3.into_dart()],
-            SelfAddressing::SHA3_512 => vec![4.into_dart()],
-            SelfAddressing::Blake2B512 => vec![5.into_dart()],
-            SelfAddressing::SHA2_512 => vec![6.into_dart()],
-            SelfAddressing::Blake2B256(field0) => vec![7.into_dart(), field0.into_dart()],
-            SelfAddressing::Blake2S256(field0) => vec![8.into_dart(), field0.into_dart()],
-        }
-        .into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for mirror_SelfAddressing {}
-impl support::IntoDart for mirror_SelfSigning {
-    fn into_dart(self) -> support::DartAbi {
-        match self.0 {
-            SelfSigning::Ed25519Sha512 => 0,
-            SelfSigning::ECDSAsecp256k1Sha256 => 1,
-            SelfSigning::Ed448 => 2,
-        }
-        .into_dart()
-    }
-}
 impl support::IntoDart for Signature {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_SelfSigning((*self.derivation)).into_dart(),
+            mirror_SignatureType((*self.derivation)).into_dart(),
             self.signature.into_dart(),
         ]
         .into_dart()
     }
 }
 impl support::IntoDartExceptPrimitive for Signature {}
+
+impl support::IntoDart for mirror_SignatureType {
+    fn into_dart(self) -> support::DartAbi {
+        match self.0 {
+            SignatureType::Ed25519Sha512 => 0,
+            SignatureType::ECDSAsecp256k1Sha256 => 1,
+            SignatureType::Ed448 => 2,
+        }
+        .into_dart()
+    }
+}
 
 // Section: executor
 

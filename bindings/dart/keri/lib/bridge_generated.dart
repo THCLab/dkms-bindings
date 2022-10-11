@@ -52,7 +52,7 @@ abstract class KeriDart {
   Future<String> anchor(
       {required Identifier identifier,
       required String data,
-      required SelfAddressing algo,
+      required DigestType algo,
       dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kAnchorConstMeta;
@@ -140,26 +140,29 @@ abstract class KeriDart {
   FlutterRustBridgeTaskConstMeta get kGetCurrentPublicKeyConstMeta;
 
   Future<PublicKey> newStaticMethodPublicKey(
-      {required Basic kt, required String keyB64, dynamic hint});
+      {required KeyType kt, required String keyB64, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNewStaticMethodPublicKeyConstMeta;
 
   Future<Digest> newStaticMethodDigest(
-      {required SelfAddressing dt,
-      required Uint8List digestData,
-      dynamic hint});
+      {required DigestType dt, required Uint8List digestData, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNewStaticMethodDigestConstMeta;
 
   Future<Signature> newFromHexStaticMethodSignature(
-      {required SelfSigning st, required String signature, dynamic hint});
+      {required SignatureType st, required String signature, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNewFromHexStaticMethodSignatureConstMeta;
 
   Future<Signature> newFromB64StaticMethodSignature(
-      {required SelfSigning st, required String signature, dynamic hint});
+      {required SignatureType st, required String signature, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNewFromB64StaticMethodSignatureConstMeta;
+
+  Future<Identifier> newStaticMethodIdentifier(
+      {required String idStr, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kNewStaticMethodIdentifierConstMeta;
 
   Future<Identifier> fromStrStaticMethodIdentifier(
       {required String idStr, dynamic hint});
@@ -194,17 +197,6 @@ class ActionRequired {
   });
 }
 
-enum Basic {
-  ECDSAsecp256k1NT,
-  ECDSAsecp256k1,
-  Ed25519NT,
-  Ed25519,
-  Ed448NT,
-  Ed448,
-  X25519,
-  X448,
-}
-
 class Config {
   final String initialOobis;
 
@@ -235,7 +227,7 @@ class DataAndSignature {
 
 class Digest {
   final KeriDart bridge;
-  final SelfAddressing derivation;
+  final DigestType derivation;
   final Uint8List digest;
 
   Digest({
@@ -246,10 +238,27 @@ class Digest {
 
   static Future<Digest> newDigest(
           {required KeriDart bridge,
-          required SelfAddressing dt,
+          required DigestType dt,
           required Uint8List digestData,
           dynamic hint}) =>
       bridge.newStaticMethodDigest(dt: dt, digestData: digestData, hint: hint);
+}
+
+@freezed
+class DigestType with _$DigestType {
+  const factory DigestType.blake3256() = DigestType_Blake3_256;
+  const factory DigestType.sha3256() = DigestType_SHA3_256;
+  const factory DigestType.sha2256() = DigestType_SHA2_256;
+  const factory DigestType.blake3512() = DigestType_Blake3_512;
+  const factory DigestType.sha3512() = DigestType_SHA3_512;
+  const factory DigestType.blake2B512() = DigestType_Blake2B512;
+  const factory DigestType.sha2512() = DigestType_SHA2_512;
+  const factory DigestType.blake2B256(
+    Uint8List field0,
+  ) = DigestType_Blake2B256;
+  const factory DigestType.blake2S256(
+    Uint8List field0,
+  ) = DigestType_Blake2S256;
 }
 
 /// Struct for collecting data that need to be signed: generated event and
@@ -278,20 +287,31 @@ class Identifier with _$Identifier {
   ) = Identifier_SelfSigning;
 }
 
+enum KeyType {
+  ECDSAsecp256k1NT,
+  ECDSAsecp256k1,
+  Ed25519NT,
+  Ed25519,
+  Ed448NT,
+  Ed448,
+  X25519,
+  X448,
+}
+
 class PublicKey {
   final KeriDart bridge;
-  final Basic derivation;
-  final Uint8List publicKey;
+  final KeyType derivation;
+  final Uint8List key;
 
   PublicKey({
     required this.bridge,
     required this.derivation,
-    required this.publicKey,
+    required this.key,
   });
 
   static Future<PublicKey> newPublicKey(
           {required KeriDart bridge,
-          required Basic kt,
+          required KeyType kt,
           required String keyB64,
           dynamic hint}) =>
       bridge.newStaticMethodPublicKey(kt: kt, keyB64: keyB64, hint: hint);
@@ -307,32 +327,9 @@ class PublicKeySignaturePair {
   });
 }
 
-@freezed
-class SelfAddressing with _$SelfAddressing {
-  const factory SelfAddressing.blake3256() = SelfAddressing_Blake3_256;
-  const factory SelfAddressing.sha3256() = SelfAddressing_SHA3_256;
-  const factory SelfAddressing.sha2256() = SelfAddressing_SHA2_256;
-  const factory SelfAddressing.blake3512() = SelfAddressing_Blake3_512;
-  const factory SelfAddressing.sha3512() = SelfAddressing_SHA3_512;
-  const factory SelfAddressing.blake2B512() = SelfAddressing_Blake2B512;
-  const factory SelfAddressing.sha2512() = SelfAddressing_SHA2_512;
-  const factory SelfAddressing.blake2B256(
-    Uint8List field0,
-  ) = SelfAddressing_Blake2B256;
-  const factory SelfAddressing.blake2S256(
-    Uint8List field0,
-  ) = SelfAddressing_Blake2S256;
-}
-
-enum SelfSigning {
-  Ed25519Sha512,
-  ECDSAsecp256k1Sha256,
-  Ed448,
-}
-
 class Signature {
   final KeriDart bridge;
-  final SelfSigning derivation;
+  final SignatureType derivation;
   final Uint8List signature;
 
   Signature({
@@ -343,7 +340,7 @@ class Signature {
 
   static Future<Signature> newFromHex(
           {required KeriDart bridge,
-          required SelfSigning st,
+          required SignatureType st,
           required String signature,
           dynamic hint}) =>
       bridge.newFromHexStaticMethodSignature(
@@ -351,11 +348,17 @@ class Signature {
 
   static Future<Signature> newFromB64(
           {required KeriDart bridge,
-          required SelfSigning st,
+          required SignatureType st,
           required String signature,
           dynamic hint}) =>
       bridge.newFromB64StaticMethodSignature(
           st: st, signature: signature, hint: hint);
+}
+
+enum SignatureType {
+  Ed25519Sha512,
+  ECDSAsecp256k1Sha256,
+  Ed448,
 }
 
 class KeriDartImpl implements KeriDart {
@@ -504,14 +507,14 @@ class KeriDartImpl implements KeriDart {
   Future<String> anchor(
           {required Identifier identifier,
           required String data,
-          required SelfAddressing algo,
+          required DigestType algo,
           dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => _platform.inner.wire_anchor(
             port_,
             _platform.api2wire_box_autoadd_identifier(identifier),
             _platform.api2wire_String(data),
-            _platform.api2wire_box_autoadd_self_addressing(algo)),
+            _platform.api2wire_box_autoadd_digest_type(algo)),
         parseSuccessData: _wire2api_String,
         constMeta: kAnchorConstMeta,
         argValues: [identifier, data, algo],
@@ -786,10 +789,10 @@ class KeriDartImpl implements KeriDart {
       );
 
   Future<PublicKey> newStaticMethodPublicKey(
-          {required Basic kt, required String keyB64, dynamic hint}) =>
+          {required KeyType kt, required String keyB64, dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => _platform.inner.wire_new__static_method__PublicKey(
-            port_, api2wire_basic(kt), _platform.api2wire_String(keyB64)),
+            port_, api2wire_key_type(kt), _platform.api2wire_String(keyB64)),
         parseSuccessData: (d) => _wire2api_public_key(d),
         constMeta: kNewStaticMethodPublicKeyConstMeta,
         argValues: [kt, keyB64],
@@ -803,13 +806,13 @@ class KeriDartImpl implements KeriDart {
       );
 
   Future<Digest> newStaticMethodDigest(
-          {required SelfAddressing dt,
+          {required DigestType dt,
           required Uint8List digestData,
           dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => _platform.inner.wire_new__static_method__Digest(
             port_,
-            _platform.api2wire_box_autoadd_self_addressing(dt),
+            _platform.api2wire_box_autoadd_digest_type(dt),
             _platform.api2wire_uint_8_list(digestData)),
         parseSuccessData: (d) => _wire2api_digest(d),
         constMeta: kNewStaticMethodDigestConstMeta,
@@ -824,12 +827,14 @@ class KeriDartImpl implements KeriDart {
       );
 
   Future<Signature> newFromHexStaticMethodSignature(
-          {required SelfSigning st, required String signature, dynamic hint}) =>
+          {required SignatureType st,
+          required String signature,
+          dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => _platform.inner
             .wire_new_from_hex__static_method__Signature(
                 port_,
-                api2wire_self_signing(st),
+                api2wire_signature_type(st),
                 _platform.api2wire_String(signature)),
         parseSuccessData: (d) => _wire2api_signature(d),
         constMeta: kNewFromHexStaticMethodSignatureConstMeta,
@@ -845,12 +850,14 @@ class KeriDartImpl implements KeriDart {
           );
 
   Future<Signature> newFromB64StaticMethodSignature(
-          {required SelfSigning st, required String signature, dynamic hint}) =>
+          {required SignatureType st,
+          required String signature,
+          dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => _platform.inner
             .wire_new_from_b64__static_method__Signature(
                 port_,
-                api2wire_self_signing(st),
+                api2wire_signature_type(st),
                 _platform.api2wire_String(signature)),
         parseSuccessData: (d) => _wire2api_signature(d),
         constMeta: kNewFromB64StaticMethodSignatureConstMeta,
@@ -864,6 +871,23 @@ class KeriDartImpl implements KeriDart {
             debugName: "new_from_b64__static_method__Signature",
             argNames: ["st", "signature"],
           );
+
+  Future<Identifier> newStaticMethodIdentifier(
+          {required String idStr, dynamic hint}) =>
+      _platform.executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => _platform.inner.wire_new__static_method__Identifier(
+            port_, _platform.api2wire_String(idStr)),
+        parseSuccessData: _wire2api_identifier,
+        constMeta: kNewStaticMethodIdentifierConstMeta,
+        argValues: [idStr],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kNewStaticMethodIdentifierConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "new__static_method__Identifier",
+        argNames: ["idStr"],
+      );
 
   Future<Identifier> fromStrStaticMethodIdentifier(
           {required String idStr, dynamic hint}) =>
@@ -946,10 +970,6 @@ class KeriDartImpl implements KeriDart {
     );
   }
 
-  Basic _wire2api_basic(dynamic raw) {
-    return Basic.values[raw];
-  }
-
   bool _wire2api_bool(dynamic raw) {
     return raw as bool;
   }
@@ -966,20 +986,20 @@ class KeriDartImpl implements KeriDart {
     return _wire2api_signature(raw);
   }
 
-  Basic _wire2api_box_basic(dynamic raw) {
-    return raw as Basic;
+  DigestType _wire2api_box_digest_type(dynamic raw) {
+    return _wire2api_digest_type(raw);
   }
 
-  SelfAddressing _wire2api_box_self_addressing(dynamic raw) {
-    return _wire2api_self_addressing(raw);
-  }
-
-  SelfSigning _wire2api_box_self_signing(dynamic raw) {
-    return raw as SelfSigning;
+  KeyType _wire2api_box_key_type(dynamic raw) {
+    return raw as KeyType;
   }
 
   Signature _wire2api_box_signature(dynamic raw) {
     return _wire2api_signature(raw);
+  }
+
+  SignatureType _wire2api_box_signature_type(dynamic raw) {
+    return raw as SignatureType;
   }
 
   Config _wire2api_config(dynamic raw) {
@@ -1008,9 +1028,38 @@ class KeriDartImpl implements KeriDart {
       throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return Digest(
       bridge: this,
-      derivation: _wire2api_box_self_addressing(arr[0]),
+      derivation: _wire2api_box_digest_type(arr[0]),
       digest: _wire2api_uint_8_list(arr[1]),
     );
+  }
+
+  DigestType _wire2api_digest_type(dynamic raw) {
+    switch (raw[0]) {
+      case 0:
+        return DigestType_Blake3_256();
+      case 1:
+        return DigestType_SHA3_256();
+      case 2:
+        return DigestType_SHA2_256();
+      case 3:
+        return DigestType_Blake3_512();
+      case 4:
+        return DigestType_SHA3_512();
+      case 5:
+        return DigestType_Blake2B512();
+      case 6:
+        return DigestType_SHA2_512();
+      case 7:
+        return DigestType_Blake2B256(
+          _wire2api_uint_8_list(raw[1]),
+        );
+      case 8:
+        return DigestType_Blake2S256(
+          _wire2api_uint_8_list(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
   }
 
   GroupInception _wire2api_group_inception(dynamic raw) {
@@ -1046,6 +1095,10 @@ class KeriDartImpl implements KeriDart {
     }
   }
 
+  KeyType _wire2api_key_type(dynamic raw) {
+    return KeyType.values[raw];
+  }
+
   List<ActionRequired> _wire2api_list_action_required(dynamic raw) {
     return (raw as List<dynamic>).map(_wire2api_action_required).toList();
   }
@@ -1063,8 +1116,8 @@ class KeriDartImpl implements KeriDart {
       throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return PublicKey(
       bridge: this,
-      derivation: _wire2api_box_basic(arr[0]),
-      publicKey: _wire2api_uint_8_list(arr[1]),
+      derivation: _wire2api_box_key_type(arr[0]),
+      key: _wire2api_uint_8_list(arr[1]),
     );
   }
 
@@ -1078,48 +1131,19 @@ class KeriDartImpl implements KeriDart {
     );
   }
 
-  SelfAddressing _wire2api_self_addressing(dynamic raw) {
-    switch (raw[0]) {
-      case 0:
-        return SelfAddressing_Blake3_256();
-      case 1:
-        return SelfAddressing_SHA3_256();
-      case 2:
-        return SelfAddressing_SHA2_256();
-      case 3:
-        return SelfAddressing_Blake3_512();
-      case 4:
-        return SelfAddressing_SHA3_512();
-      case 5:
-        return SelfAddressing_Blake2B512();
-      case 6:
-        return SelfAddressing_SHA2_512();
-      case 7:
-        return SelfAddressing_Blake2B256(
-          _wire2api_uint_8_list(raw[1]),
-        );
-      case 8:
-        return SelfAddressing_Blake2S256(
-          _wire2api_uint_8_list(raw[1]),
-        );
-      default:
-        throw Exception("unreachable");
-    }
-  }
-
-  SelfSigning _wire2api_self_signing(dynamic raw) {
-    return SelfSigning.values[raw];
-  }
-
   Signature _wire2api_signature(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 2)
       throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return Signature(
       bridge: this,
-      derivation: _wire2api_box_self_signing(arr[0]),
+      derivation: _wire2api_box_signature_type(arr[0]),
       signature: _wire2api_uint_8_list(arr[1]),
     );
+  }
+
+  SignatureType _wire2api_signature_type(dynamic raw) {
+    return SignatureType.values[raw];
   }
 
   int _wire2api_u8(dynamic raw) {
@@ -1134,17 +1158,17 @@ class KeriDartImpl implements KeriDart {
 // Section: api2wire
 
 @protected
-int api2wire_basic(Basic raw) {
-  return api2wire_i32(raw.index);
-}
-
-@protected
 int api2wire_i32(int raw) {
   return raw;
 }
 
 @protected
-int api2wire_self_signing(SelfSigning raw) {
+int api2wire_key_type(KeyType raw) {
+  return api2wire_i32(raw.index);
+}
+
+@protected
+int api2wire_signature_type(SignatureType raw) {
   return api2wire_i32(raw.index);
 }
 
@@ -1186,6 +1210,14 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
   }
 
   @protected
+  ffi.Pointer<wire_DigestType> api2wire_box_autoadd_digest_type(
+      DigestType raw) {
+    final ptr = inner.new_box_autoadd_digest_type_0();
+    _api_fill_to_wire_digest_type(raw, ptr.ref);
+    return ptr;
+  }
+
+  @protected
   ffi.Pointer<wire_Identifier> api2wire_box_autoadd_identifier(Identifier raw) {
     final ptr = inner.new_box_autoadd_identifier_0();
     _api_fill_to_wire_identifier(raw, ptr.ref);
@@ -1200,14 +1232,6 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
   }
 
   @protected
-  ffi.Pointer<wire_SelfAddressing> api2wire_box_autoadd_self_addressing(
-      SelfAddressing raw) {
-    final ptr = inner.new_box_autoadd_self_addressing_0();
-    _api_fill_to_wire_self_addressing(raw, ptr.ref);
-    return ptr;
-  }
-
-  @protected
   ffi.Pointer<wire_Signature> api2wire_box_autoadd_signature(Signature raw) {
     final ptr = inner.new_box_autoadd_signature_0();
     _api_fill_to_wire_signature(raw, ptr.ref);
@@ -1215,21 +1239,15 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
   }
 
   @protected
-  ffi.Pointer<ffi.Int32> api2wire_box_basic(Basic raw) {
-    return inner.new_box_basic_0(api2wire_basic(raw));
-  }
-
-  @protected
-  ffi.Pointer<wire_SelfAddressing> api2wire_box_self_addressing(
-      SelfAddressing raw) {
-    final ptr = inner.new_box_self_addressing_0();
-    _api_fill_to_wire_self_addressing(raw, ptr.ref);
+  ffi.Pointer<wire_DigestType> api2wire_box_digest_type(DigestType raw) {
+    final ptr = inner.new_box_digest_type_0();
+    _api_fill_to_wire_digest_type(raw, ptr.ref);
     return ptr;
   }
 
   @protected
-  ffi.Pointer<ffi.Int32> api2wire_box_self_signing(SelfSigning raw) {
-    return inner.new_box_self_signing_0(api2wire_self_signing(raw));
+  ffi.Pointer<ffi.Int32> api2wire_box_key_type(KeyType raw) {
+    return inner.new_box_key_type_0(api2wire_key_type(raw));
   }
 
   @protected
@@ -1237,6 +1255,11 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
     final ptr = inner.new_box_signature_0();
     _api_fill_to_wire_signature(raw, ptr.ref);
     return ptr;
+  }
+
+  @protected
+  ffi.Pointer<ffi.Int32> api2wire_box_signature_type(SignatureType raw) {
+    return inner.new_box_signature_type_0(api2wire_signature_type(raw));
   }
 
   @protected
@@ -1297,6 +1320,11 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
     _api_fill_to_wire_digest(apiObj, wireObj.ref);
   }
 
+  void _api_fill_to_wire_box_autoadd_digest_type(
+      DigestType apiObj, ffi.Pointer<wire_DigestType> wireObj) {
+    _api_fill_to_wire_digest_type(apiObj, wireObj.ref);
+  }
+
   void _api_fill_to_wire_box_autoadd_identifier(
       Identifier apiObj, ffi.Pointer<wire_Identifier> wireObj) {
     _api_fill_to_wire_identifier(apiObj, wireObj.ref);
@@ -1307,19 +1335,14 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
     _api_fill_to_wire_public_key(apiObj, wireObj.ref);
   }
 
-  void _api_fill_to_wire_box_autoadd_self_addressing(
-      SelfAddressing apiObj, ffi.Pointer<wire_SelfAddressing> wireObj) {
-    _api_fill_to_wire_self_addressing(apiObj, wireObj.ref);
-  }
-
   void _api_fill_to_wire_box_autoadd_signature(
       Signature apiObj, ffi.Pointer<wire_Signature> wireObj) {
     _api_fill_to_wire_signature(apiObj, wireObj.ref);
   }
 
-  void _api_fill_to_wire_box_self_addressing(
-      SelfAddressing apiObj, ffi.Pointer<wire_SelfAddressing> wireObj) {
-    _api_fill_to_wire_self_addressing(apiObj, wireObj.ref);
+  void _api_fill_to_wire_box_digest_type(
+      DigestType apiObj, ffi.Pointer<wire_DigestType> wireObj) {
+    _api_fill_to_wire_digest_type(apiObj, wireObj.ref);
   }
 
   void _api_fill_to_wire_box_signature(
@@ -1338,8 +1361,54 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
   }
 
   void _api_fill_to_wire_digest(Digest apiObj, wire_Digest wireObj) {
-    wireObj.derivation = api2wire_box_self_addressing(apiObj.derivation);
+    wireObj.derivation = api2wire_box_digest_type(apiObj.derivation);
     wireObj.digest = api2wire_uint_8_list(apiObj.digest);
+  }
+
+  void _api_fill_to_wire_digest_type(
+      DigestType apiObj, wire_DigestType wireObj) {
+    if (apiObj is DigestType_Blake3_256) {
+      wireObj.tag = 0;
+      return;
+    }
+    if (apiObj is DigestType_SHA3_256) {
+      wireObj.tag = 1;
+      return;
+    }
+    if (apiObj is DigestType_SHA2_256) {
+      wireObj.tag = 2;
+      return;
+    }
+    if (apiObj is DigestType_Blake3_512) {
+      wireObj.tag = 3;
+      return;
+    }
+    if (apiObj is DigestType_SHA3_512) {
+      wireObj.tag = 4;
+      return;
+    }
+    if (apiObj is DigestType_Blake2B512) {
+      wireObj.tag = 5;
+      return;
+    }
+    if (apiObj is DigestType_SHA2_512) {
+      wireObj.tag = 6;
+      return;
+    }
+    if (apiObj is DigestType_Blake2B256) {
+      wireObj.tag = 7;
+      wireObj.kind = inner.inflate_DigestType_Blake2B256();
+      wireObj.kind.ref.Blake2B256.ref.field0 =
+          api2wire_uint_8_list(apiObj.field0);
+      return;
+    }
+    if (apiObj is DigestType_Blake2S256) {
+      wireObj.tag = 8;
+      wireObj.kind = inner.inflate_DigestType_Blake2S256();
+      wireObj.kind.ref.Blake2S256.ref.field0 =
+          api2wire_uint_8_list(apiObj.field0);
+      return;
+    }
   }
 
   void _api_fill_to_wire_identifier(
@@ -1373,58 +1442,12 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
   }
 
   void _api_fill_to_wire_public_key(PublicKey apiObj, wire_PublicKey wireObj) {
-    wireObj.derivation = api2wire_box_basic(apiObj.derivation);
-    wireObj.public_key = api2wire_uint_8_list(apiObj.publicKey);
-  }
-
-  void _api_fill_to_wire_self_addressing(
-      SelfAddressing apiObj, wire_SelfAddressing wireObj) {
-    if (apiObj is SelfAddressing_Blake3_256) {
-      wireObj.tag = 0;
-      return;
-    }
-    if (apiObj is SelfAddressing_SHA3_256) {
-      wireObj.tag = 1;
-      return;
-    }
-    if (apiObj is SelfAddressing_SHA2_256) {
-      wireObj.tag = 2;
-      return;
-    }
-    if (apiObj is SelfAddressing_Blake3_512) {
-      wireObj.tag = 3;
-      return;
-    }
-    if (apiObj is SelfAddressing_SHA3_512) {
-      wireObj.tag = 4;
-      return;
-    }
-    if (apiObj is SelfAddressing_Blake2B512) {
-      wireObj.tag = 5;
-      return;
-    }
-    if (apiObj is SelfAddressing_SHA2_512) {
-      wireObj.tag = 6;
-      return;
-    }
-    if (apiObj is SelfAddressing_Blake2B256) {
-      wireObj.tag = 7;
-      wireObj.kind = inner.inflate_SelfAddressing_Blake2B256();
-      wireObj.kind.ref.Blake2B256.ref.field0 =
-          api2wire_uint_8_list(apiObj.field0);
-      return;
-    }
-    if (apiObj is SelfAddressing_Blake2S256) {
-      wireObj.tag = 8;
-      wireObj.kind = inner.inflate_SelfAddressing_Blake2S256();
-      wireObj.kind.ref.Blake2S256.ref.field0 =
-          api2wire_uint_8_list(apiObj.field0);
-      return;
-    }
+    wireObj.derivation = api2wire_box_key_type(apiObj.derivation);
+    wireObj.key = api2wire_uint_8_list(apiObj.key);
   }
 
   void _api_fill_to_wire_signature(Signature apiObj, wire_Signature wireObj) {
-    wireObj.derivation = api2wire_box_self_signing(apiObj.derivation);
+    wireObj.derivation = api2wire_box_signature_type(apiObj.derivation);
     wireObj.signature = api2wire_uint_8_list(apiObj.signature);
   }
 }
@@ -1601,7 +1624,7 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
     int port_,
     ffi.Pointer<wire_Identifier> identifier,
     ffi.Pointer<wire_uint_8_list> data,
-    ffi.Pointer<wire_SelfAddressing> algo,
+    ffi.Pointer<wire_DigestType> algo,
   ) {
     return _wire_anchor(
       port_,
@@ -1617,10 +1640,10 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
               ffi.Int64,
               ffi.Pointer<wire_Identifier>,
               ffi.Pointer<wire_uint_8_list>,
-              ffi.Pointer<wire_SelfAddressing>)>>('wire_anchor');
+              ffi.Pointer<wire_DigestType>)>>('wire_anchor');
   late final _wire_anchor = _wire_anchorPtr.asFunction<
       void Function(int, ffi.Pointer<wire_Identifier>,
-          ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_SelfAddressing>)>();
+          ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_DigestType>)>();
 
   void wire_anchor_digest(
     int port_,
@@ -1919,7 +1942,7 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
 
   void wire_new__static_method__Digest(
     int port_,
-    ffi.Pointer<wire_SelfAddressing> dt,
+    ffi.Pointer<wire_DigestType> dt,
     ffi.Pointer<wire_uint_8_list> digest_data,
   ) {
     return _wire_new__static_method__Digest(
@@ -1931,12 +1954,12 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
 
   late final _wire_new__static_method__DigestPtr = _lookup<
           ffi.NativeFunction<
-              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_SelfAddressing>,
+              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_DigestType>,
                   ffi.Pointer<wire_uint_8_list>)>>(
       'wire_new__static_method__Digest');
   late final _wire_new__static_method__Digest =
       _wire_new__static_method__DigestPtr.asFunction<
-          void Function(int, ffi.Pointer<wire_SelfAddressing>,
+          void Function(int, ffi.Pointer<wire_DigestType>,
               ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_new_from_hex__static_method__Signature(
@@ -1980,6 +2003,24 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_new_from_b64__static_method__Signature =
       _wire_new_from_b64__static_method__SignaturePtr
           .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_new__static_method__Identifier(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> id_str,
+  ) {
+    return _wire_new__static_method__Identifier(
+      port_,
+      id_str,
+    );
+  }
+
+  late final _wire_new__static_method__IdentifierPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>(
+      'wire_new__static_method__Identifier');
+  late final _wire_new__static_method__Identifier =
+      _wire_new__static_method__IdentifierPtr
+          .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_from_str__static_method__Identifier(
     int port_,
@@ -2073,6 +2114,16 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _new_box_autoadd_digest_0 = _new_box_autoadd_digest_0Ptr
       .asFunction<ffi.Pointer<wire_Digest> Function()>();
 
+  ffi.Pointer<wire_DigestType> new_box_autoadd_digest_type_0() {
+    return _new_box_autoadd_digest_type_0();
+  }
+
+  late final _new_box_autoadd_digest_type_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_DigestType> Function()>>(
+          'new_box_autoadd_digest_type_0');
+  late final _new_box_autoadd_digest_type_0 = _new_box_autoadd_digest_type_0Ptr
+      .asFunction<ffi.Pointer<wire_DigestType> Function()>();
+
   ffi.Pointer<wire_Identifier> new_box_autoadd_identifier_0() {
     return _new_box_autoadd_identifier_0();
   }
@@ -2093,17 +2144,6 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _new_box_autoadd_public_key_0 = _new_box_autoadd_public_key_0Ptr
       .asFunction<ffi.Pointer<wire_PublicKey> Function()>();
 
-  ffi.Pointer<wire_SelfAddressing> new_box_autoadd_self_addressing_0() {
-    return _new_box_autoadd_self_addressing_0();
-  }
-
-  late final _new_box_autoadd_self_addressing_0Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<wire_SelfAddressing> Function()>>(
-          'new_box_autoadd_self_addressing_0');
-  late final _new_box_autoadd_self_addressing_0 =
-      _new_box_autoadd_self_addressing_0Ptr
-          .asFunction<ffi.Pointer<wire_SelfAddressing> Function()>();
-
   ffi.Pointer<wire_Signature> new_box_autoadd_signature_0() {
     return _new_box_autoadd_signature_0();
   }
@@ -2114,43 +2154,29 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _new_box_autoadd_signature_0 = _new_box_autoadd_signature_0Ptr
       .asFunction<ffi.Pointer<wire_Signature> Function()>();
 
-  ffi.Pointer<ffi.Int32> new_box_basic_0(
+  ffi.Pointer<wire_DigestType> new_box_digest_type_0() {
+    return _new_box_digest_type_0();
+  }
+
+  late final _new_box_digest_type_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_DigestType> Function()>>(
+          'new_box_digest_type_0');
+  late final _new_box_digest_type_0 = _new_box_digest_type_0Ptr
+      .asFunction<ffi.Pointer<wire_DigestType> Function()>();
+
+  ffi.Pointer<ffi.Int32> new_box_key_type_0(
     int value,
   ) {
-    return _new_box_basic_0(
+    return _new_box_key_type_0(
       value,
     );
   }
 
-  late final _new_box_basic_0Ptr =
+  late final _new_box_key_type_0Ptr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int32> Function(ffi.Int32)>>(
-          'new_box_basic_0');
-  late final _new_box_basic_0 =
-      _new_box_basic_0Ptr.asFunction<ffi.Pointer<ffi.Int32> Function(int)>();
-
-  ffi.Pointer<wire_SelfAddressing> new_box_self_addressing_0() {
-    return _new_box_self_addressing_0();
-  }
-
-  late final _new_box_self_addressing_0Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<wire_SelfAddressing> Function()>>(
-          'new_box_self_addressing_0');
-  late final _new_box_self_addressing_0 = _new_box_self_addressing_0Ptr
-      .asFunction<ffi.Pointer<wire_SelfAddressing> Function()>();
-
-  ffi.Pointer<ffi.Int32> new_box_self_signing_0(
-    int value,
-  ) {
-    return _new_box_self_signing_0(
-      value,
-    );
-  }
-
-  late final _new_box_self_signing_0Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int32> Function(ffi.Int32)>>(
-          'new_box_self_signing_0');
-  late final _new_box_self_signing_0 = _new_box_self_signing_0Ptr
-      .asFunction<ffi.Pointer<ffi.Int32> Function(int)>();
+          'new_box_key_type_0');
+  late final _new_box_key_type_0 =
+      _new_box_key_type_0Ptr.asFunction<ffi.Pointer<ffi.Int32> Function(int)>();
 
   ffi.Pointer<wire_Signature> new_box_signature_0() {
     return _new_box_signature_0();
@@ -2161,6 +2187,20 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           'new_box_signature_0');
   late final _new_box_signature_0 = _new_box_signature_0Ptr
       .asFunction<ffi.Pointer<wire_Signature> Function()>();
+
+  ffi.Pointer<ffi.Int32> new_box_signature_type_0(
+    int value,
+  ) {
+    return _new_box_signature_type_0(
+      value,
+    );
+  }
+
+  late final _new_box_signature_type_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int32> Function(ffi.Int32)>>(
+          'new_box_signature_type_0');
+  late final _new_box_signature_type_0 = _new_box_signature_type_0Ptr
+      .asFunction<ffi.Pointer<ffi.Int32> Function(int)>();
 
   ffi.Pointer<wire_list_data_and_signature> new_list_data_and_signature_0(
     int len,
@@ -2222,6 +2262,26 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
       .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
 
+  ffi.Pointer<DigestTypeKind> inflate_DigestType_Blake2B256() {
+    return _inflate_DigestType_Blake2B256();
+  }
+
+  late final _inflate_DigestType_Blake2B256Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<DigestTypeKind> Function()>>(
+          'inflate_DigestType_Blake2B256');
+  late final _inflate_DigestType_Blake2B256 = _inflate_DigestType_Blake2B256Ptr
+      .asFunction<ffi.Pointer<DigestTypeKind> Function()>();
+
+  ffi.Pointer<DigestTypeKind> inflate_DigestType_Blake2S256() {
+    return _inflate_DigestType_Blake2S256();
+  }
+
+  late final _inflate_DigestType_Blake2S256Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<DigestTypeKind> Function()>>(
+          'inflate_DigestType_Blake2S256');
+  late final _inflate_DigestType_Blake2S256 = _inflate_DigestType_Blake2S256Ptr
+      .asFunction<ffi.Pointer<DigestTypeKind> Function()>();
+
   ffi.Pointer<IdentifierKind> inflate_Identifier_Basic() {
     return _inflate_Identifier_Basic();
   }
@@ -2254,28 +2314,6 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       _inflate_Identifier_SelfSigningPtr
           .asFunction<ffi.Pointer<IdentifierKind> Function()>();
 
-  ffi.Pointer<SelfAddressingKind> inflate_SelfAddressing_Blake2B256() {
-    return _inflate_SelfAddressing_Blake2B256();
-  }
-
-  late final _inflate_SelfAddressing_Blake2B256Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<SelfAddressingKind> Function()>>(
-          'inflate_SelfAddressing_Blake2B256');
-  late final _inflate_SelfAddressing_Blake2B256 =
-      _inflate_SelfAddressing_Blake2B256Ptr
-          .asFunction<ffi.Pointer<SelfAddressingKind> Function()>();
-
-  ffi.Pointer<SelfAddressingKind> inflate_SelfAddressing_Blake2S256() {
-    return _inflate_SelfAddressing_Blake2S256();
-  }
-
-  late final _inflate_SelfAddressing_Blake2S256Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<SelfAddressingKind> Function()>>(
-          'inflate_SelfAddressing_Blake2S256');
-  late final _inflate_SelfAddressing_Blake2S256 =
-      _inflate_SelfAddressing_Blake2S256Ptr
-          .asFunction<ffi.Pointer<SelfAddressingKind> Function()>();
-
   void free_WireSyncReturnStruct(
     WireSyncReturnStruct val,
   ) {
@@ -2305,7 +2343,7 @@ class wire_Config extends ffi.Struct {
 class wire_PublicKey extends ffi.Struct {
   external ffi.Pointer<ffi.Int32> derivation;
 
-  external ffi.Pointer<wire_uint_8_list> public_key;
+  external ffi.Pointer<wire_uint_8_list> key;
 }
 
 class wire_list_public_key extends ffi.Struct {
@@ -2332,57 +2370,57 @@ class wire_Identifier_Basic extends ffi.Struct {
   external ffi.Pointer<wire_PublicKey> field0;
 }
 
-class wire_SelfAddressing_Blake3_256 extends ffi.Opaque {}
+class wire_DigestType_Blake3_256 extends ffi.Opaque {}
 
-class wire_SelfAddressing_SHA3_256 extends ffi.Opaque {}
+class wire_DigestType_SHA3_256 extends ffi.Opaque {}
 
-class wire_SelfAddressing_SHA2_256 extends ffi.Opaque {}
+class wire_DigestType_SHA2_256 extends ffi.Opaque {}
 
-class wire_SelfAddressing_Blake3_512 extends ffi.Opaque {}
+class wire_DigestType_Blake3_512 extends ffi.Opaque {}
 
-class wire_SelfAddressing_SHA3_512 extends ffi.Opaque {}
+class wire_DigestType_SHA3_512 extends ffi.Opaque {}
 
-class wire_SelfAddressing_Blake2B512 extends ffi.Opaque {}
+class wire_DigestType_Blake2B512 extends ffi.Opaque {}
 
-class wire_SelfAddressing_SHA2_512 extends ffi.Opaque {}
+class wire_DigestType_SHA2_512 extends ffi.Opaque {}
 
-class wire_SelfAddressing_Blake2B256 extends ffi.Struct {
+class wire_DigestType_Blake2B256 extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> field0;
 }
 
-class wire_SelfAddressing_Blake2S256 extends ffi.Struct {
+class wire_DigestType_Blake2S256 extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> field0;
 }
 
-class SelfAddressingKind extends ffi.Union {
-  external ffi.Pointer<wire_SelfAddressing_Blake3_256> Blake3_256;
+class DigestTypeKind extends ffi.Union {
+  external ffi.Pointer<wire_DigestType_Blake3_256> Blake3_256;
 
-  external ffi.Pointer<wire_SelfAddressing_SHA3_256> SHA3_256;
+  external ffi.Pointer<wire_DigestType_SHA3_256> SHA3_256;
 
-  external ffi.Pointer<wire_SelfAddressing_SHA2_256> SHA2_256;
+  external ffi.Pointer<wire_DigestType_SHA2_256> SHA2_256;
 
-  external ffi.Pointer<wire_SelfAddressing_Blake3_512> Blake3_512;
+  external ffi.Pointer<wire_DigestType_Blake3_512> Blake3_512;
 
-  external ffi.Pointer<wire_SelfAddressing_SHA3_512> SHA3_512;
+  external ffi.Pointer<wire_DigestType_SHA3_512> SHA3_512;
 
-  external ffi.Pointer<wire_SelfAddressing_Blake2B512> Blake2B512;
+  external ffi.Pointer<wire_DigestType_Blake2B512> Blake2B512;
 
-  external ffi.Pointer<wire_SelfAddressing_SHA2_512> SHA2_512;
+  external ffi.Pointer<wire_DigestType_SHA2_512> SHA2_512;
 
-  external ffi.Pointer<wire_SelfAddressing_Blake2B256> Blake2B256;
+  external ffi.Pointer<wire_DigestType_Blake2B256> Blake2B256;
 
-  external ffi.Pointer<wire_SelfAddressing_Blake2S256> Blake2S256;
+  external ffi.Pointer<wire_DigestType_Blake2S256> Blake2S256;
 }
 
-class wire_SelfAddressing extends ffi.Struct {
+class wire_DigestType extends ffi.Struct {
   @ffi.Int32()
   external int tag;
 
-  external ffi.Pointer<SelfAddressingKind> kind;
+  external ffi.Pointer<DigestTypeKind> kind;
 }
 
 class wire_Digest extends ffi.Struct {
-  external ffi.Pointer<wire_SelfAddressing> derivation;
+  external ffi.Pointer<wire_DigestType> derivation;
 
   external ffi.Pointer<wire_uint_8_list> digest;
 }
