@@ -16,7 +16,7 @@ typedef struct wire_Config {
 } wire_Config;
 
 typedef struct wire_PublicKey {
-  int32_t derivation;
+  int32_t *derivation;
   struct wire_uint_8_list *public_key;
 } wire_PublicKey;
 
@@ -31,7 +31,7 @@ typedef struct wire_StringList {
 } wire_StringList;
 
 typedef struct wire_Signature {
-  int32_t derivation;
+  int32_t *derivation;
   struct wire_uint_8_list *signature;
 } wire_Signature;
 
@@ -39,8 +39,61 @@ typedef struct wire_Identifier_Basic {
   struct wire_PublicKey *field0;
 } wire_Identifier_Basic;
 
+typedef struct wire_SelfAddressing_Blake3_256 {
+
+} wire_SelfAddressing_Blake3_256;
+
+typedef struct wire_SelfAddressing_SHA3_256 {
+
+} wire_SelfAddressing_SHA3_256;
+
+typedef struct wire_SelfAddressing_SHA2_256 {
+
+} wire_SelfAddressing_SHA2_256;
+
+typedef struct wire_SelfAddressing_Blake3_512 {
+
+} wire_SelfAddressing_Blake3_512;
+
+typedef struct wire_SelfAddressing_SHA3_512 {
+
+} wire_SelfAddressing_SHA3_512;
+
+typedef struct wire_SelfAddressing_Blake2B512 {
+
+} wire_SelfAddressing_Blake2B512;
+
+typedef struct wire_SelfAddressing_SHA2_512 {
+
+} wire_SelfAddressing_SHA2_512;
+
+typedef struct wire_SelfAddressing_Blake2B256 {
+  struct wire_uint_8_list *field0;
+} wire_SelfAddressing_Blake2B256;
+
+typedef struct wire_SelfAddressing_Blake2S256 {
+  struct wire_uint_8_list *field0;
+} wire_SelfAddressing_Blake2S256;
+
+typedef union SelfAddressingKind {
+  struct wire_SelfAddressing_Blake3_256 *Blake3_256;
+  struct wire_SelfAddressing_SHA3_256 *SHA3_256;
+  struct wire_SelfAddressing_SHA2_256 *SHA2_256;
+  struct wire_SelfAddressing_Blake3_512 *Blake3_512;
+  struct wire_SelfAddressing_SHA3_512 *SHA3_512;
+  struct wire_SelfAddressing_Blake2B512 *Blake2B512;
+  struct wire_SelfAddressing_SHA2_512 *SHA2_512;
+  struct wire_SelfAddressing_Blake2B256 *Blake2B256;
+  struct wire_SelfAddressing_Blake2S256 *Blake2S256;
+} SelfAddressingKind;
+
+typedef struct wire_SelfAddressing {
+  int32_t tag;
+  union SelfAddressingKind *kind;
+} wire_SelfAddressing;
+
 typedef struct wire_Digest {
-  int32_t derivation;
+  struct wire_SelfAddressing *derivation;
   struct wire_uint_8_list *digest;
 } wire_Digest;
 
@@ -115,7 +168,7 @@ void wire_rotate(int64_t port_,
 void wire_anchor(int64_t port_,
                  struct wire_Identifier *identifier,
                  struct wire_uint_8_list *data,
-                 int32_t algo);
+                 struct wire_SelfAddressing *algo);
 
 void wire_anchor_digest(int64_t port_,
                         struct wire_Identifier *identifier,
@@ -170,7 +223,7 @@ void wire_new__static_method__PublicKey(int64_t port_,
                                         struct wire_uint_8_list *key_b64);
 
 void wire_new__static_method__Digest(int64_t port_,
-                                     int32_t dt,
+                                     struct wire_SelfAddressing *dt,
                                      struct wire_uint_8_list *digest_data);
 
 void wire_new_from_hex__static_method__Signature(int64_t port_,
@@ -185,6 +238,10 @@ void wire_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_
 
 void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
 
+void wire_new__static_method__DataAndSignature(int64_t port_,
+                                               struct wire_uint_8_list *data,
+                                               struct wire_Signature *signature);
+
 struct wire_StringList *new_StringList_0(int32_t len);
 
 struct wire_Config *new_box_autoadd_config_0(void);
@@ -195,7 +252,15 @@ struct wire_Identifier *new_box_autoadd_identifier_0(void);
 
 struct wire_PublicKey *new_box_autoadd_public_key_0(void);
 
+struct wire_SelfAddressing *new_box_autoadd_self_addressing_0(void);
+
 struct wire_Signature *new_box_autoadd_signature_0(void);
+
+int32_t *new_box_basic_0(int32_t value);
+
+struct wire_SelfAddressing *new_box_self_addressing_0(void);
+
+int32_t *new_box_self_signing_0(int32_t value);
 
 struct wire_Signature *new_box_signature_0(void);
 
@@ -212,6 +277,10 @@ union IdentifierKind *inflate_Identifier_Basic(void);
 union IdentifierKind *inflate_Identifier_SelfAddressing(void);
 
 union IdentifierKind *inflate_Identifier_SelfSigning(void);
+
+union SelfAddressingKind *inflate_SelfAddressing_Blake2B256(void);
+
+union SelfAddressingKind *inflate_SelfAddressing_Blake2S256(void);
 
 void free_WireSyncReturnStruct(struct WireSyncReturnStruct val);
 
@@ -241,12 +310,17 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_new_from_b64__static_method__Signature);
     dummy_var ^= ((int64_t) (void*) wire_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
+    dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);
     dummy_var ^= ((int64_t) (void*) new_StringList_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_config_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_digest_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_identifier_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_public_key_0);
+    dummy_var ^= ((int64_t) (void*) new_box_autoadd_self_addressing_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_signature_0);
+    dummy_var ^= ((int64_t) (void*) new_box_basic_0);
+    dummy_var ^= ((int64_t) (void*) new_box_self_addressing_0);
+    dummy_var ^= ((int64_t) (void*) new_box_self_signing_0);
     dummy_var ^= ((int64_t) (void*) new_box_signature_0);
     dummy_var ^= ((int64_t) (void*) new_list_data_and_signature_0);
     dummy_var ^= ((int64_t) (void*) new_list_identifier_0);
@@ -255,6 +329,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) inflate_Identifier_Basic);
     dummy_var ^= ((int64_t) (void*) inflate_Identifier_SelfAddressing);
     dummy_var ^= ((int64_t) (void*) inflate_Identifier_SelfSigning);
+    dummy_var ^= ((int64_t) (void*) inflate_SelfAddressing_Blake2B256);
+    dummy_var ^= ((int64_t) (void*) inflate_SelfAddressing_Blake2S256);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturnStruct);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
     return dummy_var;

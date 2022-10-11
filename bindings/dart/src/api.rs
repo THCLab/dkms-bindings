@@ -22,80 +22,23 @@ pub use controller::utils::OptionalConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-// // pub type KeyType = Basic;
-// #[frb(mirror(Basic))]
-// pub enum _Basic {
-//     ECDSAsecp256k1NT,
-//     ECDSAsecp256k1,
-//     Ed25519NT,
-//     Ed25519,
-//     Ed448NT,
-//     Ed448,
-//     X25519,
-//     X448,
-// }
-
-
-// // pub type DigestType = SelfAddressing;
-// #[frb(mirror(SelfAddressing))]
-// pub enum _SelfAddressing {
-//     Blake3_256,
-//     SHA3_256,
-//     SHA2_256,
-//     Blake3_512,
-//     SHA3_512,
-//     Blake2B512,
-//     SHA2_512,
-//     Blake2B256(Vec<u8>),
-//     Blake2S256(Vec<u8>),
-// }
-
-// // pub type SignatureType = SelfSigning;
-// #[frb(mirror(SelfSigning))]
-// pub enum _SelfSigning {
-//     Ed25519Sha512,
-//     ECDSAsecp256k1Sha256,
-//     Ed448,
-// }
-
-#[derive(Clone)]
-pub enum KeyType {
+// pub type KeyType = Basic;
+#[frb(mirror(Basic))]
+pub enum _Basic {
+    ECDSAsecp256k1NT,
     ECDSAsecp256k1,
+    Ed25519NT,
     Ed25519,
+    Ed448NT,
     Ed448,
     X25519,
     X448,
 }
 
-impl Into<Basic> for KeyType {
-    fn into(self) -> Basic {
-        match self {
-            KeyType::ECDSAsecp256k1 => Basic::ECDSAsecp256k1NT,
-            KeyType::Ed25519 => Basic::Ed25519NT,
-            KeyType::Ed448 => Basic::Ed448NT,
-            KeyType::X25519 => Basic::X25519,
-            KeyType::X448 => Basic::X448,
-        }
-    }
-}
 
-impl From<Basic> for KeyType {
-    fn from(kd: Basic) -> Self {
-        match kd {
-            Basic::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
-            Basic::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
-            Basic::Ed25519NT => KeyType::Ed25519,
-            Basic::Ed25519 => KeyType::Ed25519,
-            Basic::Ed448NT => KeyType::Ed448,
-            Basic::Ed448 => KeyType::Ed448,
-            Basic::X25519 => KeyType::X25519,
-            Basic::X448 => KeyType::X448,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub enum DigestType {
+// pub type DigestType = SelfAddressing;
+#[frb(mirror(SelfAddressing))]
+pub enum _SelfAddressing {
     Blake3_256,
     SHA3_256,
     SHA2_256,
@@ -103,109 +46,166 @@ pub enum DigestType {
     SHA3_512,
     Blake2B512,
     SHA2_512,
+    Blake2B256(Vec<u8>),
+    Blake2S256(Vec<u8>),
 }
 
-impl Into<SelfAddressing> for DigestType {
-    fn into(self) -> SelfAddressing {
-        match self {
-            DigestType::Blake3_256 => SelfAddressing::Blake3_256,
-            DigestType::SHA3_256 => SelfAddressing::SHA2_256,
-            DigestType::SHA2_256 => SelfAddressing::SHA3_256,
-            DigestType::Blake3_512 => SelfAddressing::Blake3_256,
-            DigestType::SHA3_512 => SelfAddressing::SHA2_256,
-            DigestType::Blake2B512 => SelfAddressing::Blake2B512,
-            DigestType::SHA2_512 => SelfAddressing::Blake3_512,
-        }
-    }
-}
-
-impl From<SelfAddressing> for DigestType {
-    fn from(sa: SelfAddressing) -> Self {
-        match sa {
-            SelfAddressing::Blake3_256 => todo!(),
-            SelfAddressing::Blake2B256(_) => todo!(),
-            SelfAddressing::Blake2S256(_) => todo!(),
-            SelfAddressing::SHA3_256 => todo!(),
-            SelfAddressing::SHA2_256 => todo!(),
-            SelfAddressing::Blake3_512 => todo!(),
-            SelfAddressing::SHA3_512 => todo!(),
-            SelfAddressing::Blake2B512 => todo!(),
-            SelfAddressing::SHA2_512 => todo!(),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub enum SignatureType {
+// pub type SignatureType = SelfSigning;
+#[frb(mirror(SelfSigning))]
+pub enum _SelfSigning {
     Ed25519Sha512,
     ECDSAsecp256k1Sha256,
     Ed448,
 }
 
-impl From<SignatureType> for SelfSigning {
-    fn from(sig: SignatureType) -> Self {
-         match sig {
-            SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
-            SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
-            SignatureType::Ed448 => SelfSigning::Ed448,
-        }
-    }
-}
+// #[derive(Clone)]
+// pub enum KeyType {
+//     ECDSAsecp256k1,
+//     Ed25519,
+//     Ed448,
+//     X25519,
+//     X448,
+// }
 
-impl From<SelfSigning> for SignatureType {
-    fn from(sd: SelfSigning) -> Self {
-        match sd {
-            SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
-            SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
-            SelfSigning::Ed448 => SignatureType::Ed448,
-        }
-    }
-}
+// impl Into<Basic> for KeyType {
+//     fn into(self) -> Basic {
+//         match self {
+//             KeyType::ECDSAsecp256k1 => Basic::ECDSAsecp256k1NT,
+//             KeyType::Ed25519 => Basic::Ed25519NT,
+//             KeyType::Ed448 => Basic::Ed448NT,
+//             KeyType::X25519 => Basic::X25519,
+//             KeyType::X448 => Basic::X448,
+//         }
+//     }
+// }
+
+// impl From<Basic> for KeyType {
+//     fn from(kd: Basic) -> Self {
+//         match kd {
+//             Basic::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
+//             Basic::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
+//             Basic::Ed25519NT => KeyType::Ed25519,
+//             Basic::Ed25519 => KeyType::Ed25519,
+//             Basic::Ed448NT => KeyType::Ed448,
+//             Basic::Ed448 => KeyType::Ed448,
+//             Basic::X25519 => KeyType::X25519,
+//             Basic::X448 => KeyType::X448,
+//         }
+//     }
+// }
+
+// #[derive(Clone)]
+// pub enum DigestType {
+//     Blake3_256,
+//     SHA3_256,
+//     SHA2_256,
+//     Blake3_512,
+//     SHA3_512,
+//     Blake2B512,
+//     SHA2_512,
+// }
+
+// impl Into<SelfAddressing> for DigestType {
+//     fn into(self) -> SelfAddressing {
+//         match self {
+//             DigestType::Blake3_256 => SelfAddressing::Blake3_256,
+//             DigestType::SHA3_256 => SelfAddressing::SHA2_256,
+//             DigestType::SHA2_256 => SelfAddressing::SHA3_256,
+//             DigestType::Blake3_512 => SelfAddressing::Blake3_256,
+//             DigestType::SHA3_512 => SelfAddressing::SHA2_256,
+//             DigestType::Blake2B512 => SelfAddressing::Blake2B512,
+//             DigestType::SHA2_512 => SelfAddressing::Blake3_512,
+//         }
+//     }
+// }
+
+// impl From<SelfAddressing> for DigestType {
+//     fn from(sa: SelfAddressing) -> Self {
+//         match sa {
+//             SelfAddressing::Blake3_256 => todo!(),
+//             SelfAddressing::Blake2B256(_) => todo!(),
+//             SelfAddressing::Blake2S256(_) => todo!(),
+//             SelfAddressing::SHA3_256 => todo!(),
+//             SelfAddressing::SHA2_256 => todo!(),
+//             SelfAddressing::Blake3_512 => todo!(),
+//             SelfAddressing::SHA3_512 => todo!(),
+//             SelfAddressing::Blake2B512 => todo!(),
+//             SelfAddressing::SHA2_512 => todo!(),
+//         }
+//     }
+// }
+
+// #[derive(Clone)]
+// pub enum SignatureType {
+//     Ed25519Sha512,
+//     ECDSAsecp256k1Sha256,
+//     Ed448,
+// }
+
+// impl From<SignatureType> for SelfSigning {
+//     fn from(sig: SignatureType) -> Self {
+//          match sig {
+//             SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
+//             SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
+//             SignatureType::Ed448 => SelfSigning::Ed448,
+//         }
+//     }
+// }
+
+// impl From<SelfSigning> for SignatureType {
+//     fn from(sd: SelfSigning) -> Self {
+//         match sd {
+//             SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
+//             SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
+//             SelfSigning::Ed448 => SignatureType::Ed448,
+//         }
+//     }
+// }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PublicKey {
-    pub derivation: KeyType,
+    pub derivation: Box<Basic>,
     pub public_key: Vec<u8>,
 }
 impl PublicKey {
-    pub fn new(kt: KeyType, key_b64: String) -> PublicKey {
-        PublicKey { derivation: kt, public_key: base64::decode(key_b64).unwrap()}
+    pub fn new(kt: Basic, key_b64: String) -> PublicKey {
+        PublicKey { derivation: Box::new(kt), public_key: base64::decode(key_b64).unwrap()}
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Digest {
-    pub derivation: DigestType,
+    pub derivation: Box<SelfAddressing>,
     pub digest: Vec<u8>,
 }
 
 impl Digest {
-    pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
-        Digest {derivation: dt, digest: digest_data}
+    pub fn new(dt: SelfAddressing, digest_data: Vec<u8>) -> Digest {
+        Digest {derivation: Box::new(dt), digest: digest_data}
     }
 }
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct  Signature {
-    pub derivation: SignatureType,
+    pub derivation: Box<SelfSigning>,
     pub signature: Vec<u8>,
 }
 
 impl Signature {
-    pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
-        Signature {derivation: st, signature: hex::decode(signature).unwrap()}
+    pub fn new_from_hex(st: SelfSigning, signature: String) -> Signature {
+        Signature {derivation: Box::new(st), signature: hex::decode(signature).unwrap()}
     }
 
-    pub fn new_from_b64(st: SignatureType, signature: String) -> Signature {
-        Signature {derivation: st, signature: base64::decode(signature).unwrap()}
+    pub fn new_from_b64(st: SelfSigning, signature: String) -> Signature {
+        Signature {derivation: Box::new(st), signature: base64::decode(signature).unwrap()}
     }
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Identifier {
     Basic(PublicKey),
     SelfAddressing(Digest),
@@ -380,6 +380,8 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .finalize_inception(event.as_bytes(), &(&signature).into())?;
+    println!("\ninception event: {}", event);
+    println!("\nController incepted id: {}", controller_id.clone().to_str());
     Ok(Identifier::from(controller_id))
 }
 
@@ -424,7 +426,7 @@ pub fn rotate(
         )?)
 }
 
-pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
+pub fn anchor(identifier: Identifier, data: String, algo: SelfAddressing) -> Result<String> {
     let dig_type: SelfAddressing = algo.into();
     let digest = dig_type.derive(data.as_bytes());
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
@@ -518,6 +520,12 @@ pub struct DataAndSignature {
     pub signature: Box<Signature>,
 }
 
+impl DataAndSignature {
+    pub fn new(data: String, signature: Signature) -> DataAndSignature {
+        Self { data, signature: Box::new(signature) }
+    }
+}
+
 pub fn finalize_group_incept(
     identifier: Identifier,
     group_event: String,
@@ -541,7 +549,7 @@ pub fn finalize_group_incept(
                      data: exn,
                      signature,
                  }| { 
-                     let sig_type : SelfSigning = signature.derivation.clone().into();
+                     let sig_type : SelfSigning = (*signature.derivation).into();
                      let sig = sig_type.derive(signature.signature.clone());
                      (exn.as_bytes().to_vec(), sig) },
             )
