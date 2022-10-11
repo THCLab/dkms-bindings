@@ -35,7 +35,6 @@ pub enum _KeyType {
     X448,
 }
 
-
 pub type DigestType = SelfAddressing;
 #[frb(mirror(DigestType))]
 pub enum _DigestType {
@@ -168,10 +167,9 @@ pub struct PublicKey {
     pub derivation: Box<KeyType>,
     pub key: Vec<u8>,
 }
-impl PublicKey {
-    pub fn new(kt: KeyType, key_b64: String) -> PublicKey {
-        PublicKey { derivation: Box::new(kt), key: base64::decode(key_b64).unwrap()}
-    }
+
+pub fn new_public_key(kt: KeyType, key_b64: String) -> PublicKey {
+    PublicKey { derivation: Box::new(kt), key: base64::decode(key_b64).unwrap()}
 }
 
 #[derive(Clone, Debug)]

@@ -1,6 +1,6 @@
 use keri::{prefix::{IdentifierPrefix, BasicPrefix, SelfAddressingPrefix, SelfSigningPrefix}, derivation::{self_signing::SelfSigning, basic::Basic}};
 
-use crate::api::{Identifier, PublicKey, Signature, Digest};
+use crate::api::{Identifier, PublicKey, Signature, Digest, new_public_key};
 
 impl From<IdentifierPrefix> for Identifier {
     fn from(id: IdentifierPrefix) -> Self {
@@ -50,7 +50,7 @@ impl From<&PublicKey> for BasicPrefix {
 
 impl Default for PublicKey {
     fn default() -> Self {
-        PublicKey::new(Basic::Ed25519, "".into())
+        new_public_key(Basic::Ed25519, "".into())
     }
 }
 
