@@ -454,4 +454,8 @@ class Keri {
         dynamic hint}) async{
     return await api.finalizeGroupIncept(identifier: identifier, groupEvent: groupEvent, signature: signature, toForward: toForward);
   }
+
+  static Future<PublicKey> newPublicKey({required KeyType kt, required String keyB64, dynamic hint}) async{
+    return await api.newStaticMethodPublicKey(kt: kt, keyB64: keyB64);
+  }
 }
