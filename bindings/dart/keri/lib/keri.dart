@@ -13,7 +13,7 @@ class Keri {
 
   static late final dylib = Platform.environment.containsKey('FLUTTER_TEST')
       ? DynamicLibrary.open(
-          Platform.script.resolve("test/dartkeriox.dll").toFilePath())
+          Platform.script.resolve("windows/dartkeriox/dartkeriox.dll").toFilePath())
       : Platform.isIOS
           ? DynamicLibrary.process()
           : Platform.isMacOS
@@ -97,7 +97,7 @@ class Keri {
   }
 
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
-  static Future<Controller> finalizeInception(
+  static Future<Identifier> finalizeInception(
       {required String event,
       required Signature signature,
       dynamic hint}) async {
@@ -126,7 +126,7 @@ class Keri {
 
   ///Creates rotation event that needs to be signed externally.
   static Future<String> rotate(
-      {required Controller controller,
+      {required Identifier controller,
       required List<PublicKey> currentKeys,
       required List<PublicKey> newNextKeys,
       required List<String> witnessToAdd,
@@ -135,7 +135,7 @@ class Keri {
       dynamic hint}) async {
     try {
       return await api.rotate(
-          controller: controller,
+          identifier: controller,
           currentKeys: currentKeys,
           newNextKeys: newNextKeys,
           witnessToAdd: witnessToAdd,
@@ -176,12 +176,12 @@ class Keri {
 
   ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
   static Future<String> addWatcher(
-      {required Controller controller,
+      {required Identifier controller,
       required String watcherOobi,
       dynamic hint}) async {
     try {
       return await api.addWatcher(
-          controller: controller, watcherOobi: watcherOobi);
+          identifier: controller, watcherOobi: watcherOobi);
     } on FfiException catch (e) {
       if (e.message.contains('Can\'t parse oobi json:')) {
         throw IncorrectWatcherOobiException(
@@ -209,7 +209,7 @@ class Keri {
 
   ///Verifies provided signatures against event and saves it.
   static Future<bool> finalizeEvent(
-      {required Controller identifier,
+      {required Identifier identifier,
       required String event,
       required Signature signature,
       dynamic hint}) async {
@@ -269,11 +269,11 @@ class Keri {
 
   ///Query designated watcher about other identifier's public keys data.
   static Future<bool> query(
-      {required Controller controller,
+      {required Identifier controller,
       required String oobisJson,
       dynamic hint}) async {
     try {
-      return await api.query(controller: controller, oobisJson: oobisJson);
+      return await api.query(identifier: controller, oobisJson: oobisJson);
     } on FfiException catch (e) {
       if (e.message.contains('Deserialize error')) {
         throw IdentifierException(
@@ -313,31 +313,9 @@ class Keri {
   }
 
   ///Returns Key Event Log in the CESR representation for current Identifier when given a controller.
-  static Future<String> getKel({required Controller cont, dynamic hint}) async {
+  static Future<String> getKel({required Identifier cont, dynamic hint}) async {
     try {
-      return await api.getKel(cont: cont);
-    } on FfiException catch (e) {
-      if (e.message.contains('Deserialize error')) {
-        throw IdentifierException(
-            'The identifier provided to the controller is incorrect. Check the identifier once again.');
-      }
-      if (e.message.contains('Unknown id')) {
-        throw IdentifierException(
-            'Unknown controller identifier. Check the confroller for identifier once again.');
-      }
-      if (e.message.contains('Can\'t parse controller')) {
-        throw IdentifierException(
-            'Can\'t parse controller prefix. Check the confroller for identifier once again.');
-      }
-      rethrow;
-    }
-  }
-
-  ///Returns Key Event Log in the CESR representation for current Identifier when given a controller identifier.
-  static Future<String> getKelByStr(
-      {required String contId, dynamic hint}) async {
-    try {
-      return await api.getKelByStr(contId: contId);
+      return await api.getKel(identifier: cont);
     } on FfiException catch (e) {
       if (e.message.contains('Deserialize error')) {
         throw IdentifierException(
@@ -371,11 +349,11 @@ class Keri {
 
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
   static Future<String> anchorDigest(
-      {required Controller controller,
+      {required Identifier controller,
       required List<String> sais,
       dynamic hint}) async {
     try {
-      return await api.anchorDigest(controller: controller, sais: sais);
+      return await api.anchorDigest(identifier: controller, sais: sais);
     } on FfiException catch (e) {
       if (e.message.contains('Unknown id')) {
         throw IdentifierException(
@@ -403,12 +381,12 @@ class Keri {
 
   ///Creates new Interaction Event along with arbitrary data.
   static Future<String> anchor(
-      {required Controller controller,
+      {required Identifier controller,
       required String data,
-      required DigestType algo,
+      required SelfAddressing algo,
       dynamic hint}) async {
     try {
-      return await api.anchor(controller: controller, data: data, algo: algo);
+      return await api.anchor(identifier: controller, data: data, algo: algo);
     } on FfiException catch (e) {
       if (e.message.contains('Unknown id')) {
         throw IdentifierException(
