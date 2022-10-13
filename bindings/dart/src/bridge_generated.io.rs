@@ -17,16 +17,6 @@ pub extern "C" fn wire_signature_from_b64(port_: i64, st: i32, signature: *mut w
 }
 
 #[no_mangle]
-pub extern "C" fn wire_identifier_from_str(port_: i64, id_str: *mut wire_uint_8_list) {
-    wire_identifier_from_str_impl(port_, id_str)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_identifier_to_str(port_: i64, identifier: *mut wire_Identifier) {
-    wire_identifier_to_str_impl(port_, identifier)
-}
-
-#[no_mangle]
 pub extern "C" fn wire_with_initial_oobis(
     port_: i64,
     config: *mut wire_Config,
@@ -209,6 +199,19 @@ pub extern "C" fn wire_get_current_public_key(port_: i64, attachment: *mut wire_
 }
 
 #[no_mangle]
+pub extern "C" fn wire_new_from_str__static_method__Identifier(
+    port_: i64,
+    id_str: *mut wire_uint_8_list,
+) {
+    wire_new_from_str__static_method__Identifier_impl(port_, id_str)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_to_str__method__Identifier(port_: i64, that: *mut wire_Identifier) {
+    wire_to_str__method__Identifier_impl(port_, that)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_new__static_method__DataAndSignature(
     port_: i64,
     data: *mut wire_uint_8_list,
@@ -383,13 +386,6 @@ impl Wire2Api<Identifier> for wire_Identifier {
         }
     }
 }
-impl Wire2Api<KeriPublicKey> for wire_KeriPublicKey {
-    fn wire2api(self) -> KeriPublicKey {
-        KeriPublicKey {
-            public_key: self.public_key.wire2api(),
-        }
-    }
-}
 
 impl Wire2Api<Vec<DataAndSignature>> for *mut wire_list_data_and_signature {
     fn wire2api(self) -> Vec<DataAndSignature> {
@@ -474,12 +470,6 @@ pub struct wire_Identifier {
 
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_KeriPublicKey {
-    public_key: *mut wire_uint_8_list,
-}
-
-#[repr(C)]
-#[derive(Clone)]
 pub struct wire_list_data_and_signature {
     ptr: *mut wire_DataAndSignature,
     len: i32,
@@ -503,7 +493,7 @@ pub struct wire_list_public_key {
 #[derive(Clone)]
 pub struct wire_PublicKey {
     derivation: i32,
-    public_key: wire_KeriPublicKey,
+    public_key: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
@@ -644,19 +634,11 @@ impl NewWithNullPtr for wire_Identifier {
     }
 }
 
-impl NewWithNullPtr for wire_KeriPublicKey {
-    fn new_with_null_ptr() -> Self {
-        Self {
-            public_key: core::ptr::null_mut(),
-        }
-    }
-}
-
 impl NewWithNullPtr for wire_PublicKey {
     fn new_with_null_ptr() -> Self {
         Self {
             derivation: Default::default(),
-            public_key: Default::default(),
+            public_key: core::ptr::null_mut(),
         }
     }
 }

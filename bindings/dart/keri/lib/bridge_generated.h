@@ -11,21 +11,13 @@ typedef struct wire_uint_8_list {
   int32_t len;
 } wire_uint_8_list;
 
-typedef struct wire_Identifier {
-  struct wire_uint_8_list *id;
-} wire_Identifier;
-
 typedef struct wire_Config {
   struct wire_uint_8_list *initial_oobis;
 } wire_Config;
 
-typedef struct wire_KeriPublicKey {
-  struct wire_uint_8_list *public_key;
-} wire_KeriPublicKey;
-
 typedef struct wire_PublicKey {
   int32_t derivation;
-  struct wire_KeriPublicKey public_key;
+  struct wire_uint_8_list *public_key;
 } wire_PublicKey;
 
 typedef struct wire_list_public_key {
@@ -42,6 +34,10 @@ typedef struct wire_Signature {
   int32_t derivation;
   struct wire_uint_8_list *signature;
 } wire_Signature;
+
+typedef struct wire_Identifier {
+  struct wire_uint_8_list *id;
+} wire_Identifier;
 
 typedef struct wire_DigestType_Blake3_256 {
 
@@ -125,10 +121,6 @@ void wire_signature_from_hex(int64_t port_, int32_t st, struct wire_uint_8_list 
 
 void wire_signature_from_b64(int64_t port_, int32_t st, struct wire_uint_8_list *signature);
 
-void wire_identifier_from_str(int64_t port_, struct wire_uint_8_list *id_str);
-
-void wire_identifier_to_str(int64_t port_, struct wire_Identifier *identifier);
-
 void wire_with_initial_oobis(int64_t port_,
                              struct wire_Config *config,
                              struct wire_uint_8_list *oobis_json);
@@ -208,6 +200,10 @@ void wire_get_kel(int64_t port_, struct wire_Identifier *identifier);
 
 void wire_get_current_public_key(int64_t port_, struct wire_uint_8_list *attachment);
 
+void wire_new_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
+
+void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
+
 void wire_new__static_method__DataAndSignature(int64_t port_,
                                                struct wire_uint_8_list *data,
                                                struct wire_Signature *signature);
@@ -243,8 +239,6 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_new_public_key);
     dummy_var ^= ((int64_t) (void*) wire_signature_from_hex);
     dummy_var ^= ((int64_t) (void*) wire_signature_from_b64);
-    dummy_var ^= ((int64_t) (void*) wire_identifier_from_str);
-    dummy_var ^= ((int64_t) (void*) wire_identifier_to_str);
     dummy_var ^= ((int64_t) (void*) wire_with_initial_oobis);
     dummy_var ^= ((int64_t) (void*) wire_init_kel);
     dummy_var ^= ((int64_t) (void*) wire_incept);
@@ -263,6 +257,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
     dummy_var ^= ((int64_t) (void*) wire_get_current_public_key);
+    dummy_var ^= ((int64_t) (void*) wire_new_from_str__static_method__Identifier);
+    dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);
     dummy_var ^= ((int64_t) (void*) new_StringList_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_config_0);

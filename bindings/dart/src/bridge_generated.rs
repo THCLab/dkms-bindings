@@ -33,7 +33,7 @@ fn wire_new_public_key_impl(
         move || {
             let api_kt = kt.wire2api();
             let api_key_b64 = key_b64.wire2api();
-            move |task_callback| Ok(mirror_PublicKey(new_public_key(api_kt, api_key_b64)))
+            move |task_callback| Ok(new_public_key(api_kt, api_key_b64))
         },
     )
 }
@@ -70,35 +70,6 @@ fn wire_signature_from_b64_impl(
             let api_st = st.wire2api();
             let api_signature = signature.wire2api();
             move |task_callback| Ok(mirror_Signature(signature_from_b64(api_st, api_signature)))
-        },
-    )
-}
-fn wire_identifier_from_str_impl(port_: MessagePort, id_str: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "identifier_from_str",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_id_str = id_str.wire2api();
-            move |task_callback| identifier_from_str(api_id_str)
-        },
-    )
-}
-fn wire_identifier_to_str_impl(
-    port_: MessagePort,
-    identifier: impl Wire2Api<Identifier> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "identifier_to_str",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_identifier = identifier.wire2api();
-            move |task_callback| Ok(identifier_to_str(api_identifier))
         },
     )
 }
@@ -472,6 +443,38 @@ fn wire_get_current_public_key_impl(
         },
     )
 }
+fn wire_new_from_str__static_method__Identifier_impl(
+    port_: MessagePort,
+    id_str: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "new_from_str__static_method__Identifier",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_id_str = id_str.wire2api();
+            move |task_callback| Identifier::new_from_str(api_id_str)
+        },
+    )
+}
+fn wire_to_str__method__Identifier_impl(
+    port_: MessagePort,
+    that: impl Wire2Api<Identifier> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "to_str__method__Identifier",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_that = that.wire2api();
+            move |task_callback| Ok(Identifier::to_str(&api_that))
+        },
+    )
+}
 fn wire_new__static_method__DataAndSignature_impl(
     port_: MessagePort,
     data: impl Wire2Api<String> + UnwindSafe,
@@ -493,13 +496,7 @@ fn wire_new__static_method__DataAndSignature_impl(
 // Section: wrapper structs
 
 #[derive(Clone)]
-struct mirror_KeriPublicKey(KeriPublicKey);
-
-#[derive(Clone)]
 struct mirror_KeyType(KeyType);
-
-#[derive(Clone)]
-struct mirror_PublicKey(PublicKey);
 
 #[derive(Clone)]
 struct mirror_Signature(Signature);
@@ -510,10 +507,6 @@ struct mirror_SignatureType(SignatureType);
 // Section: static checks
 
 const _: fn() = || {
-    {
-        let KeriPublicKey = None::<KeriPublicKey>.unwrap();
-        let _: Vec<u8> = KeriPublicKey.public_key;
-    }
     match None::<KeyType>.unwrap() {
         KeyType::ECDSAsecp256k1NT => {}
         KeyType::ECDSAsecp256k1 => {}
@@ -523,11 +516,6 @@ const _: fn() = || {
         KeyType::Ed448 => {}
         KeyType::X25519 => {}
         KeyType::X448 => {}
-    }
-    {
-        let PublicKey = None::<PublicKey>.unwrap();
-        let _: KeyType = PublicKey.derivation;
-        let _: KeriPublicKey = PublicKey.public_key;
     }
     {
         let Signature = None::<Signature>.unwrap();
@@ -655,13 +643,6 @@ impl support::IntoDart for Identifier {
 }
 impl support::IntoDartExceptPrimitive for Identifier {}
 
-impl support::IntoDart for mirror_KeriPublicKey {
-    fn into_dart(self) -> support::DartAbi {
-        vec![self.0.public_key.into_dart()].into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for mirror_KeriPublicKey {}
-
 impl support::IntoDart for mirror_KeyType {
     fn into_dart(self) -> support::DartAbi {
         match self.0 {
@@ -678,21 +659,21 @@ impl support::IntoDart for mirror_KeyType {
     }
 }
 
-impl support::IntoDart for mirror_PublicKey {
+impl support::IntoDart for PublicKey {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_KeyType(self.0.derivation).into_dart(),
-            mirror_KeriPublicKey(self.0.public_key).into_dart(),
+            mirror_KeyType(self.derivation).into_dart(),
+            self.public_key.into_dart(),
         ]
         .into_dart()
     }
 }
-impl support::IntoDartExceptPrimitive for mirror_PublicKey {}
+impl support::IntoDartExceptPrimitive for PublicKey {}
 
 impl support::IntoDart for PublicKeySignaturePair {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_PublicKey(self.key).into_dart(),
+            self.key.into_dart(),
             mirror_Signature(self.signature).into_dart(),
         ]
         .into_dart()

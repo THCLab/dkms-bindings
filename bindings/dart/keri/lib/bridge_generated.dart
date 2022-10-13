@@ -29,15 +29,6 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kSignatureFromB64ConstMeta;
 
-  Future<Identifier> identifierFromStr({required String idStr, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kIdentifierFromStrConstMeta;
-
-  Future<String> identifierToStr(
-      {required Identifier identifier, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kIdentifierToStrConstMeta;
-
   Future<Config> withInitialOobis(
       {required Config config, required String oobisJson, dynamic hint});
 
@@ -163,6 +154,16 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kGetCurrentPublicKeyConstMeta;
 
+  Future<Identifier> newFromStrStaticMethodIdentifier(
+      {required String idStr, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kNewFromStrStaticMethodIdentifierConstMeta;
+
+  Future<String> toStrMethodIdentifier(
+      {required Identifier that, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kToStrMethodIdentifierConstMeta;
+
   Future<DataAndSignature> newStaticMethodDataAndSignature(
       {required String data, required Signature signature, dynamic hint});
 
@@ -245,19 +246,21 @@ class GroupInception {
 }
 
 class Identifier {
+  final KeriDart bridge;
   final String id;
 
   Identifier({
+    required this.bridge,
     required this.id,
   });
-}
 
-class KeriPublicKey {
-  final Uint8List publicKey;
+  static Future<Identifier> newFromStr(
+          {required KeriDart bridge, required String idStr, dynamic hint}) =>
+      bridge.newFromStrStaticMethodIdentifier(idStr: idStr, hint: hint);
 
-  KeriPublicKey({
-    required this.publicKey,
-  });
+  Future<String> toStr({dynamic hint}) => bridge.toStrMethodIdentifier(
+        that: this,
+      );
 }
 
 enum KeyType {
@@ -273,7 +276,7 @@ enum KeyType {
 
 class PublicKey {
   final KeyType derivation;
-  final KeriPublicKey publicKey;
+  final Uint8List publicKey;
 
   PublicKey({
     required this.derivation,
@@ -371,39 +374,6 @@ class KeriDartImpl implements KeriDart {
         argNames: ["st", "signature"],
       );
 
-  Future<Identifier> identifierFromStr({required String idStr, dynamic hint}) =>
-      _platform.executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => _platform.inner
-            .wire_identifier_from_str(port_, _platform.api2wire_String(idStr)),
-        parseSuccessData: _wire2api_identifier,
-        constMeta: kIdentifierFromStrConstMeta,
-        argValues: [idStr],
-        hint: hint,
-      ));
-
-  FlutterRustBridgeTaskConstMeta get kIdentifierFromStrConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "identifier_from_str",
-        argNames: ["idStr"],
-      );
-
-  Future<String> identifierToStr(
-          {required Identifier identifier, dynamic hint}) =>
-      _platform.executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => _platform.inner.wire_identifier_to_str(
-            port_, _platform.api2wire_box_autoadd_identifier(identifier)),
-        parseSuccessData: _wire2api_String,
-        constMeta: kIdentifierToStrConstMeta,
-        argValues: [identifier],
-        hint: hint,
-      ));
-
-  FlutterRustBridgeTaskConstMeta get kIdentifierToStrConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "identifier_to_str",
-        argNames: ["identifier"],
-      );
-
   Future<Config> withInitialOobis(
           {required Config config, required String oobisJson, dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
@@ -483,7 +453,7 @@ class KeriDartImpl implements KeriDart {
             port_,
             _platform.api2wire_String(event),
             _platform.api2wire_box_autoadd_signature(signature)),
-        parseSuccessData: _wire2api_identifier,
+        parseSuccessData: (d) => _wire2api_identifier(d),
         constMeta: kFinalizeInceptionConstMeta,
         argValues: [event, signature],
         hint: hint,
@@ -678,7 +648,7 @@ class KeriDartImpl implements KeriDart {
             _platform.api2wire_String(groupEvent),
             _platform.api2wire_box_autoadd_signature(signature),
             _platform.api2wire_list_data_and_signature(toForward)),
-        parseSuccessData: _wire2api_identifier,
+        parseSuccessData: (d) => _wire2api_identifier(d),
         constMeta: kFinalizeGroupInceptConstMeta,
         argValues: [identifier, groupEvent, signature, toForward],
         hint: hint,
@@ -822,6 +792,42 @@ class KeriDartImpl implements KeriDart {
         argNames: ["attachment"],
       );
 
+  Future<Identifier> newFromStrStaticMethodIdentifier(
+          {required String idStr, dynamic hint}) =>
+      _platform.executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => _platform.inner
+            .wire_new_from_str__static_method__Identifier(
+                port_, _platform.api2wire_String(idStr)),
+        parseSuccessData: (d) => _wire2api_identifier(d),
+        constMeta: kNewFromStrStaticMethodIdentifierConstMeta,
+        argValues: [idStr],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta
+      get kNewFromStrStaticMethodIdentifierConstMeta =>
+          const FlutterRustBridgeTaskConstMeta(
+            debugName: "new_from_str__static_method__Identifier",
+            argNames: ["idStr"],
+          );
+
+  Future<String> toStrMethodIdentifier(
+          {required Identifier that, dynamic hint}) =>
+      _platform.executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => _platform.inner.wire_to_str__method__Identifier(
+            port_, _platform.api2wire_box_autoadd_identifier(that)),
+        parseSuccessData: _wire2api_String,
+        constMeta: kToStrMethodIdentifierConstMeta,
+        argValues: [that],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kToStrMethodIdentifierConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "to_str__method__Identifier",
+        argNames: ["that"],
+      );
+
   Future<DataAndSignature> newStaticMethodDataAndSignature(
           {required String data, required Signature signature, dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
@@ -915,16 +921,8 @@ class KeriDartImpl implements KeriDart {
     if (arr.length != 1)
       throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
     return Identifier(
+      bridge: this,
       id: _wire2api_String(arr[0]),
-    );
-  }
-
-  KeriPublicKey _wire2api_keri_public_key(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 1)
-      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
-    return KeriPublicKey(
-      publicKey: _wire2api_uint_8_list(arr[0]),
     );
   }
 
@@ -949,7 +947,7 @@ class KeriDartImpl implements KeriDart {
       throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return PublicKey(
       derivation: _wire2api_key_type(arr[0]),
-      publicKey: _wire2api_keri_public_key(arr[1]),
+      publicKey: _wire2api_uint_8_list(arr[1]),
     );
   }
 
@@ -1196,11 +1194,6 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
     wireObj.id = api2wire_String(apiObj.id);
   }
 
-  void _api_fill_to_wire_keri_public_key(
-      KeriPublicKey apiObj, wire_KeriPublicKey wireObj) {
-    wireObj.public_key = api2wire_uint_8_list(apiObj.publicKey);
-  }
-
   void _api_fill_to_wire_opt_box_autoadd_config(
       Config? apiObj, ffi.Pointer<wire_Config> wireObj) {
     if (apiObj != null) _api_fill_to_wire_box_autoadd_config(apiObj, wireObj);
@@ -1208,7 +1201,7 @@ class KeriDartPlatform extends FlutterRustBridgeBase<KeriDartWire> {
 
   void _api_fill_to_wire_public_key(PublicKey apiObj, wire_PublicKey wireObj) {
     wireObj.derivation = api2wire_key_type(apiObj.derivation);
-    wireObj.public_key = api2wire_keri_public_key(apiObj.publicKey);
+    wireObj.public_key = api2wire_uint_8_list(apiObj.publicKey);
   }
 
   void _api_fill_to_wire_signature(Signature apiObj, wire_Signature wireObj) {
@@ -1309,40 +1302,6 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
               ffi.Pointer<wire_uint_8_list>)>>('wire_signature_from_b64');
   late final _wire_signature_from_b64 = _wire_signature_from_b64Ptr
       .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
-
-  void wire_identifier_from_str(
-    int port_,
-    ffi.Pointer<wire_uint_8_list> id_str,
-  ) {
-    return _wire_identifier_from_str(
-      port_,
-      id_str,
-    );
-  }
-
-  late final _wire_identifier_from_strPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_identifier_from_str');
-  late final _wire_identifier_from_str = _wire_identifier_from_strPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
-  void wire_identifier_to_str(
-    int port_,
-    ffi.Pointer<wire_Identifier> identifier,
-  ) {
-    return _wire_identifier_to_str(
-      port_,
-      identifier,
-    );
-  }
-
-  late final _wire_identifier_to_strPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_Identifier>)>>('wire_identifier_to_str');
-  late final _wire_identifier_to_str = _wire_identifier_to_strPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
 
   void wire_with_initial_oobis(
     int port_,
@@ -1775,6 +1734,42 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_get_current_public_key = _wire_get_current_public_keyPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
+  void wire_new_from_str__static_method__Identifier(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> id_str,
+  ) {
+    return _wire_new_from_str__static_method__Identifier(
+      port_,
+      id_str,
+    );
+  }
+
+  late final _wire_new_from_str__static_method__IdentifierPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>(
+      'wire_new_from_str__static_method__Identifier');
+  late final _wire_new_from_str__static_method__Identifier =
+      _wire_new_from_str__static_method__IdentifierPtr
+          .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_to_str__method__Identifier(
+    int port_,
+    ffi.Pointer<wire_Identifier> that,
+  ) {
+    return _wire_to_str__method__Identifier(
+      port_,
+      that,
+    );
+  }
+
+  late final _wire_to_str__method__IdentifierPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>)>>(
+      'wire_to_str__method__Identifier');
+  late final _wire_to_str__method__Identifier =
+      _wire_to_str__method__IdentifierPtr
+          .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
   void wire_new__static_method__DataAndSignature(
     int port_,
     ffi.Pointer<wire_uint_8_list> data,
@@ -1963,23 +1958,15 @@ class wire_uint_8_list extends ffi.Struct {
   external int len;
 }
 
-class wire_Identifier extends ffi.Struct {
-  external ffi.Pointer<wire_uint_8_list> id;
-}
-
 class wire_Config extends ffi.Struct {
   external ffi.Pointer<wire_uint_8_list> initial_oobis;
-}
-
-class wire_KeriPublicKey extends ffi.Struct {
-  external ffi.Pointer<wire_uint_8_list> public_key;
 }
 
 class wire_PublicKey extends ffi.Struct {
   @ffi.Int32()
   external int derivation;
 
-  external wire_KeriPublicKey public_key;
+  external ffi.Pointer<wire_uint_8_list> public_key;
 }
 
 class wire_list_public_key extends ffi.Struct {
@@ -2001,6 +1988,10 @@ class wire_Signature extends ffi.Struct {
   external int derivation;
 
   external ffi.Pointer<wire_uint_8_list> signature;
+}
+
+class wire_Identifier extends ffi.Struct {
+  external ffi.Pointer<wire_uint_8_list> id;
 }
 
 class wire_DigestType_Blake3_256 extends ffi.Opaque {}

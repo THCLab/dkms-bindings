@@ -8,14 +8,14 @@ use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_mailbox_query, get_kel, identifier_from_str, incept_group, init_kel, new_public_key,
-    process_stream, query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config,
-    DataAndSignature, Identifier,
+    finalize_mailbox_query, get_kel, incept_group, init_kel, new_public_key, process_stream,
+    query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config, DataAndSignature,
+    Identifier,
 };
 
 #[test]
 pub fn test_api() -> Result<()> {
-    use crate::api::{finalize_inception, get_kel, incept, init_kel, PublicKey, Signature};
+    use crate::api::{finalize_inception, get_kel, incept, init_kel};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -55,7 +55,7 @@ pub fn test_process() -> Result<()> {
 
     process_stream(test_kel.to_string())?;
     let identifier =
-        identifier_from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string())?;
+        Identifier::new_from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string())?;
     let kel = get_kel(identifier)?;
     println!("kel: {}", kel);
 
@@ -101,7 +101,7 @@ pub fn test_add_watcher() -> Result<()> {
 
     init_kel(root_path, None)?;
     let identifier =
-        identifier_from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string())?;
+        Identifier::new_from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string())?;
 
     let add_watcher_message = add_watcher(identifier.clone(), "[{}]".into());
     assert!(add_watcher_message.is_err());
@@ -162,7 +162,7 @@ pub fn test_resolve_oobi() -> Result<()> {
 
 #[test]
 pub fn test_multisig() -> Result<()> {
-    use crate::api::{finalize_inception, get_kel, incept, init_kel, PublicKey, Signature};
+    use crate::api::{finalize_inception, get_kel, incept, init_kel};
 
     // Create temporary db file.
     let root_path: String = Builder::new()
@@ -398,9 +398,7 @@ pub fn test_multisig() -> Result<()> {
 
 #[test]
 pub fn test_demo() -> Result<()> {
-    use crate::api::{
-        finalize_inception, get_kel, incept, init_kel, Basic, PublicKey, SelfSigning, Signature,
-    };
+    use crate::api::{finalize_inception, get_kel, incept, init_kel, Basic, SelfSigning};
     use tempfile::Builder;
 
     // Create temporary db file.

@@ -60,20 +60,14 @@ pub enum _SignatureType {
     Ed448,
 }
 
-#[frb(mirror(KeriPublicKey))]
-pub struct _KeriPublicKey {
+pub struct PublicKey {
+    pub derivation: KeyType,
     pub public_key: Vec<u8>,
 }
 
-pub type PublicKey = BasicPrefix;
-#[frb(mirror(PublicKey))]
-pub struct _PublicKey {
-    pub derivation: KeyType,
-    pub public_key: KeriPublicKey,
-}
-
 pub fn new_public_key(kt: KeyType, key_b64: String) -> PublicKey {
-    kt.derive(KeriPublicKey::new(base64::decode(key_b64).unwrap()))
+    let pk = kt.derive(KeriPublicKey::new(base64::decode(key_b64).unwrap()));
+    pk.into()
 }
 
 pub type Digest = SelfAddressingPrefix;
@@ -100,20 +94,21 @@ pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
 
 #[derive(Clone)]
 pub struct Identifier {
-    pub id: String 
+    pub id: String,
 }
 
-pub fn identifier_from_str(id_str: String) -> Result<Identifier> {
-    // check if it's proper string id
-    id_str.parse::<IdentifierPrefix>()?;
-    Ok(Identifier {id: id_str})
-}
+impl Identifier {
+    pub fn new_from_str(id_str: String) -> Result<Identifier> {
+        // check if it's proper string id
+        id_str.parse::<IdentifierPrefix>()?;
+        Ok(Identifier { id: id_str })
+    }
 
-pub fn identifier_to_str(identifier: Identifier) -> String {
-    let ip: IdentifierPrefix = identifier.into();
-    ip.to_str()
+    pub fn to_str(&self) -> String {
+        let ip: IdentifierPrefix = self.into();
+        ip.to_str()
+    }
 }
-
 pub struct Config {
     pub initial_oobis: String,
 }
@@ -237,6 +232,8 @@ pub fn incept(
         .collect::<Result<Vec<_>, _>>()
         // improper json structure or improper prefix
         .map_err(|e| anyhow!(e.to_string()))?;
+    let public_keys = public_keys.iter().map(|pk| pk.into()).collect();
+    let next_pub_keys = next_pub_keys.iter().map(|pk| pk.into()).collect();
     let icp = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -283,6 +280,8 @@ pub fn rotate(
                 .map_err(|_| Error::WitnessParseError(wit.into()))
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let current_keys = current_keys.iter().map(|pk| pk.into()).collect();
+    let new_next_keys = new_next_keys.iter().map(|pk| pk.into()).collect();
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
