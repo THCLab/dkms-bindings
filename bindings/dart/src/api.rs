@@ -98,20 +98,20 @@ pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
     st.derive(base64::decode(signature).unwrap())
 }
 
-pub type Identifier = IdentifierPrefix;
-#[frb(mirror(Identifier))]
-pub enum _Identifier {
-    Basic(PublicKey),
-    SelfAddressing(Digest),
-    SelfSigning(Signature),
+#[derive(Clone)]
+pub struct Identifier {
+    pub id: String 
 }
 
-pub fn identifier_from_str(id_str: String) -> Identifier {
-    id_str.parse::<Identifier>().unwrap()
+pub fn identifier_from_str(id_str: String) -> Result<Identifier> {
+    // check if it's proper string id
+    id_str.parse::<IdentifierPrefix>()?;
+    Ok(Identifier {id: id_str})
 }
 
 pub fn identifier_to_str(identifier: Identifier) -> String {
-    identifier.to_str()
+    let ip: IdentifierPrefix = identifier.into();
+    ip.to_str()
 }
 
 pub struct Config {

@@ -55,7 +55,7 @@ pub fn test_process() -> Result<()> {
 
     process_stream(test_kel.to_string())?;
     let identifier =
-        identifier_from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string());
+        identifier_from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string())?;
     let kel = get_kel(identifier)?;
     println!("kel: {}", kel);
 
@@ -101,7 +101,7 @@ pub fn test_add_watcher() -> Result<()> {
 
     init_kel(root_path, None)?;
     let identifier =
-        identifier_from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string());
+        identifier_from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string())?;
 
     let add_watcher_message = add_watcher(identifier.clone(), "[{}]".into());
     assert!(add_watcher_message.is_err());
