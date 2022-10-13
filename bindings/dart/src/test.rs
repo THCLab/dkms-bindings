@@ -1,6 +1,6 @@
 use anyhow::Result;
 use keri::{
-    derivation::{self_addressing::SelfAddressing, basic::Basic, self_signing::SelfSigning},
+    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
     prefix::Prefix,
     signer::{CryptoBox, KeyManager},
 };
@@ -8,15 +8,14 @@ use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_mailbox_query, get_kel, incept_group, init_kel, process_stream, query_mailbox,
-    resolve_oobi, rotate, Action, Config, DataAndSignature, Identifier,
+    finalize_mailbox_query, get_kel, identifier_from_str, incept_group, init_kel, new_public_key,
+    process_stream, query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config,
+    DataAndSignature, Identifier,
 };
 
 #[test]
 pub fn test_api() -> Result<()> {
-    use crate::api::{
-        finalize_inception, get_kel, incept, init_kel, PublicKey, Signature,
-    };
+    use crate::api::{finalize_inception, get_kel, incept, init_kel, PublicKey, Signature};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -26,15 +25,15 @@ pub fn test_api() -> Result<()> {
 
     init_kel(root.path().to_str().unwrap().into(), None)?;
 
-    let pk = PublicKey::new(Basic::Ed25519NT, public_key);
-    let npk = PublicKey::new(Basic::Ed25519NT, next_public_key.into());
+    let pk = new_public_key(Basic::Ed25519NT, public_key);
+    let npk = new_public_key(Basic::Ed25519NT, next_public_key.into());
     // println!("pk: {:?}", key_prefix_from_b64(&pk.key, pk.algorithm).unwrap().to_str());
     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
     println!("icp: {}", icp_event);
 
     // sign icp event
     let signature = "F426738DFEC3EED52D36CB2B825ADFB3D06D98B3AF986EAE2F70B8E536C60C1C7DC41E49D30199D107AB57BD43D458A14064AB3A963A51450DBDE253CD94BB0C".to_string();
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, signature);
 
     let controller = finalize_inception(icp_event, signature)?;
     let kel = get_kel(controller)?;
@@ -56,7 +55,7 @@ pub fn test_process() -> Result<()> {
 
     process_stream(test_kel.to_string())?;
     let identifier =
-        Identifier::from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string())?;
+        identifier_from_str("EZrJQSdhdiyXNpEzHo-dR0EEbLfcIopBSImdLnQGOKkg".to_string());
     let kel = get_kel(identifier)?;
     println!("kel: {}", kel);
 
@@ -102,7 +101,7 @@ pub fn test_add_watcher() -> Result<()> {
 
     init_kel(root_path, None)?;
     let identifier =
-        Identifier::from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string())?;
+        identifier_from_str("EM7ml1EF4PNuuA8leM7ec0E95ukz5oBf3-gAjHEvQgsc".to_string());
 
     let add_watcher_message = add_watcher(identifier.clone(), "[{}]".into());
     assert!(add_watcher_message.is_err());
@@ -163,9 +162,7 @@ pub fn test_resolve_oobi() -> Result<()> {
 
 #[test]
 pub fn test_multisig() -> Result<()> {
-    use crate::api::{
-        finalize_inception, get_kel, incept, init_kel,  PublicKey, Signature,
-    };
+    use crate::api::{finalize_inception, get_kel, incept, init_kel, PublicKey, Signature};
 
     // Create temporary db file.
     let root_path: String = Builder::new()
@@ -200,12 +197,12 @@ pub fn test_multisig() -> Result<()> {
     let current_b64key = base64::encode(key_manager.public_key().key());
     let next_b64key = base64::encode(key_manager.next_public_key().key());
 
-    let pk = PublicKey::new(Basic::Ed25519, current_b64key);
-    let npk = PublicKey::new(Basic::Ed25519, next_b64key);
+    let pk = new_public_key(Basic::Ed25519, current_b64key);
+    let npk = new_public_key(Basic::Ed25519, next_b64key);
     let icp_event = incept(vec![pk], vec![npk], vec![wit_location.clone()], 1)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     let identifier = finalize_inception(icp_event, signature)?;
 
     // Quering own mailbox to get receipts
@@ -218,7 +215,7 @@ pub fn test_multisig() -> Result<()> {
 
     for qry in query {
         let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
-        let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+        let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
         finalize_mailbox_query(identifier.clone(), qry, signature)?;
     }
 
@@ -232,8 +229,8 @@ pub fn test_multisig() -> Result<()> {
     let current_b64key = base64::encode(participants_key_manager.public_key().key());
     let next_b64key = base64::encode(participants_key_manager.next_public_key().key());
 
-    let participant_pk = PublicKey::new(Basic::Ed25519, current_b64key);
-    let participant_npk = PublicKey::new(Basic::Ed25519, next_b64key);
+    let participant_pk = new_public_key(Basic::Ed25519, current_b64key);
+    let participant_npk = new_public_key(Basic::Ed25519, next_b64key);
     let icp_event = incept(
         vec![participant_pk],
         vec![participant_npk],
@@ -241,7 +238,7 @@ pub fn test_multisig() -> Result<()> {
         1,
     )?;
     let hex_signature = hex::encode(participants_key_manager.sign(icp_event.as_bytes())?);
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
     let participant = finalize_inception(icp_event, signature)?;
 
@@ -254,7 +251,7 @@ pub fn test_multisig() -> Result<()> {
 
     for qry in query {
         let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
-        let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+        let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
         finalize_mailbox_query(participant.clone(), qry, signature)?;
     }
 
@@ -275,17 +272,20 @@ pub fn test_multisig() -> Result<()> {
 
     // sign group inception by first participant
     let hex_signature = hex::encode(key_manager.sign(icp.icp_event.as_bytes())?);
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
     // sign exchanges to forward it to other participants
     let exn_signature = hex::encode(key_manager.sign(icp.exchanges[0].as_bytes())?);
-    let exn_signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, exn_signature);
+    let exn_signature = signature_from_hex(SelfSigning::Ed25519Sha512, exn_signature);
 
     let group_identifier = finalize_group_incept(
         identifier.clone(),
         icp.icp_event,
         signature,
-        vec![DataAndSignature::new(icp.exchanges[0].clone(), exn_signature)],
+        vec![DataAndSignature::new(
+            icp.exchanges[0].clone(),
+            exn_signature,
+        )],
     )?;
 
     // event wasn't fully signed, it shouldn't be accepted into kel.
@@ -304,7 +304,7 @@ pub fn test_multisig() -> Result<()> {
 
     let qry = query[0].clone();
     let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     // here second time the same multisig icp is processed
     let action_required = finalize_mailbox_query(participant.clone(), qry, signature)?;
     assert_eq!((&action_required).len(), 1);
@@ -314,12 +314,11 @@ pub fn test_multisig() -> Result<()> {
         Action::MultisigRequest => {
             // sign icp event by participant
             let hex_signature = hex::encode(participants_key_manager.sign(action.data.as_bytes())?);
-            let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+            let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
             let exn_signature =
                 hex::encode(participants_key_manager.sign(action.additiona_data.as_bytes())?);
-            let exn_signature =
-                Signature::new_from_hex(SelfSigning::Ed25519Sha512, exn_signature);
+            let exn_signature = signature_from_hex(SelfSigning::Ed25519Sha512, exn_signature);
 
             let group_controller = finalize_group_incept(
                 participant.clone(),
@@ -328,7 +327,7 @@ pub fn test_multisig() -> Result<()> {
                 vec![DataAndSignature::new(
                     action.additiona_data.clone(),
                     exn_signature,
-				)],
+                )],
             )?;
 
             // Group inception should not be accepted yet. Lack of receipt.
@@ -349,7 +348,7 @@ pub fn test_multisig() -> Result<()> {
 
     let qry = query[0].clone();
     let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     let action_required = finalize_mailbox_query(identifier.clone(), qry, signature);
     assert_eq!((&action_required?).len(), 0);
 
@@ -367,7 +366,7 @@ pub fn test_multisig() -> Result<()> {
 
     let qry = query[0].clone();
     let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     let action_required = finalize_mailbox_query(identifier, qry, signature);
     assert_eq!((&action_required?).len(), 0);
 
@@ -386,7 +385,7 @@ pub fn test_multisig() -> Result<()> {
 
     let qry = query[0].clone();
     let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     let action_required = finalize_mailbox_query(participant, qry, signature);
     assert_eq!((&action_required?).len(), 0);
 
@@ -400,7 +399,7 @@ pub fn test_multisig() -> Result<()> {
 #[test]
 pub fn test_demo() -> Result<()> {
     use crate::api::{
-        finalize_inception, get_kel, incept, init_kel, Basic, PublicKey, Signature, SelfSigning,
+        finalize_inception, get_kel, incept, init_kel, Basic, PublicKey, SelfSigning, Signature,
     };
     use tempfile::Builder;
 
@@ -420,28 +419,28 @@ pub fn test_demo() -> Result<()> {
 
     init_kel(root_path, None)?;
 
-    let pk = PublicKey::new(Basic::Ed25519, current_b64key);
-    let npk = PublicKey::new(Basic::Ed25519, next_b64key);
+    let pk = new_public_key(Basic::Ed25519, current_b64key);
+    let npk = new_public_key(Basic::Ed25519, next_b64key);
     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
     // sign icp event
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
     let controller = finalize_inception(icp_event, signature)?;
 
     key_manager.rotate()?;
     let current_b64key = base64::encode(key_manager.public_key().key());
     let next_b64key = base64::encode(key_manager.next_public_key().key());
-    let pk = PublicKey::new(Basic::Ed25519, current_b64key);
-    let npk = PublicKey::new(Basic::Ed25519, next_b64key);
+    let pk = new_public_key(Basic::Ed25519, current_b64key);
+    let npk = new_public_key(Basic::Ed25519, next_b64key);
 
     let rotation_event = rotate(controller.clone(), vec![pk], vec![npk], vec![], vec![], 0)?;
 
     let hex_signature = hex::encode(key_manager.sign(rotation_event.as_bytes())?);
 
     // sign rot event
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
     println!("rotation: \n{}", rotation_event);
 
@@ -457,7 +456,7 @@ pub fn test_demo() -> Result<()> {
 
     let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
     // sign rot event
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     finalize_event(controller.clone(), ixn_event, signature)?;
 
     let ixn_event = anchor(
@@ -469,7 +468,7 @@ pub fn test_demo() -> Result<()> {
 
     let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
     // sign rot event
-    let signature = Signature::new_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     finalize_event(controller.clone(), ixn_event, signature)?;
 
     let kel = get_kel(controller.clone())?;
