@@ -2,6 +2,21 @@ use super::*;
 // Section: wire functions
 
 #[no_mangle]
+pub extern "C" fn wire_new_public_key(port_: i64, kt: i32, key_b64: *mut wire_uint_8_list) {
+    wire_new_public_key_impl(port_, kt, key_b64)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_signature_from_hex(port_: i64, st: i32, signature: *mut wire_uint_8_list) {
+    wire_signature_from_hex_impl(port_, st, signature)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_signature_from_b64(port_: i64, st: i32, signature: *mut wire_uint_8_list) {
+    wire_signature_from_b64_impl(port_, st, signature)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_with_initial_oobis(
     port_: i64,
     config: *mut wire_Config,
@@ -184,52 +199,11 @@ pub extern "C" fn wire_get_current_public_key(port_: i64, attachment: *mut wire_
 }
 
 #[no_mangle]
-pub extern "C" fn wire_new__static_method__PublicKey(
-    port_: i64,
-    kt: i32,
-    key_b64: *mut wire_uint_8_list,
-) {
-    wire_new__static_method__PublicKey_impl(port_, kt, key_b64)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_new__static_method__Digest(
-    port_: i64,
-    dt: *mut wire_DigestType,
-    digest_data: *mut wire_uint_8_list,
-) {
-    wire_new__static_method__Digest_impl(port_, dt, digest_data)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_new_from_hex__static_method__Signature(
-    port_: i64,
-    st: i32,
-    signature: *mut wire_uint_8_list,
-) {
-    wire_new_from_hex__static_method__Signature_impl(port_, st, signature)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_new_from_b64__static_method__Signature(
-    port_: i64,
-    st: i32,
-    signature: *mut wire_uint_8_list,
-) {
-    wire_new_from_b64__static_method__Signature_impl(port_, st, signature)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_new__static_method__Identifier(port_: i64, id_str: *mut wire_uint_8_list) {
-    wire_new__static_method__Identifier_impl(port_, id_str)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_from_str__static_method__Identifier(
+pub extern "C" fn wire_new_from_str__static_method__Identifier(
     port_: i64,
     id_str: *mut wire_uint_8_list,
 ) {
-    wire_from_str__static_method__Identifier_impl(port_, id_str)
+    wire_new_from_str__static_method__Identifier_impl(port_, id_str)
 }
 
 #[no_mangle]
@@ -263,11 +237,6 @@ pub extern "C" fn new_box_autoadd_config_0() -> *mut wire_Config {
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_autoadd_digest_0() -> *mut wire_Digest {
-    support::new_leak_box_ptr(wire_Digest::new_with_null_ptr())
-}
-
-#[no_mangle]
 pub extern "C" fn new_box_autoadd_digest_type_0() -> *mut wire_DigestType {
     support::new_leak_box_ptr(wire_DigestType::new_with_null_ptr())
 }
@@ -278,33 +247,13 @@ pub extern "C" fn new_box_autoadd_identifier_0() -> *mut wire_Identifier {
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_autoadd_public_key_0() -> *mut wire_PublicKey {
-    support::new_leak_box_ptr(wire_PublicKey::new_with_null_ptr())
-}
-
-#[no_mangle]
 pub extern "C" fn new_box_autoadd_signature_0() -> *mut wire_Signature {
     support::new_leak_box_ptr(wire_Signature::new_with_null_ptr())
 }
 
 #[no_mangle]
-pub extern "C" fn new_box_digest_type_0() -> *mut wire_DigestType {
-    support::new_leak_box_ptr(wire_DigestType::new_with_null_ptr())
-}
-
-#[no_mangle]
-pub extern "C" fn new_box_key_type_0(value: i32) -> *mut i32 {
-    support::new_leak_box_ptr(value)
-}
-
-#[no_mangle]
 pub extern "C" fn new_box_signature_0() -> *mut wire_Signature {
     support::new_leak_box_ptr(wire_Signature::new_with_null_ptr())
-}
-
-#[no_mangle]
-pub extern "C" fn new_box_signature_type_0(value: i32) -> *mut i32 {
-    support::new_leak_box_ptr(value)
 }
 
 #[no_mangle]
@@ -366,12 +315,6 @@ impl Wire2Api<Config> for *mut wire_Config {
         Wire2Api::<Config>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<Digest> for *mut wire_Digest {
-    fn wire2api(self) -> Digest {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<Digest>::wire2api(*wrap).into()
-    }
-}
 impl Wire2Api<DigestType> for *mut wire_DigestType {
     fn wire2api(self) -> DigestType {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
@@ -384,40 +327,16 @@ impl Wire2Api<Identifier> for *mut wire_Identifier {
         Wire2Api::<Identifier>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<PublicKey> for *mut wire_PublicKey {
-    fn wire2api(self) -> PublicKey {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<PublicKey>::wire2api(*wrap).into()
-    }
-}
 impl Wire2Api<Signature> for *mut wire_Signature {
     fn wire2api(self) -> Signature {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
         Wire2Api::<Signature>::wire2api(*wrap).into()
     }
 }
-impl Wire2Api<Box<DigestType>> for *mut wire_DigestType {
-    fn wire2api(self) -> Box<DigestType> {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<DigestType>::wire2api(*wrap).into()
-    }
-}
-impl Wire2Api<Box<KeyType>> for *mut i32 {
-    fn wire2api(self) -> Box<KeyType> {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<KeyType>::wire2api(*wrap).into()
-    }
-}
 impl Wire2Api<Box<Signature>> for *mut wire_Signature {
     fn wire2api(self) -> Box<Signature> {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
         Wire2Api::<Signature>::wire2api(*wrap).into()
-    }
-}
-impl Wire2Api<Box<SignatureType>> for *mut i32 {
-    fn wire2api(self) -> Box<SignatureType> {
-        let wrap = unsafe { support::box_from_leak_ptr(self) };
-        Wire2Api::<SignatureType>::wire2api(*wrap).into()
     }
 }
 impl Wire2Api<Config> for wire_Config {
@@ -432,14 +351,6 @@ impl Wire2Api<DataAndSignature> for wire_DataAndSignature {
         DataAndSignature {
             data: self.data.wire2api(),
             signature: self.signature.wire2api(),
-        }
-    }
-}
-impl Wire2Api<Digest> for wire_Digest {
-    fn wire2api(self) -> Digest {
-        Digest {
-            derivation: self.derivation.wire2api(),
-            digest: self.digest.wire2api(),
         }
     }
 }
@@ -470,23 +381,8 @@ impl Wire2Api<DigestType> for wire_DigestType {
 
 impl Wire2Api<Identifier> for wire_Identifier {
     fn wire2api(self) -> Identifier {
-        match self.tag {
-            0 => unsafe {
-                let ans = support::box_from_leak_ptr(self.kind);
-                let ans = support::box_from_leak_ptr(ans.Basic);
-                Identifier::Basic(ans.field0.wire2api())
-            },
-            1 => unsafe {
-                let ans = support::box_from_leak_ptr(self.kind);
-                let ans = support::box_from_leak_ptr(ans.SelfAddressing);
-                Identifier::SelfAddressing(ans.field0.wire2api())
-            },
-            2 => unsafe {
-                let ans = support::box_from_leak_ptr(self.kind);
-                let ans = support::box_from_leak_ptr(ans.SelfSigning);
-                Identifier::SelfSigning(ans.field0.wire2api())
-            },
-            _ => unreachable!(),
+        Identifier {
+            id: self.id.wire2api(),
         }
     }
 }
@@ -523,7 +419,7 @@ impl Wire2Api<PublicKey> for wire_PublicKey {
     fn wire2api(self) -> PublicKey {
         PublicKey {
             derivation: self.derivation.wire2api(),
-            key: self.key.wire2api(),
+            public_key: self.public_key.wire2api(),
         }
     }
 }
@@ -568,9 +464,8 @@ pub struct wire_DataAndSignature {
 
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_Digest {
-    derivation: *mut wire_DigestType,
-    digest: *mut wire_uint_8_list,
+pub struct wire_Identifier {
+    id: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
@@ -597,14 +492,14 @@ pub struct wire_list_public_key {
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_PublicKey {
-    derivation: *mut i32,
-    key: *mut wire_uint_8_list,
+    derivation: i32,
+    public_key: *mut wire_uint_8_list,
 }
 
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_Signature {
-    derivation: *mut i32,
+    derivation: i32,
     signature: *mut wire_uint_8_list,
 }
 
@@ -675,38 +570,6 @@ pub struct wire_DigestType_Blake2S256 {
     field0: *mut wire_uint_8_list,
 }
 
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_Identifier {
-    tag: i32,
-    kind: *mut IdentifierKind,
-}
-
-#[repr(C)]
-pub union IdentifierKind {
-    Basic: *mut wire_Identifier_Basic,
-    SelfAddressing: *mut wire_Identifier_SelfAddressing,
-    SelfSigning: *mut wire_Identifier_SelfSigning,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_Identifier_Basic {
-    field0: *mut wire_PublicKey,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_Identifier_SelfAddressing {
-    field0: *mut wire_Digest,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_Identifier_SelfSigning {
-    field0: *mut wire_Signature,
-}
-
 // Section: impl NewWithNullPtr
 
 pub trait NewWithNullPtr {
@@ -732,15 +595,6 @@ impl NewWithNullPtr for wire_DataAndSignature {
         Self {
             data: core::ptr::null_mut(),
             signature: core::ptr::null_mut(),
-        }
-    }
-}
-
-impl NewWithNullPtr for wire_Digest {
-    fn new_with_null_ptr() -> Self {
-        Self {
-            derivation: core::ptr::null_mut(),
-            digest: core::ptr::null_mut(),
         }
     }
 }
@@ -775,44 +629,16 @@ pub extern "C" fn inflate_DigestType_Blake2S256() -> *mut DigestTypeKind {
 impl NewWithNullPtr for wire_Identifier {
     fn new_with_null_ptr() -> Self {
         Self {
-            tag: -1,
-            kind: core::ptr::null_mut(),
+            id: core::ptr::null_mut(),
         }
     }
-}
-
-#[no_mangle]
-pub extern "C" fn inflate_Identifier_Basic() -> *mut IdentifierKind {
-    support::new_leak_box_ptr(IdentifierKind {
-        Basic: support::new_leak_box_ptr(wire_Identifier_Basic {
-            field0: core::ptr::null_mut(),
-        }),
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn inflate_Identifier_SelfAddressing() -> *mut IdentifierKind {
-    support::new_leak_box_ptr(IdentifierKind {
-        SelfAddressing: support::new_leak_box_ptr(wire_Identifier_SelfAddressing {
-            field0: core::ptr::null_mut(),
-        }),
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn inflate_Identifier_SelfSigning() -> *mut IdentifierKind {
-    support::new_leak_box_ptr(IdentifierKind {
-        SelfSigning: support::new_leak_box_ptr(wire_Identifier_SelfSigning {
-            field0: core::ptr::null_mut(),
-        }),
-    })
 }
 
 impl NewWithNullPtr for wire_PublicKey {
     fn new_with_null_ptr() -> Self {
         Self {
-            derivation: core::ptr::null_mut(),
-            key: core::ptr::null_mut(),
+            derivation: Default::default(),
+            public_key: core::ptr::null_mut(),
         }
     }
 }
@@ -820,7 +646,7 @@ impl NewWithNullPtr for wire_PublicKey {
 impl NewWithNullPtr for wire_Signature {
     fn new_with_null_ptr() -> Self {
         Self {
-            derivation: core::ptr::null_mut(),
+            derivation: Default::default(),
             signature: core::ptr::null_mut(),
         }
     }

@@ -19,6 +19,60 @@ use flutter_rust_bridge::*;
 
 // Section: wire functions
 
+fn wire_new_public_key_impl(
+    port_: MessagePort,
+    kt: impl Wire2Api<KeyType> + UnwindSafe,
+    key_b64: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "new_public_key",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_kt = kt.wire2api();
+            let api_key_b64 = key_b64.wire2api();
+            move |task_callback| Ok(new_public_key(api_kt, api_key_b64))
+        },
+    )
+}
+fn wire_signature_from_hex_impl(
+    port_: MessagePort,
+    st: impl Wire2Api<SignatureType> + UnwindSafe,
+    signature: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "signature_from_hex",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_st = st.wire2api();
+            let api_signature = signature.wire2api();
+            move |task_callback| Ok(mirror_Signature(signature_from_hex(api_st, api_signature)))
+        },
+    )
+}
+fn wire_signature_from_b64_impl(
+    port_: MessagePort,
+    st: impl Wire2Api<SignatureType> + UnwindSafe,
+    signature: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "signature_from_b64",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_st = st.wire2api();
+            let api_signature = signature.wire2api();
+            move |task_callback| Ok(mirror_Signature(signature_from_b64(api_st, api_signature)))
+        },
+    )
+}
 fn wire_with_initial_oobis_impl(
     port_: MessagePort,
     config: impl Wire2Api<Config> + UnwindSafe,
@@ -389,107 +443,19 @@ fn wire_get_current_public_key_impl(
         },
     )
 }
-fn wire_new__static_method__PublicKey_impl(
-    port_: MessagePort,
-    kt: impl Wire2Api<KeyType> + UnwindSafe,
-    key_b64: impl Wire2Api<String> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "new__static_method__PublicKey",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_kt = kt.wire2api();
-            let api_key_b64 = key_b64.wire2api();
-            move |task_callback| Ok(PublicKey::new(api_kt, api_key_b64))
-        },
-    )
-}
-fn wire_new__static_method__Digest_impl(
-    port_: MessagePort,
-    dt: impl Wire2Api<DigestType> + UnwindSafe,
-    digest_data: impl Wire2Api<Vec<u8>> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "new__static_method__Digest",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_dt = dt.wire2api();
-            let api_digest_data = digest_data.wire2api();
-            move |task_callback| Ok(Digest::new(api_dt, api_digest_data))
-        },
-    )
-}
-fn wire_new_from_hex__static_method__Signature_impl(
-    port_: MessagePort,
-    st: impl Wire2Api<SignatureType> + UnwindSafe,
-    signature: impl Wire2Api<String> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "new_from_hex__static_method__Signature",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_st = st.wire2api();
-            let api_signature = signature.wire2api();
-            move |task_callback| Ok(Signature::new_from_hex(api_st, api_signature))
-        },
-    )
-}
-fn wire_new_from_b64__static_method__Signature_impl(
-    port_: MessagePort,
-    st: impl Wire2Api<SignatureType> + UnwindSafe,
-    signature: impl Wire2Api<String> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "new_from_b64__static_method__Signature",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_st = st.wire2api();
-            let api_signature = signature.wire2api();
-            move |task_callback| Ok(Signature::new_from_b64(api_st, api_signature))
-        },
-    )
-}
-fn wire_new__static_method__Identifier_impl(
+fn wire_new_from_str__static_method__Identifier_impl(
     port_: MessagePort,
     id_str: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "new__static_method__Identifier",
+            debug_name: "new_from_str__static_method__Identifier",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_id_str = id_str.wire2api();
-            move |task_callback| Identifier::new(api_id_str)
-        },
-    )
-}
-fn wire_from_str__static_method__Identifier_impl(
-    port_: MessagePort,
-    id_str: impl Wire2Api<String> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "from_str__static_method__Identifier",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_id_str = id_str.wire2api();
-            move |task_callback| Identifier::from_str(api_id_str)
+            move |task_callback| Identifier::new_from_str(api_id_str)
         },
     )
 }
@@ -530,10 +496,10 @@ fn wire_new__static_method__DataAndSignature_impl(
 // Section: wrapper structs
 
 #[derive(Clone)]
-struct mirror_DigestType(DigestType);
+struct mirror_KeyType(KeyType);
 
 #[derive(Clone)]
-struct mirror_KeyType(KeyType);
+struct mirror_Signature(Signature);
 
 #[derive(Clone)]
 struct mirror_SignatureType(SignatureType);
@@ -541,21 +507,6 @@ struct mirror_SignatureType(SignatureType);
 // Section: static checks
 
 const _: fn() = || {
-    match None::<DigestType>.unwrap() {
-        DigestType::Blake3_256 => {}
-        DigestType::SHA3_256 => {}
-        DigestType::SHA2_256 => {}
-        DigestType::Blake3_512 => {}
-        DigestType::SHA3_512 => {}
-        DigestType::Blake2B512 => {}
-        DigestType::SHA2_512 => {}
-        DigestType::Blake2B256(field0) => {
-            let _: Vec<u8> = field0;
-        }
-        DigestType::Blake2S256(field0) => {
-            let _: Vec<u8> = field0;
-        }
-    }
     match None::<KeyType>.unwrap() {
         KeyType::ECDSAsecp256k1NT => {}
         KeyType::ECDSAsecp256k1 => {}
@@ -565,6 +516,11 @@ const _: fn() = || {
         KeyType::Ed448 => {}
         KeyType::X25519 => {}
         KeyType::X448 => {}
+    }
+    {
+        let Signature = None::<Signature>.unwrap();
+        let _: SignatureType = Signature.derivation;
+        let _: Vec<u8> = Signature.signature;
     }
     match None::<SignatureType>.unwrap() {
         SignatureType::Ed25519Sha512 => {}
@@ -664,39 +620,15 @@ impl support::IntoDartExceptPrimitive for Config {}
 
 impl support::IntoDart for DataAndSignature {
     fn into_dart(self) -> support::DartAbi {
-        vec![self.data.into_dart(), (*self.signature).into_dart()].into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for DataAndSignature {}
-
-impl support::IntoDart for Digest {
-    fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_DigestType((*self.derivation)).into_dart(),
-            self.digest.into_dart(),
+            self.data.into_dart(),
+            mirror_Signature((*self.signature)).into_dart(),
         ]
         .into_dart()
     }
 }
-impl support::IntoDartExceptPrimitive for Digest {}
+impl support::IntoDartExceptPrimitive for DataAndSignature {}
 
-impl support::IntoDart for mirror_DigestType {
-    fn into_dart(self) -> support::DartAbi {
-        match self.0 {
-            DigestType::Blake3_256 => vec![0.into_dart()],
-            DigestType::SHA3_256 => vec![1.into_dart()],
-            DigestType::SHA2_256 => vec![2.into_dart()],
-            DigestType::Blake3_512 => vec![3.into_dart()],
-            DigestType::SHA3_512 => vec![4.into_dart()],
-            DigestType::Blake2B512 => vec![5.into_dart()],
-            DigestType::SHA2_512 => vec![6.into_dart()],
-            DigestType::Blake2B256(field0) => vec![7.into_dart(), field0.into_dart()],
-            DigestType::Blake2S256(field0) => vec![8.into_dart(), field0.into_dart()],
-        }
-        .into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for mirror_DigestType {}
 impl support::IntoDart for GroupInception {
     fn into_dart(self) -> support::DartAbi {
         vec![self.icp_event.into_dart(), self.exchanges.into_dart()].into_dart()
@@ -706,15 +638,11 @@ impl support::IntoDartExceptPrimitive for GroupInception {}
 
 impl support::IntoDart for Identifier {
     fn into_dart(self) -> support::DartAbi {
-        match self {
-            Self::Basic(field0) => vec![0.into_dart(), field0.into_dart()],
-            Self::SelfAddressing(field0) => vec![1.into_dart(), field0.into_dart()],
-            Self::SelfSigning(field0) => vec![2.into_dart(), field0.into_dart()],
-        }
-        .into_dart()
+        vec![self.id.into_dart()].into_dart()
     }
 }
 impl support::IntoDartExceptPrimitive for Identifier {}
+
 impl support::IntoDart for mirror_KeyType {
     fn into_dart(self) -> support::DartAbi {
         match self.0 {
@@ -734,8 +662,8 @@ impl support::IntoDart for mirror_KeyType {
 impl support::IntoDart for PublicKey {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_KeyType((*self.derivation)).into_dart(),
-            self.key.into_dart(),
+            mirror_KeyType(self.derivation).into_dart(),
+            self.public_key.into_dart(),
         ]
         .into_dart()
     }
@@ -744,21 +672,25 @@ impl support::IntoDartExceptPrimitive for PublicKey {}
 
 impl support::IntoDart for PublicKeySignaturePair {
     fn into_dart(self) -> support::DartAbi {
-        vec![self.key.into_dart(), self.signature.into_dart()].into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for PublicKeySignaturePair {}
-
-impl support::IntoDart for Signature {
-    fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_SignatureType((*self.derivation)).into_dart(),
-            self.signature.into_dart(),
+            self.key.into_dart(),
+            mirror_Signature(self.signature).into_dart(),
         ]
         .into_dart()
     }
 }
-impl support::IntoDartExceptPrimitive for Signature {}
+impl support::IntoDartExceptPrimitive for PublicKeySignaturePair {}
+
+impl support::IntoDart for mirror_Signature {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            mirror_SignatureType(self.0.derivation).into_dart(),
+            self.0.signature.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for mirror_Signature {}
 
 impl support::IntoDart for mirror_SignatureType {
     fn into_dart(self) -> support::DartAbi {

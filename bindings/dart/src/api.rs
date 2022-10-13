@@ -8,13 +8,16 @@ use controller::{error::ControllerError, identifier_controller::IdentifierContro
 use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
-pub use keri::{prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix}, derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning}};
 pub use keri::keys::PublicKey as KeriPublicKey;
 use keri::{
     actor::{event_generator, prelude::Message},
     event_parsing::{message::query_message, Attachment, EventType},
     oobi::{EndRole, LocationScheme, Role},
     prefix::Prefix,
+};
+pub use keri::{
+    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
+    prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
 
 use crate::utils::{join_keys_and_signatures, parse_attachment};
@@ -57,195 +60,55 @@ pub enum _SignatureType {
     Ed448,
 }
 
-// #[derive(Clone)]
-// pub enum KeyType {
-//     ECDSAsecp256k1,
-//     Ed25519,
-//     Ed448,
-//     X25519,
-//     X448,
-// }
-
-// impl Into<Basic> for KeyType {
-//     fn into(self) -> Basic {
-//         match self {
-//             KeyType::ECDSAsecp256k1 => Basic::ECDSAsecp256k1NT,
-//             KeyType::Ed25519 => Basic::Ed25519NT,
-//             KeyType::Ed448 => Basic::Ed448NT,
-//             KeyType::X25519 => Basic::X25519,
-//             KeyType::X448 => Basic::X448,
-//         }
-//     }
-// }
-
-// impl From<Basic> for KeyType {
-//     fn from(kd: Basic) -> Self {
-//         match kd {
-//             Basic::ECDSAsecp256k1NT => KeyType::ECDSAsecp256k1,
-//             Basic::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
-//             Basic::Ed25519NT => KeyType::Ed25519,
-//             Basic::Ed25519 => KeyType::Ed25519,
-//             Basic::Ed448NT => KeyType::Ed448,
-//             Basic::Ed448 => KeyType::Ed448,
-//             Basic::X25519 => KeyType::X25519,
-//             Basic::X448 => KeyType::X448,
-//         }
-//     }
-// }
-
-// #[derive(Clone)]
-// pub enum DigestType {
-//     Blake3_256,
-//     SHA3_256,
-//     SHA2_256,
-//     Blake3_512,
-//     SHA3_512,
-//     Blake2B512,
-//     SHA2_512,
-// }
-
-// impl Into<SelfAddressing> for DigestType {
-//     fn into(self) -> SelfAddressing {
-//         match self {
-//             DigestType::Blake3_256 => SelfAddressing::Blake3_256,
-//             DigestType::SHA3_256 => SelfAddressing::SHA2_256,
-//             DigestType::SHA2_256 => SelfAddressing::SHA3_256,
-//             DigestType::Blake3_512 => SelfAddressing::Blake3_256,
-//             DigestType::SHA3_512 => SelfAddressing::SHA2_256,
-//             DigestType::Blake2B512 => SelfAddressing::Blake2B512,
-//             DigestType::SHA2_512 => SelfAddressing::Blake3_512,
-//         }
-//     }
-// }
-
-// impl From<SelfAddressing> for DigestType {
-//     fn from(sa: SelfAddressing) -> Self {
-//         match sa {
-//             SelfAddressing::Blake3_256 => todo!(),
-//             SelfAddressing::Blake2B256(_) => todo!(),
-//             SelfAddressing::Blake2S256(_) => todo!(),
-//             SelfAddressing::SHA3_256 => todo!(),
-//             SelfAddressing::SHA2_256 => todo!(),
-//             SelfAddressing::Blake3_512 => todo!(),
-//             SelfAddressing::SHA3_512 => todo!(),
-//             SelfAddressing::Blake2B512 => todo!(),
-//             SelfAddressing::SHA2_512 => todo!(),
-//         }
-//     }
-// }
-
-// #[derive(Clone)]
-// pub enum SignatureType {
-//     Ed25519Sha512,
-//     ECDSAsecp256k1Sha256,
-//     Ed448,
-// }
-
-// impl From<SignatureType> for SelfSigning {
-//     fn from(sig: SignatureType) -> Self {
-//          match sig {
-//             SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
-//             SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
-//             SignatureType::Ed448 => SelfSigning::Ed448,
-//         }
-//     }
-// }
-
-// impl From<SelfSigning> for SignatureType {
-//     fn from(sd: SelfSigning) -> Self {
-//         match sd {
-//             SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
-//             SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
-//             SelfSigning::Ed448 => SignatureType::Ed448,
-//         }
-//     }
-// }
-
-
-#[derive(Clone, Debug)]
 pub struct PublicKey {
-    pub derivation: Box<KeyType>,
-    pub key: Vec<u8>,
+    pub derivation: KeyType,
+    pub public_key: Vec<u8>,
 }
 
 pub fn new_public_key(kt: KeyType, key_b64: String) -> PublicKey {
-    PublicKey { derivation: Box::new(kt), key: base64::decode(key_b64).unwrap()}
+    let pk = kt.derive(KeriPublicKey::new(base64::decode(key_b64).unwrap()));
+    pk.into()
 }
 
-#[derive(Clone, Debug)]
-pub struct Digest {
-    pub derivation: Box<DigestType>,
+pub type Digest = SelfAddressingPrefix;
+#[frb(mirror(Digest))]
+pub struct _Digest {
+    pub derivation: DigestType,
     pub digest: Vec<u8>,
 }
 
-impl Digest {
-    pub fn new(dt: DigestType, digest_data: Vec<u8>) -> Digest {
-        Digest {derivation: Box::new(dt), digest: digest_data}
-    }
-}
-
-
-
-#[derive(Clone, Debug)]
-pub struct Signature {
-    pub derivation: Box<SignatureType>,
+pub type Signature = SelfSigningPrefix;
+#[frb(mirror(Signature))]
+pub struct _Signature {
+    pub derivation: SignatureType,
     pub signature: Vec<u8>,
 }
 
-impl Signature {
-    pub fn new_from_hex(st: SignatureType, signature: String) -> Signature {
-        Signature {derivation: Box::new(st), signature: hex::decode(signature).unwrap()}
-    }
-
-    pub fn new_from_b64(st: SignatureType, signature: String) -> Signature {
-        Signature {derivation: Box::new(st), signature: base64::decode(signature).unwrap()}
-    }
+pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
+    st.derive(hex::decode(signature).unwrap())
 }
 
-
-#[derive(Clone, Debug)]
-pub enum Identifier {
-    Basic(PublicKey),
-    SelfAddressing(Digest),
-    SelfSigning(Signature),
+pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
+    st.derive(base64::decode(signature).unwrap())
 }
 
+#[derive(Clone)]
+pub struct Identifier {
+    pub id: String,
+}
 
 impl Identifier {
-
-    pub fn new(id_str: String) -> Result<Identifier> {
-        Identifier::from_str(id_str)
-    }
-
-    pub fn from_str(id_str: String) -> Result<Identifier> {
-        let id= match id_str.parse::<IdentifierPrefix>()? {
-            IdentifierPrefix::Basic(bp) => Identifier::Basic(PublicKey { derivation: bp.derivation.into(), key: bp.public_key.key() }),
-            IdentifierPrefix::SelfAddressing(sa) => Identifier::SelfAddressing(Digest {derivation: sa.derivation.into(), digest: sa.digest}),
-            IdentifierPrefix::SelfSigning(ss) => Identifier::SelfSigning(Signature { derivation:ss.derivation.into(), signature: ss.signature}),
-        };
-        Ok(id)
+    pub fn new_from_str(id_str: String) -> Result<Identifier> {
+        // check if it's proper string id
+        id_str.parse::<IdentifierPrefix>()?;
+        Ok(Identifier { id: id_str })
     }
 
     pub fn to_str(&self) -> String {
-        match self {
-            Identifier::Basic(bp) => {
-                let bp: BasicPrefix = bp.into();
-                bp.to_str()
-            } ,
-            Identifier::SelfAddressing(sa) => {
-                let sa: SelfAddressingPrefix = sa.clone().into();
-                sa.to_str()
-            },
-            Identifier::SelfSigning(ss) => {
-                let ss: SelfSigningPrefix = ss.clone().into();
-                ss.to_str()
-            },
-        }
+        let ip: IdentifierPrefix = self.into();
+        ip.to_str()
     }
 }
-
-
-
 pub struct Config {
     pub initial_oobis: String,
 }
@@ -384,7 +247,10 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
         .ok_or(Error::ControllerInitializationError)?
         .finalize_inception(event.as_bytes(), &signature.into())?;
     println!("\ninception event: {}", event);
-    println!("\nController incepted id: {}", controller_id.clone().to_str());
+    println!(
+        "\nController incepted id: {}",
+        controller_id.clone().to_str()
+    );
     Ok(Identifier::from(controller_id))
 }
 
@@ -399,8 +265,6 @@ pub fn rotate(
     witness_to_remove: Vec<String>,
     witness_threshold: u64,
 ) -> Result<String> {
-    let current_keys = current_keys.iter().map(|pk| pk.into()).collect();
-    let new_next_keys = new_next_keys.iter().map(|pk| pk.into()).collect();
     // Parse location schema from string
     let witnesses_to_add = witness_to_add
         .iter()
@@ -416,6 +280,8 @@ pub fn rotate(
                 .map_err(|_| Error::WitnessParseError(wit.into()))
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let current_keys = current_keys.iter().map(|pk| pk.into()).collect();
+    let new_next_keys = new_next_keys.iter().map(|pk| pk.into()).collect();
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -476,7 +342,7 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
         .ok_or(Error::ControllerInitializationError)?
         .clone();
     let identifier_controller = IdentifierController::new(identifier.into(), controller);
-    identifier_controller.finalize_event(event.as_bytes(), (&signature).into())?;
+    identifier_controller.finalize_event(event.as_bytes(), signature)?;
     Ok(true)
 }
 
@@ -517,7 +383,6 @@ pub fn incept_group(
     })
 }
 
-#[derive(Default)]
 pub struct DataAndSignature {
     pub data: String,
     pub signature: Box<Signature>,
@@ -525,7 +390,10 @@ pub struct DataAndSignature {
 
 impl DataAndSignature {
     pub fn new(data: String, signature: Signature) -> DataAndSignature {
-        Self { data, signature: Box::new(signature) }
+        Self {
+            data,
+            signature: Box::new(signature),
+        }
     }
 }
 
@@ -544,17 +412,18 @@ pub fn finalize_group_incept(
 
     let group_identifier = identifier_controller.finalize_group_incept(
         group_event.as_bytes(),
-        (&signature).into(),
+        signature,
         to_forward
             .iter()
             .map(
                 |DataAndSignature {
                      data: exn,
                      signature,
-                 }| { 
-                     let sig_type : SelfSigning = (*signature.derivation).into();
-                     let sig = sig_type.derive(signature.signature.clone());
-                     (exn.as_bytes().to_vec(), sig) },
+                 }| {
+                    let sig_type: SelfSigning = signature.derivation;
+                    let sig = sig_type.derive(signature.signature.clone());
+                    (exn.as_bytes().to_vec(), sig)
+                },
             )
             .collect::<Vec<(Vec<u8>, SelfSigningPrefix)>>(),
     )?;
@@ -612,7 +481,7 @@ pub fn finalize_mailbox_query(
 
     match query {
         EventType::Qry(ref qry) => {
-            let ar = identifier_controller.finalize_mailbox_query(vec![(qry.clone(), (&signature).into())]);
+            let ar = identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature)]);
 
             let out = ar?
                 .iter()
@@ -668,7 +537,7 @@ pub fn query(identifier: Identifier, oobis_json: String) -> Result<bool> {
     let mut issuer_id: Option<String> = None;
     let oobis = serde_json::from_str::<Vec<Oobis>>(&oobis_json)
         .map_err(|_| Error::OobiParseError(oobis_json.clone()))?;
-        let identifier_prefix: IdentifierPrefix = identifier.clone().into();
+    let identifier_prefix: IdentifierPrefix = identifier.clone().into();
     for oobi in oobis {
         match &oobi {
             Oobis::LocScheme(lc) => {
