@@ -33,7 +33,7 @@ fn wire_new_public_key_impl(
         move || {
             let api_kt = kt.wire2api();
             let api_key_b64 = key_b64.wire2api();
-            move |task_callback| Ok(new_public_key(api_kt, api_key_b64))
+            move |task_callback| new_public_key(api_kt, api_key_b64)
         },
     )
 }

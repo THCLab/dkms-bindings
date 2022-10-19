@@ -25,8 +25,8 @@ pub fn test_api() -> Result<()> {
 
     init_kel(root.path().to_str().unwrap().into(), None)?;
 
-    let pk = new_public_key(Basic::Ed25519NT, public_key);
-    let npk = new_public_key(Basic::Ed25519NT, next_public_key.into());
+    let pk = new_public_key(Basic::Ed25519NT, public_key)?;
+    let npk = new_public_key(Basic::Ed25519NT, next_public_key.into())?;
     // println!("pk: {:?}", key_prefix_from_b64(&pk.key, pk.algorithm).unwrap().to_str());
     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
     println!("icp: {}", icp_event);
@@ -197,8 +197,8 @@ pub fn test_multisig() -> Result<()> {
     let current_b64key = base64::encode(key_manager.public_key().key());
     let next_b64key = base64::encode(key_manager.next_public_key().key());
 
-    let pk = new_public_key(Basic::Ed25519, current_b64key);
-    let npk = new_public_key(Basic::Ed25519, next_b64key);
+    let pk = new_public_key(Basic::Ed25519, current_b64key)?;
+    let npk = new_public_key(Basic::Ed25519, next_b64key)?;
     let icp_event = incept(vec![pk], vec![npk], vec![wit_location.clone()], 1)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
@@ -229,8 +229,8 @@ pub fn test_multisig() -> Result<()> {
     let current_b64key = base64::encode(participants_key_manager.public_key().key());
     let next_b64key = base64::encode(participants_key_manager.next_public_key().key());
 
-    let participant_pk = new_public_key(Basic::Ed25519, current_b64key);
-    let participant_npk = new_public_key(Basic::Ed25519, next_b64key);
+    let participant_pk = new_public_key(Basic::Ed25519, current_b64key)?;
+    let participant_npk = new_public_key(Basic::Ed25519, next_b64key)?;
     let icp_event = incept(
         vec![participant_pk],
         vec![participant_npk],
@@ -417,8 +417,8 @@ pub fn test_demo() -> Result<()> {
 
     init_kel(root_path, None)?;
 
-    let pk = new_public_key(Basic::Ed25519, current_b64key);
-    let npk = new_public_key(Basic::Ed25519, next_b64key);
+    let pk = new_public_key(Basic::Ed25519, current_b64key)?;
+    let npk = new_public_key(Basic::Ed25519, next_b64key)?;
     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
 
@@ -430,8 +430,8 @@ pub fn test_demo() -> Result<()> {
     key_manager.rotate()?;
     let current_b64key = base64::encode(key_manager.public_key().key());
     let next_b64key = base64::encode(key_manager.next_public_key().key());
-    let pk = new_public_key(Basic::Ed25519, current_b64key);
-    let npk = new_public_key(Basic::Ed25519, next_b64key);
+    let pk = new_public_key(Basic::Ed25519, current_b64key)?;
+    let npk = new_public_key(Basic::Ed25519, next_b64key)?;
 
     let rotation_event = rotate(controller.clone(), vec![pk], vec![npk], vec![], vec![], 0)?;
 
