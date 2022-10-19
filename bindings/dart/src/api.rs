@@ -65,9 +65,9 @@ pub struct PublicKey {
     pub public_key: Vec<u8>,
 }
 
-pub fn new_public_key(kt: KeyType, key_b64: String) -> PublicKey {
-    let pk = kt.derive(KeriPublicKey::new(base64::decode(key_b64).unwrap()));
-    pk.into()
+pub fn new_public_key(kt: KeyType, key_b64: String) -> Result<PublicKey> {
+    let pk = kt.derive(KeriPublicKey::new(base64::decode(key_b64).map_err(|e| Error::Base64Error(e))?));
+    Ok(pk.into())
 }
 
 pub type Digest = SelfAddressingPrefix;
@@ -85,11 +85,11 @@ pub struct _Signature {
 }
 
 pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
-    st.derive(hex::decode(signature).unwrap())
+    st.derive(hex::decode(signature).map_err(|e| Error::HexError(e)).unwrap())
 }
 
 pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
-    st.derive(base64::decode(signature).unwrap())
+    st.derive(hex::decode(signature).map_err(|e| Error::HexError(e)).unwrap())
 }
 
 #[derive(Clone)]
@@ -100,7 +100,7 @@ pub struct Identifier {
 impl Identifier {
     pub fn new_from_str(id_str: String) -> Result<Identifier> {
         // check if it's proper string id
-        id_str.parse::<IdentifierPrefix>()?;
+        id_str.parse::<IdentifierPrefix>().map_err(|e| Error::IdentifierParseError(e.to_string()))?;
         Ok(Identifier { id: id_str })
     }
 
@@ -145,7 +145,7 @@ pub enum Error {
 
     // arguments parsing errors
     #[error("Can't parse controller prefix: {0}")]
-    PrefixParseError(String),
+    IdentifierParseError(String),
 
     #[error("Can't parse self addressing identifier: {0}")]
     SaiParseError(String),
