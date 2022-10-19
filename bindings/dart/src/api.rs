@@ -100,7 +100,7 @@ pub struct Identifier {
 impl Identifier {
     pub fn new_from_str(id_str: String) -> Result<Identifier> {
         // check if it's proper string id
-        id_str.parse::<IdentifierPrefix>()?;
+        id_str.parse::<IdentifierPrefix>().map_err(|e| Error::IdentifierParseError(e.to_string()))?;
         Ok(Identifier { id: id_str })
     }
 
@@ -145,7 +145,7 @@ pub enum Error {
 
     // arguments parsing errors
     #[error("Can't parse controller prefix: {0}")]
-    PrefixParseError(String),
+    IdentifierParseError(String),
 
     #[error("Can't parse self addressing identifier: {0}")]
     SaiParseError(String),
