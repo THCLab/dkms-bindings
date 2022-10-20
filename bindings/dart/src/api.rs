@@ -180,7 +180,7 @@ pub enum Error {
 
 /// Helper function for tests. Enable to switch to use other database. Used to
 /// simulate using multiple devices.
-pub(crate) fn change_controller(db_path: String) -> Result<bool> {
+pub fn change_controller(db_path: String) -> Result<bool> {
     let config = OptionalConfig {
         db_path: Some(PathBuf::from(db_path)),
         initial_oobis: None,
