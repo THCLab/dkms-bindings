@@ -147,6 +147,9 @@ pub enum Error {
     #[error("Can't parse controller prefix: {0}")]
     IdentifierParseError(String),
 
+    #[error("Can't parse event: {0}")]
+    EventParsingError(String),
+
     #[error("Can't parse self addressing identifier: {0}")]
     SaiParseError(String),
 
@@ -476,7 +479,7 @@ pub fn finalize_mailbox_query(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let query = query_message(query_event.as_bytes()).unwrap().1;
+    let query = query_message(query_event.as_bytes()).map_err(|e| Error::EventParsingError(e.to_string()))?.1;
     let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
 
     match query {
