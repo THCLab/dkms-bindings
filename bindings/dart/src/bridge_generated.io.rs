@@ -26,6 +26,11 @@ pub extern "C" fn wire_with_initial_oobis(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_change_controller(port_: i64, db_path: *mut wire_uint_8_list) {
+    wire_change_controller_impl(port_, db_path)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_init_kel(
     port_: i64,
     input_app_dir: *mut wire_uint_8_list,

@@ -410,7 +410,15 @@ class Keri {
 
   static Future<Identifier> newIdentifier(
       {required String idStr, dynamic hint}) async{
-    return await api.newStaticMethodIdentifier(idStr: idStr);
+    try{
+      return await api.newFromStrStaticMethodIdentifier(idStr: idStr);
+    }on FfiException catch (e){
+      if (e.message.contains('Can\'t parse controller')) {
+        throw IdentifierException(
+            'Can\'t parse controller prefix. Check the confroller for identifier once again.');
+      }
+      rethrow;
+    }
   }
 
   static Future<List<String>> queryMailbox(
@@ -433,7 +441,7 @@ class Keri {
       {required SignatureType st,
         required String signature,
     dynamic hint}) async{
-    return await api.newFromHexStaticMethodSignature(st: st, signature: signature);
+    return await api.signatureFromHex(st: st, signature: signature);
   }
 
   static Future<GroupInception> inceptGroup(
@@ -456,6 +464,23 @@ class Keri {
   }
 
   static Future<PublicKey> newPublicKey({required KeyType kt, required String keyB64, dynamic hint}) async{
-    return await api.newStaticMethodPublicKey(kt: kt, keyB64: keyB64);
+    try{
+      return await api.newPublicKey(kt: kt, keyB64: keyB64);
+    } on FfiException catch (e){
+      if (e.message.contains('base64 decode error')) {
+        throw IncorrectKeyFormatException(
+            "The provided key is not a Base64 string. Check the string once again.");
+      }
+      rethrow;
+    }
   }
+
+  static Future<DataAndSignature> newDataAndSignature(
+      {required String data, required Signature signature, dynamic hint}) async{
+    return await api.newStaticMethodDataAndSignature(data: data, signature: signature);
+  }
+
+  // static Future<bool> changeController({required String dbPath, dynamic hint})async{
+  //   return await api.changeController(dbPath: dbPath);
+  // }
 }

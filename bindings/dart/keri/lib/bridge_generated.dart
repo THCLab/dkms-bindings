@@ -34,6 +34,12 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kWithInitialOobisConstMeta;
 
+  /// Helper function for tests. Enable to switch to use other database. Used to
+  /// simulate using multiple devices.
+  Future<bool> changeController({required String dbPath, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kChangeControllerConstMeta;
+
   Future<bool> initKel(
       {required String inputAppDir, Config? optionalConfigs, dynamic hint});
 
@@ -391,6 +397,22 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "with_initial_oobis",
         argNames: ["config", "oobisJson"],
+      );
+
+  Future<bool> changeController({required String dbPath, dynamic hint}) =>
+      _platform.executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => _platform.inner
+            .wire_change_controller(port_, _platform.api2wire_String(dbPath)),
+        parseSuccessData: _wire2api_bool,
+        constMeta: kChangeControllerConstMeta,
+        argValues: [dbPath],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kChangeControllerConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "change_controller",
+        argNames: ["dbPath"],
       );
 
   Future<bool> initKel(
@@ -1322,6 +1344,23 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_with_initial_oobis = _wire_with_initial_oobisPtr.asFunction<
       void Function(
           int, ffi.Pointer<wire_Config>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_change_controller(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> db_path,
+  ) {
+    return _wire_change_controller(
+      port_,
+      db_path,
+    );
+  }
+
+  late final _wire_change_controllerPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_change_controller');
+  late final _wire_change_controller = _wire_change_controllerPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_init_kel(
     int port_,

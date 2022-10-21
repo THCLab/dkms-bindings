@@ -125,6 +125,8 @@ void wire_with_initial_oobis(int64_t port_,
                              struct wire_Config *config,
                              struct wire_uint_8_list *oobis_json);
 
+void wire_change_controller(int64_t port_, struct wire_uint_8_list *db_path);
+
 void wire_init_kel(int64_t port_,
                    struct wire_uint_8_list *input_app_dir,
                    struct wire_Config *optional_configs);
@@ -240,6 +242,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_signature_from_hex);
     dummy_var ^= ((int64_t) (void*) wire_signature_from_b64);
     dummy_var ^= ((int64_t) (void*) wire_with_initial_oobis);
+    dummy_var ^= ((int64_t) (void*) wire_change_controller);
     dummy_var ^= ((int64_t) (void*) wire_init_kel);
     dummy_var ^= ((int64_t) (void*) wire_incept);
     dummy_var ^= ((int64_t) (void*) wire_finalize_inception);

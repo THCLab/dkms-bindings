@@ -91,6 +91,19 @@ fn wire_with_initial_oobis_impl(
         },
     )
 }
+fn wire_change_controller_impl(port_: MessagePort, db_path: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "change_controller",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_db_path = db_path.wire2api();
+            move |task_callback| change_controller(api_db_path)
+        },
+    )
+}
 fn wire_init_kel_impl(
     port_: MessagePort,
     input_app_dir: impl Wire2Api<String> + UnwindSafe,
