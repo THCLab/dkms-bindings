@@ -1444,6 +1444,7 @@ void main() {
   });
 
   test('Multisig use case', () async{
+
     await Keri.initKel(inputAppDir: 'keritest');
 
     String witness_id = "DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
@@ -1462,7 +1463,7 @@ void main() {
     print(icp_event);
     var signature =
         'A2FA422FD0786321C44E6B16231EFB83A6BDC7A71EA7A35B50279C099DB9D6CE52941160E996351CC321832FF2D8C9757B89278B4C55B3BF35C7C23D38850102';
-    var controller = await Keri.finalizeInception(
+    var identifier = await Keri.finalizeInception(
         event: icp_event,
         signature:
         await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
@@ -1474,9 +1475,9 @@ void main() {
     //MOCK QUERY MAILBOX because signature changes with every test run.
     var query = '{"v":"KERI10JSON00018e_","t":"qry","d":"EOsIfpnrmxFwD1OPC6k06BkUBmaf0jdzZUqy-SD4ZqI8","dt":"2022-10-21T11:32:22.157953+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
     var signature2 = 'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-    var finalizeQuery = await Keri.finalizeMailboxQuery(identifier: controller, queryEvent: query, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
+    var finalizeQuery = await Keri.finalizeMailboxQuery(identifier: identifier, queryEvent: query, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
 
-    var initiatorKel = await Keri.getKel(cont: controller);
+    var initiatorKel = await Keri.getKel(cont: identifier);
     var switchController = await Keri.api.changeController(dbPath: 'keritest2');
 
     var process = await Keri.processStream(stream: initiatorKel);
@@ -1507,18 +1508,47 @@ void main() {
     var changeController = await Keri.api.changeController(dbPath: 'keritest');
     var process2 = await Keri.processStream(stream: participantKel);
 
-    var icp = await Keri.inceptGroup(identifier: controller, participants: [participant], signatureThreshold: 2, initialWitnesses: vec4, witnessThreshold: 1);
+    var icp = await Keri.inceptGroup(identifier: identifier, participants: [participant], signatureThreshold: 2, initialWitnesses: vec4, witnessThreshold: 1);
     var signature5 = '4F9782BF238408908344FD36D66D7A3507F7D70A26A40F608247F5BD57F51B3F6E15886B268592A5F64D37BAAFE5D003564DC3AC7352F1D7F6B46789BE0C7504';
     var signatureex = '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
     //
-    var fgi = await Keri.finalizeGroupIncept(identifier: controller, groupEvent: icp.icpEvent, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature5), toForward: [await Keri.newDataAndSignature(data: icp.exchanges[0], signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signatureex))]);
+    var group_identifier = await Keri.finalizeGroupIncept(identifier: identifier, groupEvent: icp.icpEvent, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature5), toForward: [await Keri.newDataAndSignature(data: icp.exchanges[0], signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signatureex))]);
 
-    //var changeController2 = await Keri.api.changeController(dbPath: 'keritest2');
+    var changeController2 = await Keri.api.changeController(dbPath: 'keritest2');
     //var query3 = await Keri.queryMailbox(whoAsk: participant, aboutWho: participant, witness: vec4);
     //MOCK QUERY MAILBOX because signature changes with every test run.
-    //var query3 = '{"v":"KERI10JSON00018e_","t":"qry","d":"EDhRwPEWsAhk45GokK_eSX1HjWIkyuU0fDg-clNk4SrU","dt":"2022-10-21T15:09:49.403737+00:00","r":"mbx","rr":"","q":{"pre":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-    //var signature6 = 'BB07D321C483A5593CD9CFC3981046D5CFF61C2AC025020A11C780C20B0D8A1C1AE749002C44FAB52269CDB2C5D975CDF87447BD28D8FBEA67F590D57B89FF03';
-    // var finalizeQuery3 = await Keri.finalizeMailboxQuery(identifier: participant, queryEvent: query3, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature6));
-    // print('finalize: $finalizeQuery3');
+    var query3 = '{"v":"KERI10JSON00018e_","t":"qry","d":"EDhRwPEWsAhk45GokK_eSX1HjWIkyuU0fDg-clNk4SrU","dt":"2022-10-21T15:09:49.403737+00:00","r":"mbx","rr":"","q":{"pre":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+    var signature6 = 'BB07D321C483A5593CD9CFC3981046D5CFF61C2AC025020A11C780C20B0D8A1C1AE749002C44FAB52269CDB2C5D975CDF87447BD28D8FBEA67F590D57B89FF03';
+    List<ActionRequired> finalizeQuery3 = await Keri.finalizeMailboxQuery(identifier: participant, queryEvent: query3, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature6));
+
+    if(finalizeQuery3[0].action == Action.MultisigRequest){
+      var icpsignature = '51605A9F3B371AB9D615EB11E045B21E5AF31170DF46A69B4C9359A52ACD0F2C3041EEC4ED8402828D540716DDD631FDFBD91F2F157E295EEDB228169DCC0902';
+      var icpexsignature ='250BD709C82FEF02DF09D84CAC9E7891E5976C69205BC0EFACDF43E6FB6F6A06E8F1DF6FCE4AE9EDA2954BEFD463131F3256D5ECD371C35AE0394FF018553309';
+      
+      var group_controller = await Keri.finalizeGroupIncept(identifier: participant, groupEvent: finalizeQuery3[0].data, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: icpsignature), toForward: [await Keri.newDataAndSignature(data: finalizeQuery3[0].additionaData, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: icpexsignature))]);
+    }
+
+    var changeController3 = await Keri.api.changeController(dbPath: 'keritest');
+    //var query4 = await Keri.queryMailbox(whoAsk: controller, aboutWho: group_identifier, witness: vec4);
+    //MOCK QUERY MAILBOX because signature changes with every test run.
+    var query4 = '{"v":"KERI10JSON00018e_","t":"qry","d":"E2PheXm-3wCE0QrmeQm0RUxPZOWPio-CHHVftt3tPMdk","dt":"2022-10-24T11:47:52.172662+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+    var signature7 = '2E849AD6255F2680A3CD64561FBC3EF27A8C8B10EDE673E4EDEB00FE75AAB9FF4A2B497D00C9C2B9BE77A44A3FB81E15779C1C47F379DBE1224D4ADC2DBC8F0C';
+    var action_required = await Keri.finalizeMailboxQuery(identifier: identifier, queryEvent: query4, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature7));
+
+    //var query5 = await Keri.queryMailbox(whoAsk: controller, aboutWho: group_identifier, witness: vec4);
+    //MOCK QUERY MAILBOX because signature changes with every test run.
+    var query5 = '{"v":"KERI10JSON00018e_","t":"qry","d":"Enr4_i6V2cn15u1gVdh6scKDGTEelTiV3gmxpzoPniQw","dt":"2022-10-24T11:52:03.898695+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+    var signature8 = '3B770222210028A459489FB4590575B98BFC47F983A748415DCEC9452C76A9A0BCD1887C95214AAEE2E789F32D15581E9029750C1FCEC8FA660DA485CD1E4D04';
+    var action_required2 = await Keri.finalizeMailboxQuery(identifier: identifier, queryEvent: query5, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature8));
+
+    var changeController4 = await Keri.api.changeController(dbPath: 'keritest2');
+    //var query6 = await Keri.queryMailbox(whoAsk: participant, aboutWho: group_identifier, witness: vec4);
+    //MOCK QUERY MAILBOX because signature changes with every test run.
+    var query6 = '{"v":"KERI10JSON00018e_","t":"qry","d":"Ejc77kBLkrBfLVkSub8IKcgySzzvwiaOSytQswZBZhv0","dt":"2022-10-24T11:55:45.251661+00:00","r":"mbx","rr":"","q":{"pre":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+    var signature9 = '668A2F1EDB09E2E8268B5F8B4E822A8DB89DE62FA8DB1CD3D9A482D33A044BF28E4D42DC04DCED71A8911F3EE59D041A39F81AB18B99257A6EA10C4859ED1E04';
+    var action_required3 = await Keri.finalizeMailboxQuery(identifier: participant, queryEvent: query6, signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature9));
+
+    var kel = await Keri.getKel(cont: group_identifier);
+    print(kel);
   });
 }
