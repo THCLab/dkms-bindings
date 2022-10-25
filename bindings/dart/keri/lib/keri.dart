@@ -11,7 +11,7 @@ class Keri {
   static const base = 'dartkeriox';
   static final path = Platform.isWindows ? '$base.dll' : 'lib$base.so';
 
-  static late final dylib = Platform.environment.containsKey('FLUTTER_TEST')
+  static final dylib = Platform.environment.containsKey('FLUTTER_TEST')
       ? DynamicLibrary.open(
           Platform.script.resolve("windows/dartkeriox/dartkeriox.dll").toFilePath())
       : Platform.isIOS
@@ -19,7 +19,7 @@ class Keri {
           : Platform.isMacOS
               ? DynamicLibrary.executable()
               : DynamicLibrary.open(path);
-  static late final api = KeriDartImpl(dylib);
+  static final api = KeriDartImpl(dylib);
 
   ///Initializes database for storing events.
   static Future<bool> initKel(
@@ -421,27 +421,50 @@ class Keri {
     }
   }
 
+  //ToDo
   static Future<List<String>> queryMailbox(
       {required Identifier whoAsk,
         required Identifier aboutWho,
         required List<String> witness,
         dynamic hint}) async{
-    return await api.queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
+    try{
+      return await api.queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
+    }on FfiException catch(e){
+
+      rethrow;
+    }
   }
 
+  //ToDo
   static Future<List<ActionRequired>> finalizeMailboxQuery(
       {required Identifier identifier,
         required String queryEvent,
         required Signature signature,
         dynamic hint}) async{
-    return await api.finalizeMailboxQuery(identifier: identifier, queryEvent: queryEvent, signature: signature);
+    try{
+      return await api.finalizeMailboxQuery(identifier: identifier, queryEvent: queryEvent, signature: signature);
+    }on FfiException catch(e){
+      if (e.message.contains('Can\'t parse event')) {
+        throw WrongEventException(
+            'Provided string is not a correct query event. Check the string once again.');
+      }
+      rethrow;
+    }
   }
 
   static Future<Signature> signatureFromHex(
       {required SignatureType st,
         required String signature,
     dynamic hint}) async{
-    return await api.signatureFromHex(st: st, signature: signature);
+    try{
+      return await api.signatureFromHex(st: st, signature: signature);
+    }on FfiException catch (e){
+      if (e.message.contains('hex decode error')) {
+        throw IncorrectSignatureException(
+            'The signature provided is not a correct HEX string. Check the signature once again.');
+      }
+      rethrow;
+    }
   }
 
   static Future<GroupInception> inceptGroup(
@@ -451,7 +474,15 @@ class Keri {
         required List<String> initialWitnesses,
         required int witnessThreshold,
         dynamic hint}) async{
-    return await api.inceptGroup(identifier: identifier, participants: participants, signatureThreshold: signatureThreshold, initialWitnesses: initialWitnesses, witnessThreshold: witnessThreshold);
+    try{
+      return await api.inceptGroup(identifier: identifier, participants: participants, signatureThreshold: signatureThreshold, initialWitnesses: initialWitnesses, witnessThreshold: witnessThreshold);
+    }on FfiException catch(e){
+      if (e.message.contains('Deserialize error')) {
+        throw IdentifierException(
+            'Provided witness id is incorrect. Check the identifier once again.');
+      }
+      rethrow;
+    }
   }
 
   static Future<Identifier> finalizeGroupIncept(
@@ -460,7 +491,15 @@ class Keri {
         required Signature signature,
         required List<DataAndSignature> toForward,
         dynamic hint}) async{
-    return await api.finalizeGroupIncept(identifier: identifier, groupEvent: groupEvent, signature: signature, toForward: toForward);
+    try{
+      return await api.finalizeGroupIncept(identifier: identifier, groupEvent: groupEvent, signature: signature, toForward: toForward);
+    }on FfiException catch(e){
+      if (e.message.contains('Unknown id')) {
+        throw IdentifierException(
+            'Unknown controller identifier. Check the confroller for identifier once again.');
+      }
+      rethrow;
+    }
   }
 
   static Future<PublicKey> newPublicKey({required KeyType kt, required String keyB64, dynamic hint}) async{
