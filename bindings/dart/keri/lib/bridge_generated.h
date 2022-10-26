@@ -192,10 +192,6 @@ void wire_finalize_mailbox_query(int64_t port_,
 
 void wire_resolve_oobi(int64_t port_, struct wire_uint_8_list *oobi_json);
 
-void wire_query(int64_t port_,
-                struct wire_Identifier *identifier,
-                struct wire_uint_8_list *oobis_json);
-
 void wire_process_stream(int64_t port_, struct wire_uint_8_list *stream);
 
 void wire_get_kel(int64_t port_, struct wire_Identifier *identifier);
@@ -256,7 +252,6 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_query_mailbox);
     dummy_var ^= ((int64_t) (void*) wire_finalize_mailbox_query);
     dummy_var ^= ((int64_t) (void*) wire_resolve_oobi);
-    dummy_var ^= ((int64_t) (void*) wire_query);
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
     dummy_var ^= ((int64_t) (void*) wire_get_current_public_key);

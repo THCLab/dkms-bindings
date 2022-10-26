@@ -396,24 +396,6 @@ fn wire_resolve_oobi_impl(port_: MessagePort, oobi_json: impl Wire2Api<String> +
         },
     )
 }
-fn wire_query_impl(
-    port_: MessagePort,
-    identifier: impl Wire2Api<Identifier> + UnwindSafe,
-    oobis_json: impl Wire2Api<String> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "query",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_identifier = identifier.wire2api();
-            let api_oobis_json = oobis_json.wire2api();
-            move |task_callback| query(api_identifier, api_oobis_json)
-        },
-    )
-}
 fn wire_process_stream_impl(port_: MessagePort, stream: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

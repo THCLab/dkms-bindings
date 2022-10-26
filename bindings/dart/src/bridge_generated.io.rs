@@ -180,15 +180,6 @@ pub extern "C" fn wire_resolve_oobi(port_: i64, oobi_json: *mut wire_uint_8_list
 }
 
 #[no_mangle]
-pub extern "C" fn wire_query(
-    port_: i64,
-    identifier: *mut wire_Identifier,
-    oobis_json: *mut wire_uint_8_list,
-) {
-    wire_query_impl(port_, identifier, oobis_json)
-}
-
-#[no_mangle]
 pub extern "C" fn wire_process_stream(port_: i64, stream: *mut wire_uint_8_list) {
     wire_process_stream_impl(port_, stream)
 }

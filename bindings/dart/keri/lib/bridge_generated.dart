@@ -139,13 +139,6 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kResolveOobiConstMeta;
 
-  Future<bool> query(
-      {required Identifier identifier,
-      required String oobisJson,
-      dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kQueryConstMeta;
-
   Future<bool> processStream({required String stream, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kProcessStreamConstMeta;
@@ -742,27 +735,6 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "resolve_oobi",
         argNames: ["oobiJson"],
-      );
-
-  Future<bool> query(
-          {required Identifier identifier,
-          required String oobisJson,
-          dynamic hint}) =>
-      _platform.executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => _platform.inner.wire_query(
-            port_,
-            _platform.api2wire_box_autoadd_identifier(identifier),
-            _platform.api2wire_String(oobisJson)),
-        parseSuccessData: _wire2api_bool,
-        constMeta: kQueryConstMeta,
-        argValues: [identifier, oobisJson],
-        hint: hint,
-      ));
-
-  FlutterRustBridgeTaskConstMeta get kQueryConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "query",
-        argNames: ["identifier", "oobisJson"],
       );
 
   Future<bool> processStream({required String stream, dynamic hint}) =>
@@ -1701,26 +1673,6 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
               ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_resolve_oobi');
   late final _wire_resolve_oobi = _wire_resolve_oobiPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
-  void wire_query(
-    int port_,
-    ffi.Pointer<wire_Identifier> identifier,
-    ffi.Pointer<wire_uint_8_list> oobis_json,
-  ) {
-    return _wire_query(
-      port_,
-      identifier,
-      oobis_json,
-    );
-  }
-
-  late final _wire_queryPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_query');
-  late final _wire_query = _wire_queryPtr.asFunction<
-      void Function(
-          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_process_stream(
     int port_,
