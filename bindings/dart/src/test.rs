@@ -20,7 +20,7 @@ pub fn test_new_key() -> Result<()> {
     let to_short_public_key = "6UMthURGxkWVEKxJ/m3OpgV3Be/STsM//4tONKaiTrA".to_string();
     let to_long_public_key = "xeIGdSW6mJsPqFysR6diH0/4lXXgyy36Hb9BzcLOp+s=GGG".to_string();
 
-    let pk = new_public_key(Basic::Ed25519NT, public_key)?;
+    assert!(new_public_key(Basic::Ed25519NT, public_key).is_ok());
     assert!(new_public_key(Basic::Ed25519NT, not_base_64).is_err());
     assert!(new_public_key(Basic::Ed25519NT, to_short_public_key).is_err());
     assert!(new_public_key(Basic::Ed25519NT, to_long_public_key).is_err());

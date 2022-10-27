@@ -16,11 +16,15 @@ use keri::{
     prefix::Prefix,
 };
 pub use keri::{
-    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning, DerivationCode},
+    derivation::{
+        basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning, DerivationCode,
+    },
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
 
-use crate::utils::{join_keys_and_signatures, parse_attachment};
+use crate::utils::{
+    join_keys_and_signatures, parse_attachment, parse_location_schemes, parse_witness_prefix,
+};
 pub use controller::utils::OptionalConfig;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -91,11 +95,19 @@ pub struct _Signature {
 }
 
 pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
-    st.derive(hex::decode(signature).map_err(|e| Error::HexError(e)).unwrap())
+    st.derive(
+        hex::decode(signature)
+            .map_err(|e| Error::HexError(e))
+            .unwrap(),
+    )
 }
 
 pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
-    st.derive(hex::decode(signature).map_err(|e| Error::HexError(e)).unwrap())
+    st.derive(
+        hex::decode(signature)
+            .map_err(|e| Error::HexError(e))
+            .unwrap(),
+    )
 }
 
 #[derive(Clone)]
@@ -106,7 +118,9 @@ pub struct Identifier {
 impl Identifier {
     pub fn new_from_str(id_str: String) -> Result<Identifier> {
         // check if it's proper string id
-        id_str.parse::<IdentifierPrefix>().map_err(|e| Error::IdentifierParseError(e.to_string()))?;
+        id_str
+            .parse::<IdentifierPrefix>()
+            .map_err(|e| Error::IdentifierParseError(e.to_string()))?;
         Ok(Identifier { id: id_str })
     }
 
@@ -150,7 +164,7 @@ pub enum Error {
     ControllerInitializationError,
 
     // arguments parsing errors
-    #[error("Can't parse controller prefix: {0}")]
+    #[error("Can't parse identifier prefix: {0}")]
     IdentifierParseError(String),
 
     #[error("Can't parse event: {0}")]
@@ -237,10 +251,7 @@ pub fn incept(
 ) -> Result<String> {
     let witnesses = witnesses
         .iter()
-        .map(|wit| {
-            serde_json::from_str::<LocationScheme>(wit)
-                .map_err(|_e| Error::OobiParseError(wit.into()))
-        })
+        .map(|wit| parse_location_schemes(wit))
         .collect::<Result<Vec<_>, _>>()
         // improper json structure or improper prefix
         .map_err(|e| anyhow!(e.to_string()))?;
@@ -280,10 +291,7 @@ pub fn rotate(
     // Parse location schema from string
     let witnesses_to_add = witness_to_add
         .iter()
-        .map(|wit| {
-            serde_json::from_str::<LocationScheme>(wit)
-                .map_err(|_| Error::OobiParseError(wit.into()))
-        })
+        .map(|wit| parse_location_schemes(wit))
         .collect::<Result<Vec<_>, _>>()?;
     let witnesses_to_remove = witness_to_remove
         .iter()
@@ -332,8 +340,7 @@ pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String
 }
 
 pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<String> {
-    let lc: LocationScheme =
-        serde_json::from_str(&watcher_oobi).map_err(|_| Error::OobiParseError(watcher_oobi))?;
+    let lc = parse_location_schemes(&watcher_oobi)?;
     if let IdentifierPrefix::Basic(_bp) = &lc.eid {
         (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
             .as_ref()
@@ -453,17 +460,15 @@ pub fn query_mailbox(
         .clone();
 
     let identifier_controller = IdentifierController::new(who_ask.into(), controller);
-    let witnesses: Vec<_> = witness
+    let witnesses: Result<Vec<_>> = witness
         .iter()
-        .map(|wit| wit.parse::<BasicPrefix>().unwrap())
+        .map(|wit| -> Result<BasicPrefix> { Ok(parse_witness_prefix(wit)?) })
         .collect();
-    let query = identifier_controller
-        .query_mailbox(&about_who.into(), &witnesses)?
+    identifier_controller
+        .query_mailbox(&about_who.into(), &witnesses?)?
         .iter()
-        .map(|qry| String::from_utf8(qry.serialize().unwrap()).unwrap())
-        .collect::<Vec<_>>();
-
-    Ok(query)
+        .map(|qry| -> Result<String> { Ok(String::from_utf8(qry.serialize()?)?) })
+        .collect::<Result<Vec<_>>>()
 }
 
 #[derive(Debug)]
@@ -488,7 +493,9 @@ pub fn finalize_mailbox_query(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let query = query_message(query_event.as_bytes()).map_err(|e| Error::EventParsingError(e.to_string()))?.1;
+    let query = query_message(query_event.as_bytes())
+        .map_err(|e| Error::EventParsingError(e.to_string()))?
+        .1;
     let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
 
     match query {
@@ -521,8 +528,7 @@ pub fn finalize_mailbox_query(
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
-    let lc: LocationScheme =
-        serde_json::from_str(&oobi_json).map_err(|_e| Error::OobiParseError(oobi_json))?;
+    let lc = parse_location_schemes(&oobi_json)?;
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
