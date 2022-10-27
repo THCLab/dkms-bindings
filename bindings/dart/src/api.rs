@@ -511,8 +511,8 @@ pub fn finalize_mailbox_query(
                             exchanges,
                         ) => Ok(ActionRequired {
                             action: Action::MultisigRequest,
-                            data: String::from_utf8(data.serialize()?).unwrap(),
-                            additiona_data: String::from_utf8(exchanges.serialize()?).unwrap(),
+                            data: String::from_utf8(data.serialize()?)?,
+                            additiona_data: String::from_utf8(exchanges.serialize()?)?,
                         }),
                         _ => {
                             todo!()
@@ -594,7 +594,7 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
         .map(|event| Message::Notice(event).to_cesr().unwrap())
         .flatten()
         .collect();
-    Ok(String::from_utf8(signed_event).unwrap())
+    Ok(String::from_utf8(signed_event)?)
 }
 
 pub struct PublicKeySignaturePair {
