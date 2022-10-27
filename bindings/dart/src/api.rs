@@ -16,7 +16,7 @@ use keri::{
     prefix::Prefix,
 };
 pub use keri::{
-    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
+    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning, DerivationCode},
     prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
 };
 
@@ -66,8 +66,14 @@ pub struct PublicKey {
 }
 
 pub fn new_public_key(kt: KeyType, key_b64: String) -> Result<PublicKey> {
-    let pk = kt.derive(KeriPublicKey::new(base64::decode(key_b64).map_err(|e| Error::Base64Error(e))?));
-    Ok(pk.into())
+    let expected_len = kt.code_len() + kt.derivative_b64_len();
+    if key_b64.len() == expected_len {
+        let decoded_key = base64::decode(key_b64).map_err(|e| Error::Base64Error(e))?;
+        let pk = kt.derive(KeriPublicKey::new(decoded_key));
+        Ok(pk.into())
+    } else {
+        Err(Error::KeyLengthError(key_b64.len(), expected_len).into())
+    }
 }
 
 pub type Digest = SelfAddressingPrefix;
@@ -161,6 +167,9 @@ pub enum Error {
 
     #[error("base64 decode error")]
     Base64Error(#[from] base64::DecodeError),
+
+    #[error("wrong key length, got: {0}, should be {1}")]
+    KeyLengthError(usize, usize),
 
     #[error("hex decode error")]
     HexError(#[from] hex::FromHexError),
