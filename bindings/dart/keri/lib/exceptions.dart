@@ -200,3 +200,39 @@ class SelfAddressingIndentifierException implements Exception {
   @override
   String toString() => "SelfAddressingIndentifierException: $cause";
 }
+
+///An exception thrown when the witness is not listening
+class NetworkErrorException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  NetworkErrorException(this.cause);
+
+  @override
+  String toString() => "NetworkErrorException: $cause";
+}
+
+///An exception thrown when the signature threshold is lower than 0 or bigger than key list length
+class ImproperSignatureThresholdException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  ImproperSignatureThresholdException(this.cause);
+
+  @override
+  String toString() => "ImproperSignatureThresholdException: $cause";
+}
+
+///An exception thrown when the witness threshold is lower than 0 or bigger than witness list length
+class ImproperWitnessThresholdException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  ImproperWitnessThresholdException(this.cause);
+
+  @override
+  String toString() => "ImproperWitnessThresholdException: $cause";
+}

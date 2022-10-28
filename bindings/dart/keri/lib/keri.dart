@@ -39,7 +39,7 @@ class Keri {
           throw UnavailableDirectoryException(
               "The provided directory isn't available for writing. Consider changing the path.");
         }
-        if (e.message.contains('error sending request for url')) {
+        if (e.message.contains('network error')) {
           throw OobiResolvingErrorException(
               "No service is listening under the provided port number. Consider changing it.");
         }
@@ -88,7 +88,7 @@ class Keri {
         throw ImproperWitnessPrefixException(
             "Improper witness prefix, should be basic prefix. Check the eid field.");
       }
-      if (e.message.contains('error sending request for url')) {
+      if (e.message.contains('network error')) {
         throw OobiResolvingErrorException(
             "No service is listening under the provided port number. Consider changing it.");
       }
@@ -154,7 +154,7 @@ class Keri {
         throw WitnessParsingException(
             'Can\'t parse witness identifier. Check the wittnessToRemove field.');
       }
-      if (e.message.contains('error sending request for url')) {
+      if (e.message.contains('network error')) {
         throw OobiResolvingErrorException(
             "No service is listening under the provided port number. Consider changing it.");
       }
@@ -195,7 +195,7 @@ class Keri {
         throw IdentifierException(
             'Can\'t parse controller prefix. Check the confroller for identifier once again.');
       }
-      if (e.message.contains('error sending request for url')) {
+      if (e.message.contains('network error')) {
         throw OobiResolvingErrorException(
             "No service is listening under the provided port number. Consider changing it.");
       }
@@ -255,7 +255,7 @@ class Keri {
         throw IncorrectOobiException(
             'Provided oobi is incorrect. Please check the JSON once again');
       }
-      if (e.message.contains('error sending request for url')) {
+      if (e.message.contains('network error')) {
         throw OobiResolvingErrorException(
             "No service is listening under the provided port number. Consider changing it.");
       }
@@ -268,44 +268,44 @@ class Keri {
   }
 
   ///Query designated watcher about other identifier's public keys data.
-  static Future<bool> query(
-      {required Identifier controller,
-      required String oobisJson,
-      dynamic hint}) async {
-    try {
-      return await api.query(identifier: controller, oobisJson: oobisJson);
-    } on FfiException catch (e) {
-      if (e.message.contains('Deserialize error')) {
-        throw IdentifierException(
-            'The identifier provided to the controller is incorrect. Check the identifier once again.');
-      }
-      if (e.message.contains('Unknown id')) {
-        throw IdentifierException(
-            'Unknown controller identifier. Check the confroller for identifier once again.');
-      }
-      if (e.message.contains('Can\'t parse controller')) {
-        throw IdentifierException(
-            'Can\'t parse controller prefix. Check the confroller for identifier once again.');
-      }
-      if (e.message.contains('error sending request for url')) {
-        throw OobiResolvingErrorException(
-            "No service is listening under the provided port number. Consider changing it.");
-      }
-      if (e.message.contains('Controller wasn\'t initialized')) {
-        throw ControllerNotInitializedException(
-            "Controller has not been initialized. Execute initKel() before incepting.");
-      }
-      if (e.message.contains('Signature verification failed')) {
-        throw SignatureVerificationException(
-            'Signature verification failed - event signature does not match event keys.');
-      }
-      if (e.message.contains('Can\'t parse oobi json')) {
-        throw IncorrectOobiException(
-            'Provided oobi is incorrect. Please check the JSON once again');
-      }
-      rethrow;
-    }
-  }
+  // static Future<bool> query(
+  //     {required Identifier controller,
+  //     required String oobisJson,
+  //     dynamic hint}) async {
+  //   try {
+  //     return await api.query(identifier: controller, oobisJson: oobisJson);
+  //   } on FfiException catch (e) {
+  //     if (e.message.contains('Deserialize error')) {
+  //       throw IdentifierException(
+  //           'The identifier provided to the controller is incorrect. Check the identifier once again.');
+  //     }
+  //     if (e.message.contains('Unknown id')) {
+  //       throw IdentifierException(
+  //           'Unknown controller identifier. Check the confroller for identifier once again.');
+  //     }
+  //     if (e.message.contains('Can\'t parse controller')) {
+  //       throw IdentifierException(
+  //           'Can\'t parse controller prefix. Check the confroller for identifier once again.');
+  //     }
+  //     if (e.message.contains('error sending request for url')) {
+  //       throw OobiResolvingErrorException(
+  //           "No service is listening under the provided port number. Consider changing it.");
+  //     }
+  //     if (e.message.contains('Controller wasn\'t initialized')) {
+  //       throw ControllerNotInitializedException(
+  //           "Controller has not been initialized. Execute initKel() before incepting.");
+  //     }
+  //     if (e.message.contains('Signature verification failed')) {
+  //       throw SignatureVerificationException(
+  //           'Signature verification failed - event signature does not match event keys.');
+  //     }
+  //     if (e.message.contains('Can\'t parse oobi json')) {
+  //       throw IncorrectOobiException(
+  //           'Provided oobi is incorrect. Please check the JSON once again');
+  //     }
+  //     rethrow;
+  //   }
+  // }
 
   //CZY JEST POTRZEBNA?
   static Future<void> processStream({required String stream, dynamic hint}) async {
@@ -372,7 +372,7 @@ class Keri {
             'The SAI provided to the anchor is incorrect. Check the list once again.');
       }
       if (e.message.contains('Controller wasn\'t initialized')) {
-        throw ControllerNotInitializedException(
+        throw IdentifierException(
             "Controller has not been initialized. Execute initKel() before incepting.");
       }
       rethrow;
@@ -413,9 +413,9 @@ class Keri {
     try{
       return await api.newFromStrStaticMethodIdentifier(idStr: idStr);
     }on FfiException catch (e){
-      if (e.message.contains('Can\'t parse controller')) {
+      if (e.message.contains('Can\'t parse identifier prefix')) {
         throw IdentifierException(
-            'Can\'t parse controller prefix. Check the confroller for identifier once again.');
+            'Can\'t parse identifier prefix. Check the confroller for identifier once again.');
       }
       rethrow;
     }
@@ -430,7 +430,14 @@ class Keri {
     try{
       return await api.queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
     }on FfiException catch(e){
-
+      if (e.message.contains('Can\'t parse identifier prefix')) {
+        throw WitnessParsingException(
+            'Can\'t parse witness prefix. Check the queryMailbox witness list again.');
+      }
+      if (e.message.contains('network error')) {
+        throw NetworkErrorException(
+            'The witness is not listening on the provided port. Turn it on or change the port.');
+      }
       rethrow;
     }
   }
@@ -447,6 +454,10 @@ class Keri {
       if (e.message.contains('Can\'t parse event')) {
         throw WrongEventException(
             'Provided string is not a correct query event. Check the string once again.');
+      }
+      if (e.message.contains('Transport error: invalid response')) {
+        throw SignatureVerificationException(
+            'Signature verification failed - event signature does not match event keys.');
       }
       rethrow;
     }
@@ -481,6 +492,18 @@ class Keri {
         throw IdentifierException(
             'Provided witness id is incorrect. Check the identifier once again.');
       }
+      if (e.message.contains('Improper signature threshold')) {
+        throw ImproperSignatureThresholdException(
+            'Provided signature threshold is incorrect. Should be higher than 0 and lower than key list length.');
+      }
+      if (e.message.contains('Improper witness threshold')) {
+        throw ImproperWitnessThresholdException(
+            'Provided witness threshold is incorrect. Should be higher than 0 and lower than witness list length.');
+      }
+      if (e.message.contains('Unknown id')) {
+        throw IdentifierException(
+            'Unknown identifier. Check the identifier or participants list for identifier once again.');
+      }
       rethrow;
     }
   }
@@ -498,6 +521,14 @@ class Keri {
         throw IdentifierException(
             'Unknown controller identifier. Check the confroller for identifier once again.');
       }
+      if (e.message.contains('network error')) {
+        throw NetworkErrorException(
+            'The witness is not listening on the provided port. Turn it on or change the port.');
+      }
+      if (e.message.contains('Wrong event format')) {
+        throw WrongEventException(
+            'Provided string is not a correct group event. Check the string once again.');
+      }
       rethrow;
     }
   }
@@ -506,7 +537,7 @@ class Keri {
     try{
       return await api.newPublicKey(kt: kt, keyB64: keyB64);
     } on FfiException catch (e){
-      if (e.message.contains('base64 decode error')) {
+      if (e.message.contains('wrong key length')) {
         throw IncorrectKeyFormatException(
             "The provided key is not a Base64 string. Check the string once again.");
       }

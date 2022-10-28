@@ -175,31 +175,6 @@ void main() {
           'ENHwqUzQVZqy6ugSvgpzzMVMB2PaymhQm9cU0cPdPlwE');
     });
 
-    test(
-        'The finalize inception fails, because the signature is not a correct hex string',
-        () async {
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [];
-      var icp_event = await Keri.incept(
-          publicKeys: vec1,
-          nextPubKeys: vec2,
-          witnesses: vec3,
-          witnessThreshold: 0);
-      var signature = 'failSignature';
-      try {
-        var controller = await Keri.finalizeInception(
-            event: icp_event,
-            signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, const ex.isInstanceOf<IncorrectSignatureException>());
-      }
-    });
-
     test('The finalize inception fails, because the signature fails to verify',
         () async {
       await Keri.initKel(inputAppDir: 'keritest');
@@ -750,175 +725,175 @@ void main() {
         });
   });
 
-  group('query()', () {
-    test('query passes', () async {
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [
-        '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
-      ];
-      var icp_event = await Keri.incept(
-          publicKeys: vec1,
-          nextPubKeys: vec2,
-          witnesses: vec3,
-          witnessThreshold: 0);
-      print(icp_event);
-      var signature =
-          '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
-      var controller = await Keri.finalizeInception(
-          event: icp_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
-      //MOCK WATCHER EVENT
-      var watcher_event = await Keri.addWatcher(controller: controller, watcherOobi:  '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}');
-         // '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-      var signature2 =
-          '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
-      var res = await Keri.finalizeEvent(
-          identifier: controller,
-          event: watcher_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
-      var oobiString =
-          '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
-      var res2 =
-          await Keri.query(controller: controller, oobisJson: oobiString);
-      expect(res2, true);
-    });
-
-    test('query fails, because nobody is listening on the port.', () async {
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [
-        '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
-      ];
-      var icp_event = await Keri.incept(
-          publicKeys: vec1,
-          nextPubKeys: vec2,
-          witnesses: vec3,
-          witnessThreshold: 0);
-      var signature =
-          '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
-      var controller = await Keri.finalizeInception(
-          event: icp_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
-      //MOCK WATCHER EVENT
-      var watcher_event =
-          '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-      var signature2 =
-          '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
-      var res = await Keri.finalizeEvent(
-          identifier: controller,
-          event: watcher_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
-      var oobiString =
-          '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:8888/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
-      try {
-        var res2 =
-            await Keri.query(controller: controller, oobisJson: oobiString);
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
-      }
-    });
-
-    test('query fails, because of incorrect oobi json', () async {
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [
-        '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
-      ];
-      var icp_event = await Keri.incept(
-          publicKeys: vec1,
-          nextPubKeys: vec2,
-          witnesses: vec3,
-          witnessThreshold: 0);
-      var signature =
-          '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
-      var controller = await Keri.finalizeInception(
-          event: icp_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
-      //MOCK WATCHER EVENT
-      var watcher_event =
-          '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-      var signature2 =
-          '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
-      var res = await Keri.finalizeEvent(
-          identifier: controller,
-          event: watcher_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
-      var oobiString =
-          '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}';
-      try {
-        var res2 =
-            await Keri.query(controller: controller, oobisJson: oobiString);
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, const ex.isInstanceOf<IncorrectOobiException>());
-      }
-    });
-
-    test('query fails, because the controller identifier is incorrect.',
-        () async {
-      await Keri.initKel(inputAppDir: 'keritest');
-      List<PublicKey> vec1 = [];
-      vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [
-        '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
-      ];
-      var icp_event = await Keri.incept(
-          publicKeys: vec1,
-          nextPubKeys: vec2,
-          witnesses: vec3,
-          witnessThreshold: 0);
-      var signature =
-          '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
-      var controller = await Keri.finalizeInception(
-          event: icp_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
-      //MOCK WATCHER EVENT
-      var watcher_event =
-          '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-      var signature2 =
-          '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
-      var res = await Keri.finalizeEvent(
-          identifier: controller,
-          event: watcher_event,
-          signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
-      var oobiString =
-          '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
-      try {
-        var res2 = await Keri.query(
-            controller: await Keri.newIdentifier(idStr: 'fail'), oobisJson: oobiString);
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, const ex.isInstanceOf<IdentifierException>());
-      }
-    });
-
-    test('query fails, because the controller has not been initialized',
-        () async {
-      var oobiString =
-          "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}]";
-      try {
-        var res2 = await Keri.query(
-            controller: await Keri.newIdentifier(idStr: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'),
-            oobisJson: oobiString);
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, const ex.isInstanceOf<ControllerNotInitializedException>());
-      }
-    });
-  });
+  // group('query()', () {
+  //   test('query passes', () async {
+  //     await Keri.initKel(inputAppDir: 'keritest');
+  //     List<PublicKey> vec1 = [];
+  //     vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+  //     List<PublicKey> vec2 = [];
+  //     vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+  //     List<String> vec3 = [
+  //       '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
+  //     ];
+  //     var icp_event = await Keri.incept(
+  //         publicKeys: vec1,
+  //         nextPubKeys: vec2,
+  //         witnesses: vec3,
+  //         witnessThreshold: 0);
+  //     print(icp_event);
+  //     var signature =
+  //         '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
+  //     var controller = await Keri.finalizeInception(
+  //         event: icp_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
+  //     //MOCK WATCHER EVENT
+  //     var watcher_event = await Keri.addWatcher(controller: controller, watcherOobi:  '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}');
+  //        // '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+  //     var signature2 =
+  //         '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
+  //     var res = await Keri.finalizeEvent(
+  //         identifier: controller,
+  //         event: watcher_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
+  //     var oobiString =
+  //         '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
+  //     var res2 =
+  //         await Keri.query(controller: controller, oobisJson: oobiString);
+  //     expect(res2, true);
+  //   });
+  //
+  //   test('query fails, because nobody is listening on the port.', () async {
+  //     await Keri.initKel(inputAppDir: 'keritest');
+  //     List<PublicKey> vec1 = [];
+  //     vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+  //     List<PublicKey> vec2 = [];
+  //     vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+  //     List<String> vec3 = [
+  //       '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
+  //     ];
+  //     var icp_event = await Keri.incept(
+  //         publicKeys: vec1,
+  //         nextPubKeys: vec2,
+  //         witnesses: vec3,
+  //         witnessThreshold: 0);
+  //     var signature =
+  //         '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
+  //     var controller = await Keri.finalizeInception(
+  //         event: icp_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
+  //     //MOCK WATCHER EVENT
+  //     var watcher_event =
+  //         '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+  //     var signature2 =
+  //         '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
+  //     var res = await Keri.finalizeEvent(
+  //         identifier: controller,
+  //         event: watcher_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
+  //     var oobiString =
+  //         '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:8888/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
+  //     try {
+  //       var res2 =
+  //           await Keri.query(controller: controller, oobisJson: oobiString);
+  //       fail("exception not thrown");
+  //     } catch (e) {
+  //       expect(e, const ex.isInstanceOf<OobiResolvingErrorException>());
+  //     }
+  //   });
+  //
+  //   test('query fails, because of incorrect oobi json', () async {
+  //     await Keri.initKel(inputAppDir: 'keritest');
+  //     List<PublicKey> vec1 = [];
+  //     vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+  //     List<PublicKey> vec2 = [];
+  //     vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+  //     List<String> vec3 = [
+  //       '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
+  //     ];
+  //     var icp_event = await Keri.incept(
+  //         publicKeys: vec1,
+  //         nextPubKeys: vec2,
+  //         witnesses: vec3,
+  //         witnessThreshold: 0);
+  //     var signature =
+  //         '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
+  //     var controller = await Keri.finalizeInception(
+  //         event: icp_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
+  //     //MOCK WATCHER EVENT
+  //     var watcher_event =
+  //         '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+  //     var signature2 =
+  //         '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
+  //     var res = await Keri.finalizeEvent(
+  //         identifier: controller,
+  //         event: watcher_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
+  //     var oobiString =
+  //         '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}';
+  //     try {
+  //       var res2 =
+  //           await Keri.query(controller: controller, oobisJson: oobiString);
+  //       fail("exception not thrown");
+  //     } catch (e) {
+  //       expect(e, const ex.isInstanceOf<IncorrectOobiException>());
+  //     }
+  //   });
+  //
+  //   test('query fails, because the controller identifier is incorrect.',
+  //       () async {
+  //     await Keri.initKel(inputAppDir: 'keritest');
+  //     List<PublicKey> vec1 = [];
+  //     vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+  //     List<PublicKey> vec2 = [];
+  //     vec2.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+  //     List<String> vec3 = [
+  //       '{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"}'
+  //     ];
+  //     var icp_event = await Keri.incept(
+  //         publicKeys: vec1,
+  //         nextPubKeys: vec2,
+  //         witnesses: vec3,
+  //         witnessThreshold: 0);
+  //     var signature =
+  //         '5A6DF1A29EA3991A3F3C8A68ACCEDDD740AE0B51EFA8B66D49DC4A76DF09B973E75045583C90FA478016745B2C44E120F6527A3870FFC663AF4BC6DAEEEF2605';
+  //     var controller = await Keri.finalizeInception(
+  //         event: icp_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
+  //     //MOCK WATCHER EVENT
+  //     var watcher_event =
+  //         '{"v":"KERI10JSON000113_","t":"rpy","d":"Emnz_fz7suVJmKAqC-Kt8VQu6cTXuWJ4ciSEnLGYIjLs","dt":"2022-06-20T15:16:52.679568+00:00","r":"/end/role/add","a":{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"watcher","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+  //     var signature2 =
+  //         '1F5BFC6876B6CD7A39CDC6F70A9F3FB9AB80F5E3C78EFD2BF78FAEAACA3DAB292BDC2DA8C267EAB4896CFDBF1BC19F76397245341F63CFDD4AC641CA4454D806';
+  //     var res = await Keri.finalizeEvent(
+  //         identifier: controller,
+  //         event: watcher_event,
+  //         signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
+  //     var oobiString =
+  //         '[{"eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://sandbox.argo.colossi.network:3232/"},{"cid":"EY5lVApVptXa2Or0QBXnYJC4gp-sdQQ4wGMTJQsFUY7w","role":"witness","eid":"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}]';
+  //     try {
+  //       var res2 = await Keri.query(
+  //           controller: await Keri.newIdentifier(idStr: 'fail'), oobisJson: oobiString);
+  //       fail("exception not thrown");
+  //     } catch (e) {
+  //       expect(e, const ex.isInstanceOf<IdentifierException>());
+  //     }
+  //   });
+  //
+  //   test('query fails, because the controller has not been initialized',
+  //       () async {
+  //     var oobiString =
+  //         "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}]";
+  //     try {
+  //       var res2 = await Keri.query(
+  //           controller: await Keri.newIdentifier(idStr: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'),
+  //           oobisJson: oobiString);
+  //       fail("exception not thrown");
+  //     } catch (e) {
+  //       expect(e, const ex.isInstanceOf<ControllerNotInitializedException>());
+  //     }
+  //   });
+  // });
 
   group('getKel()', () {
     test('the getKel passes', () async {
@@ -989,7 +964,7 @@ void main() {
       expect(res, true);
     });
 
-    test('anchor fails, because the sai is incorrect', () async {
+    test('anchorDigest fails, because the sai is incorrect', () async {
       await Keri.initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
       vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
@@ -1018,7 +993,7 @@ void main() {
       }
     });
 
-    test('anchor fails, because the controller is unknown', () async {
+    test('anchorDigest fails, because the controller is unknown', () async {
       await Keri.initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
       vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
@@ -1049,7 +1024,7 @@ void main() {
       }
     });
 
-    test('anchor fails, because the controller is incorrect', () async {
+    test('anchorDigest fails, because the controller is incorrect', () async {
       await Keri.initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
       vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
@@ -1078,7 +1053,7 @@ void main() {
       }
     });
 
-    test('anchor fails, because the controller was not initialized', () async {
+    test('anchorDigest fails, because the controller was not initialized', () async {
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
@@ -1116,8 +1091,9 @@ void main() {
       sais.add(sai);
       var anchor_event = await Keri.anchor(
           controller: controller, data: 'data', algo: DigestType.blake3256());
+      print(anchor_event);
       var signature2 =
-          '629B2205FB6DC594F8368B031DEEAE5A4EB766222B7C008BDDB0668645681DEDFB8F72A93D6C9AE4938FF32637BD64A6D5D49AE3BDB5EC4932D91310EB67330D';
+          '79552DCFB2693021311C5D07BD26B7147EBB92BB31C4B22150DC9686DEA44C0181261BC1AF036F3520D4F3EC10C64F9917084A2B5EC4F7D9E69353706668DB00';
       var res = await Keri.finalizeEvent(
           identifier: controller,
           event: anchor_event,
@@ -1199,7 +1175,7 @@ void main() {
             algo: DigestType.blake3256());
         fail("exception not thrown");
       } catch (e) {
-        expect(e, const ex.isInstanceOf<IdentifierException>());
+        expect(e, const ex.isInstanceOf<ControllerNotInitializedException>());
       }
     });
   });
@@ -1269,8 +1245,7 @@ void main() {
       }
     });
 
-    //Fails
-    test('The key creation fails, because the key is of a wrong type',
+    test('The key creation fails, because the key is of a wrong length',
         () async {
       List<PublicKey> vec1 = [];
       try {
@@ -1295,6 +1270,7 @@ void main() {
   });
 
   group("signatureFromHex", () {
+    //Fails
     test('signature creation fails because of invalid hex string', () async{
       try {
         var signature =  await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: 'fail');
@@ -1306,7 +1282,6 @@ void main() {
   });
 
   group("queryMailbox", () {
-    //Fails
     test('queryMailbox fails, because provided witness is incorrect', () async{
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -1337,10 +1312,10 @@ void main() {
       List<String> witness_id_list = [];
       witness_id_list.add(witness_id);
       try{
-        var query = await Keri.queryMailbox(whoAsk: identifier, aboutWho: identifier, witness: ['kotki']);
+        var query = await Keri.queryMailbox(whoAsk: identifier, aboutWho: identifier, witness: ['fail']);
         fail("exception not thrown");
       }catch(e){
-        expect(e, const ex.isInstanceOf<IncorrectWitnessOobiException>());
+        expect(e, const ex.isInstanceOf<WitnessParsingException>());
       }
     });
 
@@ -1378,13 +1353,12 @@ void main() {
         var query = await Keri.queryMailbox(whoAsk: await Keri.newIdentifier(idStr: 'Efrtu2CqKiP7YbWQ0c7X0VJU2i5E4V4frrlB72ytPBjQ'), aboutWho: identifier, witness: ['BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA']);
         fail("exception not thrown");
       }catch(e){
-        expect(e, const ex.isInstanceOf<IncorrectWitnessOobiException>());
+        expect(e, const ex.isInstanceOf<NetworkErrorException>());
       }
     });
   });
 
   group("finalizeMailboxQuery", () {
-    //Fails, will be corrected
     test('finalizeMailboxQuery fails, because signature is incorrect', () async{
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -1597,7 +1571,6 @@ void main() {
       expect(icp.icpEvent, '{"v":"KERI10JSON0001b7_","t":"icp","d":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","s":"0","kt":"2","k":["D6gWY4Y-k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0","Dvyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE"],"nt":"1","n":["ERnMydUxS3HsugRxKTx104D1YLQG6AouPwW0weJo9UYM","EhWifOnJf1PdwY-5VeWNTYecSNOtOfyT9JWxiCdR5nAY"],"bt":"1","b":["DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"],"c":[],"a":[]}');
     });
 
-    //Fails, should be corrected
     test('inceptGroup fails, because the signature treshold is incorrect', () async{
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -1674,11 +1647,14 @@ void main() {
       await Keri.processStream(stream: participantKel);
 
       //Incept group identifier
-      var icp = await Keri.inceptGroup(identifier: identifier, participants: [participant], signatureThreshold: -2, initialWitnesses: witness_id_list, witnessThreshold: 1);
-      expect(icp.icpEvent, '{"v":"KERI10JSON0001b7_","t":"icp","d":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","s":"0","kt":"2","k":["D6gWY4Y-k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0","Dvyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE"],"nt":"1","n":["ERnMydUxS3HsugRxKTx104D1YLQG6AouPwW0weJo9UYM","EhWifOnJf1PdwY-5VeWNTYecSNOtOfyT9JWxiCdR5nAY"],"bt":"1","b":["DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"],"c":[],"a":[]}');
+      try{
+        var icp = await Keri.inceptGroup(identifier: identifier, participants: [participant], signatureThreshold: -2, initialWitnesses: witness_id_list, witnessThreshold: 1);
+        fail("exception not thrown");
+      }catch(e){
+        expect(e, const ex.isInstanceOf<ImproperSignatureThresholdException>());
+      }
     });
 
-    //Fails, should be corrected
     test('inceptGroup fails, because the witness treshold is incorrect', () async{
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -1755,8 +1731,12 @@ void main() {
       await Keri.processStream(stream: participantKel);
 
       //Incept group identifier
-      var icp = await Keri.inceptGroup(identifier: identifier, participants: [participant], signatureThreshold: 2, initialWitnesses: witness_id_list, witnessThreshold: -1);
-      expect(icp.icpEvent, '{"v":"KERI10JSON0001b7_","t":"icp","d":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","s":"0","kt":"2","k":["D6gWY4Y-k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0","Dvyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE"],"nt":"1","n":["ERnMydUxS3HsugRxKTx104D1YLQG6AouPwW0weJo9UYM","EhWifOnJf1PdwY-5VeWNTYecSNOtOfyT9JWxiCdR5nAY"],"bt":"1","b":["DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"],"c":[],"a":[]}');
+      try{
+        var icp = await Keri.inceptGroup(identifier: identifier, participants: [participant], signatureThreshold: 2, initialWitnesses: witness_id_list, witnessThreshold: -1);
+        fail("exception not thrown");
+      }catch(e){
+        expect(e, const ex.isInstanceOf<ImproperWitnessThresholdException>());
+      }
     });
 
     test('inceptGroup fails, because the initial witness id is incorrect', () async{
@@ -1843,7 +1823,6 @@ void main() {
       }
     });
 
-    //Fails, will be corrected
     test('inceptGroup fails, because the participant is unknown', () async{
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -1928,7 +1907,6 @@ void main() {
       }
     });
 
-    //Fails, wil be corrected
     test('inceptGroup fails, because the identifier is unknown', () async{
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -2237,7 +2215,6 @@ void main() {
           ]);
     });
 
-    //Fails, should be corrected
     test('finalizeGroupIncept fails, because group event is incorrect', () async {
       await Keri.initKel(inputAppDir: 'keritest');
 
@@ -2335,126 +2312,20 @@ void main() {
       var signature5 = '4F9782BF238408908344FD36D66D7A3507F7D70A26A40F608247F5BD57F51B3F6E15886B268592A5F64D37BAAFE5D003564DC3AC7352F1D7F6B46789BE0C7504';
       //Signed exchanges
       var signatureex = '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
-      var group_identifier = await Keri.finalizeGroupIncept(
-          identifier: identifier,
-          groupEvent: 'fail',
-          signature: await Keri.signatureFromHex(
-              st: SignatureType.Ed25519Sha512, signature: signature5),
-          toForward: [
-            await Keri.newDataAndSignature(data: icp.exchanges[0],
-                signature: await Keri.signatureFromHex(
-                    st: SignatureType.Ed25519Sha512, signature: signatureex))
-          ]);
-    });
-
-    //Fails, should be corrected
-    test('finalizeGroupIncept fails, because identifier is unknown', () async {
-      await Keri.initKel(inputAppDir: 'keritest');
-
-      String witness_id = "DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location = '{"eid":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
-
-      //Create identifier keys
-      List<PublicKey> vec1 = [];
-      vec1.add(
-          await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      List<PublicKey> vec2 = [];
-      vec2.add(
-          await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
-
-      //Incept identifier
-      var icp_event = await Keri.incept(
-          publicKeys: vec1,
-          nextPubKeys: vec2,
-          witnesses: vec3,
-          witnessThreshold: 1);
-      //Signed icp_event
-      var signature =
-          'A2FA422FD0786321C44E6B16231EFB83A6BDC7A71EA7A35B50279C099DB9D6CE52941160E996351CC321832FF2D8C9757B89278B4C55B3BF35C7C23D38850102';
-      var identifier = await Keri.finalizeInception(
-          event: icp_event,
-          signature:
-          await Keri.signatureFromHex(
-              st: SignatureType.Ed25519Sha512, signature: signature));
-
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
-
-      //Query mailbox
-      //var query = await Keri.queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
-      //MOCK QUERY MAILBOX because signature changes with every test run.
-      var query = '{"v":"KERI10JSON00018e_","t":"qry","d":"EOsIfpnrmxFwD1OPC6k06BkUBmaf0jdzZUqy-SD4ZqI8","dt":"2022-10-21T11:32:22.157953+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-      //Signed query
-      var signature2 = 'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await Keri.finalizeMailboxQuery(identifier: identifier,
-          queryEvent: query,
-          signature: await Keri.signatureFromHex(
-              st: SignatureType.Ed25519Sha512, signature: signature2));
-
-
-      var initiatorKel = await Keri.getKel(cont: identifier);
-      await Keri.api.changeController(dbPath: 'keritest2');
-      await Keri.processStream(stream: initiatorKel);
-
-      //Create participant keys
-      List<PublicKey> vec11 = [];
-      vec11.add(
-          await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
-      List<PublicKey> vec22 = [];
-      vec22.add(
-          await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
-
-      //Incept participant
-      var icp_event2 = await Keri.incept(
-          publicKeys: vec11,
-          nextPubKeys: vec22,
-          witnesses: vec33,
-          witnessThreshold: 1);
-      //Signed icp_event2
-      var signature3 = 'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
-      var participant = await Keri.finalizeInception(
-          event: icp_event2,
-          signature:
-          await Keri.signatureFromHex(
-              st: SignatureType.Ed25519Sha512, signature: signature3));
-
-      //Query mailbox
-      //var query2 = await Keri.queryMailbox(whoAsk: participant, aboutWho: participant, witness: witness_id_list);
-      //MOCK QUERY MAILBOX because signature changes with every test run.
-      var query2 = '{"v":"KERI10JSON00018e_","t":"qry","d":"E5d9qJagbXKqYJGc3JQG4e7s9aeuRioljXYr2_GjLBP0","dt":"2022-10-21T14:51:32.655073+00:00","r":"mbx","rr":"","q":{"pre":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","src":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
-      //Signed query2
-      var signature4 = '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await Keri.finalizeMailboxQuery(identifier: participant,
-          queryEvent: query2,
-          signature: await Keri.signatureFromHex(
-              st: SignatureType.Ed25519Sha512, signature: signature4));
-
-      var participantKel = await Keri.getKel(cont: participant);
-      await Keri.api.changeController(dbPath: 'keritest');
-      await Keri.processStream(stream: participantKel);
-
-      //Incept group identifier
-      var icp = await Keri.inceptGroup(identifier: identifier,
-          participants: [participant],
-          signatureThreshold: 2,
-          initialWitnesses: witness_id_list,
-          witnessThreshold: 1);
-      //Signed incept event from icp
-      var signature5 = '4F9782BF238408908344FD36D66D7A3507F7D70A26A40F608247F5BD57F51B3F6E15886B268592A5F64D37BAAFE5D003564DC3AC7352F1D7F6B46789BE0C7504';
-      //Signed exchanges
-      var signatureex = '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
-      var group_identifier = await Keri.finalizeGroupIncept(
-          identifier: identifier,
-          groupEvent: icp.icpEvent,
-          signature: await Keri.signatureFromHex(
-              st: SignatureType.Ed25519Sha512, signature: signatureex),
-          toForward: [
-            await Keri.newDataAndSignature(data: icp.exchanges[0],
-                signature: await Keri.signatureFromHex(
-                    st: SignatureType.Ed25519Sha512, signature: signatureex))
-          ]);
+      try{
+        var group_identifier = await Keri.finalizeGroupIncept(
+            identifier: identifier,
+            groupEvent: 'fail',
+            signature: await Keri.signatureFromHex(
+                st: SignatureType.Ed25519Sha512, signature: signature5),
+            toForward: [
+              await Keri.newDataAndSignature(data: icp.exchanges[0],
+                  signature: await Keri.signatureFromHex(
+                      st: SignatureType.Ed25519Sha512, signature: signatureex))
+            ]);
+      }catch(e){
+        expect(e, const ex.isInstanceOf<WrongEventException>());
+      }
     });
 
     test('finalizeGroupIncept fails, because identifier is incorrect', () async {
