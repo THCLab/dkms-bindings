@@ -12,8 +12,9 @@ class Keri {
   static final path = Platform.isWindows ? '$base.dll' : 'lib$base.so';
 
   static final dylib = Platform.environment.containsKey('FLUTTER_TEST')
-      ? DynamicLibrary.open(
-          Platform.script.resolve("windows/dartkeriox/dartkeriox.dll").toFilePath())
+      ? DynamicLibrary.open(Platform.script
+          .resolve("windows/dartkeriox/dartkeriox.dll")
+          .toFilePath())
       : Platform.isIOS
           ? DynamicLibrary.process()
           : Platform.isMacOS
@@ -308,7 +309,8 @@ class Keri {
   // }
 
   //CZY JEST POTRZEBNA?
-  static Future<void> processStream({required String stream, dynamic hint}) async {
+  static Future<void> processStream(
+      {required String stream, dynamic hint}) async {
     await api.processStream(stream: stream);
   }
 
@@ -409,10 +411,10 @@ class Keri {
   }
 
   static Future<Identifier> newIdentifier(
-      {required String idStr, dynamic hint}) async{
-    try{
+      {required String idStr, dynamic hint}) async {
+    try {
       return await api.newFromStrStaticMethodIdentifier(idStr: idStr);
-    }on FfiException catch (e){
+    } on FfiException catch (e) {
       if (e.message.contains('Can\'t parse identifier prefix')) {
         throw IdentifierException(
             'Can\'t parse identifier prefix. Check the confroller for identifier once again.');
@@ -424,12 +426,13 @@ class Keri {
   //ToDo
   static Future<List<String>> queryMailbox(
       {required Identifier whoAsk,
-        required Identifier aboutWho,
-        required List<String> witness,
-        dynamic hint}) async{
-    try{
-      return await api.queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
-    }on FfiException catch(e){
+      required Identifier aboutWho,
+      required List<String> witness,
+      dynamic hint}) async {
+    try {
+      return await api.queryMailbox(
+          whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
+    } on FfiException catch (e) {
       if (e.message.contains('Can\'t parse identifier prefix')) {
         throw WitnessParsingException(
             'Can\'t parse witness prefix. Check the queryMailbox witness list again.');
@@ -445,12 +448,13 @@ class Keri {
   //ToDo
   static Future<List<ActionRequired>> finalizeMailboxQuery(
       {required Identifier identifier,
-        required String queryEvent,
-        required Signature signature,
-        dynamic hint}) async{
-    try{
-      return await api.finalizeMailboxQuery(identifier: identifier, queryEvent: queryEvent, signature: signature);
-    }on FfiException catch(e){
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) async {
+    try {
+      return await api.finalizeMailboxQuery(
+          identifier: identifier, queryEvent: queryEvent, signature: signature);
+    } on FfiException catch (e) {
       if (e.message.contains('Can\'t parse event')) {
         throw WrongEventException(
             'Provided string is not a correct query event. Check the string once again.');
@@ -465,11 +469,11 @@ class Keri {
 
   static Future<Signature> signatureFromHex(
       {required SignatureType st,
-        required String signature,
-    dynamic hint}) async{
-    try{
+      required String signature,
+      dynamic hint}) async {
+    try {
       return await api.signatureFromHex(st: st, signature: signature);
-    }on FfiException catch (e){
+    } on FfiException catch (e) {
       if (e.message.contains('hex decode error')) {
         throw IncorrectSignatureException(
             'The signature provided is not a correct HEX string. Check the signature once again.');
@@ -480,14 +484,19 @@ class Keri {
 
   static Future<GroupInception> inceptGroup(
       {required Identifier identifier,
-        required List<Identifier> participants,
-        required int signatureThreshold,
-        required List<String> initialWitnesses,
-        required int witnessThreshold,
-        dynamic hint}) async{
-    try{
-      return await api.inceptGroup(identifier: identifier, participants: participants, signatureThreshold: signatureThreshold, initialWitnesses: initialWitnesses, witnessThreshold: witnessThreshold);
-    }on FfiException catch(e){
+      required List<Identifier> participants,
+      required int signatureThreshold,
+      required List<String> initialWitnesses,
+      required int witnessThreshold,
+      dynamic hint}) async {
+    try {
+      return await api.inceptGroup(
+          identifier: identifier,
+          participants: participants,
+          signatureThreshold: signatureThreshold,
+          initialWitnesses: initialWitnesses,
+          witnessThreshold: witnessThreshold);
+    } on FfiException catch (e) {
       if (e.message.contains('Deserialize error')) {
         throw IdentifierException(
             'Provided witness id is incorrect. Check the identifier once again.');
@@ -510,13 +519,17 @@ class Keri {
 
   static Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
-        required String groupEvent,
-        required Signature signature,
-        required List<DataAndSignature> toForward,
-        dynamic hint}) async{
-    try{
-      return await api.finalizeGroupIncept(identifier: identifier, groupEvent: groupEvent, signature: signature, toForward: toForward);
-    }on FfiException catch(e){
+      required String groupEvent,
+      required Signature signature,
+      required List<DataAndSignature> toForward,
+      dynamic hint}) async {
+    try {
+      return await api.finalizeGroupIncept(
+          identifier: identifier,
+          groupEvent: groupEvent,
+          signature: signature,
+          toForward: toForward);
+    } on FfiException catch (e) {
       if (e.message.contains('Unknown id')) {
         throw IdentifierException(
             'Unknown controller identifier. Check the confroller for identifier once again.');
@@ -533,10 +546,11 @@ class Keri {
     }
   }
 
-  static Future<PublicKey> newPublicKey({required KeyType kt, required String keyB64, dynamic hint}) async{
-    try{
+  static Future<PublicKey> newPublicKey(
+      {required KeyType kt, required String keyB64, dynamic hint}) async {
+    try {
       return await api.newPublicKey(kt: kt, keyB64: keyB64);
-    } on FfiException catch (e){
+    } on FfiException catch (e) {
       if (e.message.contains('wrong key length')) {
         throw IncorrectKeyFormatException(
             "The provided key is not a Base64 string. Check the string once again.");
@@ -546,8 +560,11 @@ class Keri {
   }
 
   static Future<DataAndSignature> newDataAndSignature(
-      {required String data, required Signature signature, dynamic hint}) async{
-    return await api.newStaticMethodDataAndSignature(data: data, signature: signature);
+      {required String data,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.newStaticMethodDataAndSignature(
+        data: data, signature: signature);
   }
 
   // static Future<bool> changeController({required String dbPath, dynamic hint})async{

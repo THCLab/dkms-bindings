@@ -69,9 +69,10 @@ class _MyAppState extends State<MyApp> {
                     onPressed: () async {
                       currentKey = await signer.getCurrentPubKey();
                       nextKey = await signer.getNextPubKey();
-                      vec1.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: currentKey));
-                      vec2.add(
-                          await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: nextKey));
+                      vec1.add(await Keri.newPublicKey(
+                          kt: KeyType.Ed25519, keyB64: currentKey));
+                      vec2.add(await Keri.newPublicKey(
+                          kt: KeyType.Ed25519, keyB64: nextKey));
                       setState(() {});
                     },
                     child: const Text('Get keys'),
@@ -134,7 +135,9 @@ class _MyAppState extends State<MyApp> {
                         onPressed: () async {
                           controller = await Keri.finalizeInception(
                               event: icpEvent,
-                              signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature));
+                              signature: await Keri.signatureFromHex(
+                                  st: SignatureType.Ed25519Sha512,
+                                  signature: signature));
                           controllerId = controller.identifier;
                           setState(() {});
                         },
@@ -157,8 +160,10 @@ class _MyAppState extends State<MyApp> {
                           await signer.rotateForEd25519();
                           currentKey = await signer.getCurrentPubKey();
                           nextKey = await signer.getNextPubKey();
-                          currentKeys.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: currentKey));
-                          newNextKeys.add(await Keri.newPublicKey(kt: KeyType.Ed25519, keyB64: nextKey));
+                          currentKeys.add(await Keri.newPublicKey(
+                              kt: KeyType.Ed25519, keyB64: currentKey));
+                          newNextKeys.add(await Keri.newPublicKey(
+                              kt: KeyType.Ed25519, keyB64: nextKey));
                           rotationEvent = await Keri.rotate(
                               controller: controller,
                               currentKeys: currentKeys,
@@ -206,7 +211,9 @@ class _MyAppState extends State<MyApp> {
                           finalizedEvent = await Keri.finalizeEvent(
                               identifier: controller,
                               event: rotationEvent,
-                              signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature2));
+                              signature: await Keri.signatureFromHex(
+                                  st: SignatureType.Ed25519Sha512,
+                                  signature: signature2));
                           setState(() {});
                         },
                         child: const Text('Finalize event'),
@@ -276,7 +283,9 @@ class _MyAppState extends State<MyApp> {
                           finalizedAnchor = await Keri.finalizeEvent(
                               identifier: controller,
                               event: anchorEvent,
-                              signature: await Keri.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: signature3));
+                              signature: await Keri.signatureFromHex(
+                                  st: SignatureType.Ed25519Sha512,
+                                  signature: signature3));
                           setState(() {});
                         },
                         child: const Text('Finalize event'),
