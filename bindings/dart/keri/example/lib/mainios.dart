@@ -28,7 +28,7 @@ class _MyAppState extends State<MyApp> {
   List<PublicKey> vec2 = [];
   List<String> vec3 = [];
   String signature = '';
-  late var controller;
+  late Identifier controller;
   String controllerId = '';
   List<PublicKey> currentKeys = [];
   List<PublicKey> newNextKeys = [];
@@ -96,6 +96,7 @@ class _MyAppState extends State<MyApp> {
                               witnesses: vec3,
                               witnessThreshold: 0);
                           setState(() {});
+                          print(icpEvent);
                         },
                         child: const Text('Incept'),
                         shape: RoundedRectangleBorder(
@@ -114,7 +115,7 @@ class _MyAppState extends State<MyApp> {
                     ? RawMaterialButton(
                         onPressed: () async {
                           signature =
-                              'A9390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
+                              '0CDD8D47A4FA43116D627E1410F84DB5016251EC04DFDFFC036F2307EDD44FEF27F7F721349E4FF40740A8984723BDD03BE0ABAAE97741436D2F45FB588E0E05';
                           setState(() {});
                         },
                         child: const Text('Sign event'),
@@ -138,7 +139,7 @@ class _MyAppState extends State<MyApp> {
                               signature: await Keri.signatureFromHex(
                                   st: SignatureType.Ed25519Sha512,
                                   signature: signature));
-                          controllerId = controller.identifier;
+                          controllerId = controller.id;
                           setState(() {});
                         },
                         child: const Text('Finalize Inception'),
@@ -173,6 +174,7 @@ class _MyAppState extends State<MyApp> {
                               witnessToRemove: [],
                               witnessThreshold: 0);
                           setState(() {});
+                          print(rotationEvent);
                         },
                         child: const Text('Rotate'),
                         shape: RoundedRectangleBorder(
@@ -191,7 +193,7 @@ class _MyAppState extends State<MyApp> {
                     ? RawMaterialButton(
                         onPressed: () async {
                           signature2 =
-                              'AAE6871AE38588FCA317AD78B1DEF05AB0A0BFE9D85FBFCB627926E35BB0FAB705A660B2B5C6E2177C72E8254BC0448784A575E73481FD153FE2BEA83961040A';
+                              '29FA3CD56DD1F6DED19A035A48CBDFB010F64158824BA66825423413C56E90B5B4D85DBFBA15D5A0029E838967FA119888DFD44DAAF38AA66336A16F55C01000';
                           setState(() {});
                         },
                         child: const Text('Sign event'),
@@ -246,6 +248,7 @@ class _MyAppState extends State<MyApp> {
                               data: dataForAnchor,
                               algo: DigestType.blake3256());
                           setState(() {});
+                          print(anchorEvent);
                         },
                         child: const Text('Anchor'),
                         shape: RoundedRectangleBorder(
@@ -264,7 +267,7 @@ class _MyAppState extends State<MyApp> {
                     ? RawMaterialButton(
                         onPressed: () async {
                           signature3 =
-                              '05A12E80B0762363F4A088ABEB0991B4EE9ED63512DB71C9BD8EBA298F25DBFE093EA0DF3F5A6DE4A18F037C1BBB07633B3BB15156CF35F9273222CCDEB44D00';
+                              'CB16207214C91415809068126F6846E86B0404D1ACFEEF5CE853DED53CD70EED2BC0368E048CB68ADC1D637FE2DB09F624126387FF02C2E48FD2E3B02BE4D30F';
                           setState(() {});
                         },
                         child: const Text('Sign event'),
