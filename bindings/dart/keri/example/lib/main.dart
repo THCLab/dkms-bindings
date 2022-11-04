@@ -30,7 +30,7 @@ class _MyAppState extends State<MyApp> {
   List<PublicKey> vec2 = [];
   List<String> vec3 = [];
   String signature = '';
-  late var controller;
+  late Identifier controller;
   String controllerId = '';
   List<PublicKey> currentKeys = [];
   List<PublicKey> newNextKeys = [];
@@ -138,7 +138,7 @@ class _MyAppState extends State<MyApp> {
                               signature: await Keri.signatureFromHex(
                                   st: SignatureType.Ed25519Sha512,
                                   signature: signature));
-                          controllerId = controller.identifier;
+                          controllerId = controller.id;
                           setState(() {});
                         },
                         child: const Text('Finalize Inception'),
