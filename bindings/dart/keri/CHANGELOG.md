@@ -25,3 +25,7 @@ Added support for MacOS
 ## 0.4.0
 
 Added support for Windows
+
+## 1.0.0
+
+Initial support for multisig (windows and android only)
