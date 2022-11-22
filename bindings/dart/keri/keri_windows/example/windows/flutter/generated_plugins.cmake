@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  keri_platform_interface
   keri_windows
 )
 
