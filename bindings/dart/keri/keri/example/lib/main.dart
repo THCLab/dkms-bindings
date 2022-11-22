@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:keri/bridge_generated.dart';
 import 'package:keri/keri.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:keri_platform_interface/bridge_generated.dart';
 
 void main() {
   runApp(const MyApp());
@@ -44,14 +43,14 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    initKel();
+    inittKel();
     super.initState();
   }
 
-  Future<void> initKel() async {
+  Future<void> inittKel() async {
     signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
-    var inited = await Keri.initKel(inputAppDir: dir);
+    var inited = await initKel(inputAppDir: 'inputAppDir');
   }
 
   @override
@@ -69,9 +68,9 @@ class _MyAppState extends State<MyApp> {
                     onPressed: () async {
                       currentKey = await signer.getCurrentPubKey();
                       nextKey = await signer.getNextPubKey();
-                      vec1.add(await Keri.newPublicKey(
+                      vec1.add(await newPublicKey(
                           kt: KeyType.Ed25519, keyB64: currentKey));
-                      vec2.add(await Keri.newPublicKey(
+                      vec2.add(await newPublicKey(
                           kt: KeyType.Ed25519, keyB64: nextKey));
                       setState(() {});
                     },
@@ -91,7 +90,7 @@ class _MyAppState extends State<MyApp> {
                 currentKey.isNotEmpty
                     ? RawMaterialButton(
                         onPressed: () async {
-                          icpEvent = await Keri.incept(
+                          icpEvent = await incept(
                               publicKeys: vec1,
                               nextPubKeys: vec2,
                               witnesses: vec3,
@@ -133,9 +132,9 @@ class _MyAppState extends State<MyApp> {
                 signature.isNotEmpty
                     ? RawMaterialButton(
                         onPressed: () async {
-                          controller = await Keri.finalizeInception(
+                          controller = await finalizeInception(
                               event: icpEvent,
-                              signature: await Keri.signatureFromHex(
+                              signature: await signatureFromHex(
                                   st: SignatureType.Ed25519Sha512,
                                   signature: signature));
                           controllerId = controller.id;
@@ -160,11 +159,11 @@ class _MyAppState extends State<MyApp> {
                           await signer.rotateForEd25519();
                           currentKey = await signer.getCurrentPubKey();
                           nextKey = await signer.getNextPubKey();
-                          currentKeys.add(await Keri.newPublicKey(
+                          currentKeys.add(await newPublicKey(
                               kt: KeyType.Ed25519, keyB64: currentKey));
-                          newNextKeys.add(await Keri.newPublicKey(
+                          newNextKeys.add(await newPublicKey(
                               kt: KeyType.Ed25519, keyB64: nextKey));
-                          rotationEvent = await Keri.rotate(
+                          rotationEvent = await rotate(
                               controller: controller,
                               currentKeys: currentKeys,
                               newNextKeys: newNextKeys,
@@ -208,10 +207,10 @@ class _MyAppState extends State<MyApp> {
                 signature2.isNotEmpty
                     ? RawMaterialButton(
                         onPressed: () async {
-                          finalizedEvent = await Keri.finalizeEvent(
+                          finalizedEvent = await finalizeEvent(
                               identifier: controller,
                               event: rotationEvent,
-                              signature: await Keri.signatureFromHex(
+                              signature: await signatureFromHex(
                                   st: SignatureType.Ed25519Sha512,
                                   signature: signature2));
                           setState(() {});
@@ -239,7 +238,7 @@ class _MyAppState extends State<MyApp> {
                 finalizedEvent
                     ? RawMaterialButton(
                         onPressed: () async {
-                          anchorEvent = await Keri.anchor(
+                          anchorEvent = await anchor(
                               controller: controller,
                               data: dataForAnchor,
                               algo: DigestType.blake3256());
@@ -280,10 +279,10 @@ class _MyAppState extends State<MyApp> {
                 signature3.isNotEmpty
                     ? RawMaterialButton(
                         onPressed: () async {
-                          finalizedAnchor = await Keri.finalizeEvent(
+                          finalizedAnchor = await finalizeEvent(
                               identifier: controller,
                               event: anchorEvent,
-                              signature: await Keri.signatureFromHex(
+                              signature: await signatureFromHex(
                                   st: SignatureType.Ed25519Sha512,
                                   signature: signature3));
                           setState(() {});
@@ -310,6 +309,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<String> getLocalPath() async {
     final directory = await getApplicationDocumentsDirectory();
+    print(directory);
     return directory.path;
   }
 }

@@ -6,9 +6,9 @@
 
 #include "generated_plugin_registrant.h"
 
-#include <keri/keri_plugin_c_api.h>
+#include <keri_windows/keri_windows_plugin_c_api.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
-  KeriPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("KeriPluginCApi"));
+  KeriWindowsPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("KeriWindowsPluginCApi"));
 }

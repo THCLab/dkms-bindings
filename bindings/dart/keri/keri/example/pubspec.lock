@@ -187,7 +187,7 @@ packages:
       name: flutter_rust_bridge
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.48.1"
+    version: "1.49.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -270,6 +270,27 @@ packages:
       relative: true
     source: path
     version: "1.0.0"
+  keri_android:
+    dependency: transitive
+    description:
+      name: keri_android
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.3"
+  keri_platform_interface:
+    dependency: transitive
+    description:
+      name: keri_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.3"
+  keri_windows:
+    dependency: transitive
+    description:
+      name: keri_windows
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.3"
   lints:
     dependency: transitive
     description:
@@ -397,7 +418,7 @@ packages:
     source: hosted
     version: "3.1.0"
   plugin_platform_interface:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: plugin_platform_interface
       url: "https://pub.dartlang.org"
