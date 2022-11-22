@@ -54,6 +54,15 @@
       <excludeFolder url="file://$MODULE_DIR$/keri_android/build" />
       <excludeFolder url="file://$MODULE_DIR$/keri_android/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/keri_android/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_android/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_android/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_android/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_android/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_android/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_android/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_android/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_android/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_android/example/.dart_tool" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
