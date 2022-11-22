@@ -18,6 +18,36 @@
       <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/build" />
       <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_platform_interface/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/keri/keri_windows/example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/example/.pub" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

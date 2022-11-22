@@ -3,7 +3,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'bridge_generated.dart';
 
-class KeriPlatformInterface extends PlatformInterface {
+abstract class KeriPlatformInterface extends PlatformInterface {
   KeriPlatformInterface() : super(token: _token);
 
   static final Object _token = Object();
@@ -39,7 +39,7 @@ class KeriPlatformInterface extends PlatformInterface {
   }
 
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
-  Future<Identifier?> finalizeInception(
+  Future<Identifier> finalizeInception(
       {required String event,
       required Signature signature,
       dynamic hint}) async {
@@ -86,7 +86,7 @@ class KeriPlatformInterface extends PlatformInterface {
   }
 
   /// Returns pairs: public key encoded in base64 and signature encoded in hex.
-  Future<List<PublicKeySignaturePair>?> getCurrentPublicKey(
+  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
       {required String attachment, dynamic hint}) async {
     throw UnimplementedError('getCurrentPublicKey() has not been implemented.');
   }
@@ -109,7 +109,7 @@ class KeriPlatformInterface extends PlatformInterface {
   }
 
   ///Creates new Identifier from string
-  Future<Identifier?> newIdentifier(
+  Future<Identifier> newIdentifier(
       {required String idStr, dynamic hint}) async {
     throw UnimplementedError('newIdentifier() has not been implemented.');
   }
@@ -131,14 +131,14 @@ class KeriPlatformInterface extends PlatformInterface {
         'finalizeMailboxQuery() has not been implemented.');
   }
 
-  Future<Signature?> signatureFromHex(
+  Future<Signature> signatureFromHex(
       {required SignatureType st,
       required String signature,
       dynamic hint}) async {
     throw UnimplementedError('signatureFromHex() has not been implemented.');
   }
 
-  Future<GroupInception?> inceptGroup(
+  Future<GroupInception> inceptGroup(
       {required Identifier identifier,
       required List<Identifier> participants,
       required int signatureThreshold,
@@ -148,7 +148,7 @@ class KeriPlatformInterface extends PlatformInterface {
     throw UnimplementedError('inceptGroup() has not been implemented.');
   }
 
-  Future<Identifier?> finalizeGroupIncept(
+  Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
       required String groupEvent,
       required Signature signature,
@@ -157,12 +157,12 @@ class KeriPlatformInterface extends PlatformInterface {
     throw UnimplementedError('finalizeGroupIncept() has not been implemented.');
   }
 
-  Future<PublicKey?> newPublicKey(
+  Future<PublicKey> newPublicKey(
       {required KeyType kt, required String keyB64, dynamic hint}) async {
     throw UnimplementedError('newPublicKey() has not been implemented.');
   }
 
-  Future<DataAndSignature?> newDataAndSignature(
+  Future<DataAndSignature> newDataAndSignature(
       {required String data,
       required Signature signature,
       dynamic hint}) async {

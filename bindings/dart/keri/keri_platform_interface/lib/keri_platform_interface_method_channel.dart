@@ -28,11 +28,11 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
   }
 
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
-  Future<Identifier?> finalizeInception(
+  Future<Identifier> finalizeInception(
       {required String event,
       required Signature signature,
       dynamic hint}) async {
-    return null;
+    throw UnimplementedError('finalizeInception() has not been implemented.');
   }
 
   ///Creates rotation event that needs to be signed externally.
@@ -75,9 +75,9 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
   }
 
   /// Returns pairs: public key encoded in base64 and signature encoded in hex.
-  Future<List<PublicKeySignaturePair>?> getCurrentPublicKey(
+  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
       {required String attachment, dynamic hint}) async {
-    return null;
+    throw UnimplementedError('getCurrentPublicKey() has not been implemented.');
   }
 
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
@@ -98,9 +98,9 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
   }
 
   ///Creates new Identifier from string
-  Future<Identifier?> newIdentifier(
+  Future<Identifier> newIdentifier(
       {required String idStr, dynamic hint}) async {
-    return null;
+    throw UnimplementedError('newIdentifier() has not been implemented.');
   }
 
   Future<List<String>> queryMailbox(
@@ -119,41 +119,41 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
     return [];
   }
 
-  Future<Signature?> signatureFromHex(
+  Future<Signature> signatureFromHex(
       {required SignatureType st,
       required String signature,
       dynamic hint}) async {
-    return null;
+    throw UnimplementedError('signatureFromHex() has not been implemented.');
   }
 
-  Future<GroupInception?> inceptGroup(
+  Future<GroupInception> inceptGroup(
       {required Identifier identifier,
       required List<Identifier> participants,
       required int signatureThreshold,
       required List<String> initialWitnesses,
       required int witnessThreshold,
       dynamic hint}) async {
-    return null;
+    throw UnimplementedError('inceptGroup() has not been implemented.');
   }
 
-  Future<Identifier?> finalizeGroupIncept(
+  Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
       required String groupEvent,
       required Signature signature,
       required List<DataAndSignature> toForward,
       dynamic hint}) async {
-    return null;
+    throw UnimplementedError('finalizeGroupIncept() has not been implemented.');
   }
 
-  Future<PublicKey?> newPublicKey(
+  Future<PublicKey> newPublicKey(
       {required KeyType kt, required String keyB64, dynamic hint}) async {
-    return null;
+    throw UnimplementedError('newPublicKey() has not been implemented.');
   }
 
-  Future<DataAndSignature?> newDataAndSignature(
+  Future<DataAndSignature> newDataAndSignature(
       {required String data,
       required Signature signature,
       dynamic hint}) async {
-    return null;
+    throw UnimplementedError('newDataAndSignature() has not been implemented.');
   }
 }
