@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   flutter_rust_bridge: ^1.49.2
   freezed: ^2.2.1
+  freezed_annotation: ^2.2.0
+  meta: ^1.7.0
   plugin_platform_interface: ^2.0.2
 
 dev_dependencies:
@@ -19,9 +21,4 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^2.0.0
 
-flutter:
-  plugin:
-    platforms:
-      windows:
-        pluginClass: KeriPlatformInterfacePluginCApi
 
