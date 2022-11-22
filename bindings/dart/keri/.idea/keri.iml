@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/keri/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_platform_interface/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_platform_interface/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri_platform_interface/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/build" />
+      <excludeFolder url="file://$MODULE_DIR$/keri/example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows/.pub" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Dart SDK" level="project" />
+    <orderEntry type="library" name="Dart Packages" level="project" />
+  </component>
+</module>
