@@ -21,7 +21,7 @@ pub fn parse_witness_prefix(wit_str: &str) -> Result<BasicPrefix, Error> {
     let parsed_prefix = wit_str
         .parse::<BasicPrefix>()
         .map_err(|_| Error::IdentifierParseError("Can't parse witness prefix".into()))?;
-    if !parsed_prefix.derivation.is_transferable() {
+    if !parsed_prefix.is_transferable() {
         Ok(parsed_prefix)
     } else {
         Err(Error::IdentifierParseError(

@@ -9,17 +9,17 @@ use flutter_rust_bridge::{frb, support::lazy_static};
 
 use anyhow::{anyhow, Result};
 pub use keri::keys::PublicKey as KeriPublicKey;
+pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
 use keri::{
     actor::{event_generator, prelude::Message},
-    event_parsing::{message::query_message, Attachment, EventType},
+    event_parsing::{
+        codes::{basic::Basic, self_signing::SelfSigning, DerivationCode},
+        message::query_message,
+        Attachment, EventType,
+    },
     oobi::{LocationScheme, Role},
     prefix::Prefix,
-};
-pub use keri::{
-    derivation::{
-        basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning, DerivationCode,
-    },
-    prefix::{BasicPrefix, IdentifierPrefix, SelfAddressingPrefix, SelfSigningPrefix},
+    sai::{derivation::SelfAddressing, SelfAddressingPrefix},
 };
 use tokio::runtime::Runtime;
 
@@ -73,7 +73,10 @@ pub fn new_public_key(kt: KeyType, key_b64: String) -> Result<PublicKey> {
     let expected_len = kt.code_len() + kt.derivative_b64_len();
     if key_b64.len() == expected_len {
         let decoded_key = base64::decode(key_b64).map_err(|e| Error::Base64Error(e))?;
-        let pk = kt.derive(KeriPublicKey::new(decoded_key));
+        let pk = PublicKey {
+            derivation: kt,
+            public_key: decoded_key,
+        };
         Ok(pk.into())
     } else {
         Err(Error::KeyLengthError(key_b64.len(), expected_len).into())
@@ -95,7 +98,8 @@ pub struct _Signature {
 }
 
 pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
-    st.derive(
+    SelfSigningPrefix::new(
+        st,
         hex::decode(signature)
             .map_err(|e| Error::HexError(e))
             .unwrap(),
@@ -103,9 +107,10 @@ pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
 }
 
 pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
-    st.derive(
-        hex::decode(signature)
-            .map_err(|e| Error::HexError(e))
+    SelfSigningPrefix::new(
+        st,
+        base64::decode(signature)
+            .map_err(|e| Error::Base64Error(e))
             .unwrap(),
     )
 }
@@ -454,8 +459,8 @@ pub fn finalize_group_incept(
                      data: exn,
                      signature,
                  }| {
-                    let sig_type: SelfSigning = signature.derivation;
-                    let sig = sig_type.derive(signature.signature.clone());
+                    let sig_type: SelfSigning = signature.get_code();
+                    let sig = SelfSigningPrefix::new(sig_type, signature.derivative());
                     (exn.as_bytes().to_vec(), sig)
                 },
             )

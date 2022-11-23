@@ -1,3 +1,4 @@
+use keri::event_parsing::codes::basic::Basic;
 use keri::keys::PublicKey as KeriPublicKey;
 use keri::prefix::{BasicPrefix, IdentifierPrefix, Prefix};
 
@@ -22,18 +23,25 @@ impl Into<IdentifierPrefix> for Identifier {
 
 impl From<BasicPrefix> for PublicKey {
     fn from(bp: BasicPrefix) -> Self {
+        let code = match bp {
+            BasicPrefix::ECDSAsecp256k1NT(_) => Basic::ECDSAsecp256k1NT,
+            BasicPrefix::ECDSAsecp256k1(_) => Basic::ECDSAsecp256k1,
+            BasicPrefix::Ed25519NT(_) => Basic::Ed25519NT,
+            BasicPrefix::Ed25519(_) => Basic::Ed25519,
+            BasicPrefix::Ed448NT(_) => Basic::Ed25519NT,
+            BasicPrefix::Ed448(_) => Basic::Ed448,
+            BasicPrefix::X25519(_) => Basic::X25519,
+            BasicPrefix::X448(_) => Basic::X448,
+        };
         PublicKey {
-            public_key: bp.public_key.key(),
-            derivation: bp.derivation,
+            public_key: bp.derivative(),
+            derivation: code,
         }
     }
 }
 
 impl From<&PublicKey> for BasicPrefix {
     fn from(pk: &PublicKey) -> Self {
-        BasicPrefix {
-            derivation: pk.derivation,
-            public_key: KeriPublicKey::new(pk.public_key.clone()),
-        }
+        BasicPrefix::new(pk.derivation, KeriPublicKey::new(pk.public_key.clone()))
     }
 }

@@ -1,7 +1,8 @@
 use anyhow::Result;
 use keri::{
-    derivation::{basic::Basic, self_addressing::SelfAddressing, self_signing::SelfSigning},
+    event_parsing::codes::{basic::Basic, self_signing::SelfSigning},
     prefix::Prefix,
+    sai::derivation::SelfAddressing,
     signer::{CryptoBox, KeyManager},
 };
 use tempfile::Builder;
@@ -413,7 +414,7 @@ pub fn test_multisig() -> Result<()> {
 
 #[test]
 pub fn test_demo() -> Result<()> {
-    use crate::api::{finalize_inception, get_kel, incept, init_kel, Basic, SelfSigning};
+    use crate::api::{finalize_inception, get_kel, incept, init_kel};
     use tempfile::Builder;
 
     // Create temporary db file.
