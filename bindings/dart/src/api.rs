@@ -83,36 +83,33 @@ pub fn new_public_key(kt: KeyType, key_b64: String) -> Result<PublicKey> {
     }
 }
 
-pub type Digest = SelfAddressingPrefix;
-#[frb(mirror(Digest))]
-pub struct _Digest {
+pub struct Digest {
     pub derivation: DigestType,
     pub digest: Vec<u8>,
 }
 
-pub type Signature = SelfSigningPrefix;
-#[frb(mirror(Signature))]
-pub struct _Signature {
+#[derive(Clone)]
+pub struct Signature {
     pub derivation: SignatureType,
     pub signature: Vec<u8>,
 }
 
 pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
-    SelfSigningPrefix::new(
-        st,
-        hex::decode(signature)
+    Signature {
+        derivation: st,
+        signature: hex::decode(signature)
             .map_err(|e| Error::HexError(e))
             .unwrap(),
-    )
+    }
 }
 
 pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
-    SelfSigningPrefix::new(
-        st,
-        base64::decode(signature)
-            .map_err(|e| Error::Base64Error(e))
+     Signature {
+        derivation: st,
+        signature: hex::decode(signature)
+            .map_err(|e| Error::HexError(e))
             .unwrap(),
-    )
+    }
 }
 
 #[derive(Clone)]
@@ -278,7 +275,8 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let controller_id = controller.finalize_inception(event.as_bytes(), &signature);
+    let ssp = signature.into();
+    let controller_id = controller.finalize_inception(event.as_bytes(), &ssp);
     let rt = Runtime::new().unwrap();
     let controller_id = rt.block_on(async { controller_id.await })?;
     println!("\ninception event: {}", event);
@@ -379,7 +377,7 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
         .ok_or(Error::ControllerInitializationError)?
         .clone();
     let identifier_controller = IdentifierController::new(identifier.into(), controller);
-    let finalize_event_future = identifier_controller.finalize_event(event.as_bytes(), signature);
+    let finalize_event_future = identifier_controller.finalize_event(event.as_bytes(), signature.into());
     let rt = Runtime::new().unwrap();
     rt.block_on(async { finalize_event_future.await })?;
     Ok(true)
@@ -451,7 +449,7 @@ pub fn finalize_group_incept(
 
     let group_identifier_future = identifier_controller.finalize_group_incept(
         group_event.as_bytes(),
-        signature,
+        signature.into(),
         to_forward
             .iter()
             .map(
@@ -459,8 +457,8 @@ pub fn finalize_group_incept(
                      data: exn,
                      signature,
                  }| {
-                    let sig_type: SelfSigning = signature.get_code();
-                    let sig = SelfSigningPrefix::new(sig_type, signature.derivative());
+                    let sig_type: SelfSigning = signature.derivation.clone();
+                    let sig = SelfSigningPrefix::new(sig_type, signature.signature.clone());
                     (exn.as_bytes().to_vec(), sig)
                 },
             )
@@ -524,7 +522,7 @@ pub fn finalize_mailbox_query(
     match query {
         EventType::Qry(ref qry) => {
             let finalize_qry_future =
-                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature)]);
+                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature.into())]);
 
             let rt = Runtime::new().unwrap();
             let out = rt

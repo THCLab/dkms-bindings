@@ -1,9 +1,9 @@
-use crate::api::Error;
+use crate::api::{Error, Signature, PublicKey, Digest};
 use controller::error::ControllerError;
 use keri::{
     event_parsing::{attachment::attachment, Attachment},
     oobi::LocationScheme,
-    prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix},
+    prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix, Prefix}, sai::SelfAddressingPrefix,
 };
 
 pub fn parse_attachment(stream: &[u8]) -> Result<Attachment, Error> {
@@ -47,6 +47,29 @@ pub fn join_keys_and_signatures(
             ))
         })
         .collect()
+}
+
+impl Into<SelfSigningPrefix> for Signature {
+    fn into(self) -> SelfSigningPrefix {
+        SelfSigningPrefix::new(self.derivation, self.signature)
+    }
+}
+
+impl Into<SelfAddressingPrefix> for Digest {
+    fn into(self) -> SelfAddressingPrefix {
+        SelfAddressingPrefix::new(self.derivation, self.digest)
+    }
+}
+impl Into<BasicPrefix> for PublicKey {
+    fn into(self) -> BasicPrefix {
+        BasicPrefix::new(self.derivation, keri::keys::PublicKey::new(self.public_key))
+    }
+}
+
+impl From<SelfSigningPrefix> for Signature {
+    fn from(ssp: SelfSigningPrefix) -> Self {
+        Signature { derivation: ssp.get_code(), signature: ssp.derivative() }
+    }
 }
 
 #[test]
