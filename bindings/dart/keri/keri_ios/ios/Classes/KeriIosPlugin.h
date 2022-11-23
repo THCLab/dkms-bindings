@@ -20,8 +20,8 @@ typedef struct wire_Config {
 } wire_Config;
 
 typedef struct wire_PublicKey {
-  int32_t *derivation;
-  struct wire_uint_8_list *key;
+  int32_t derivation;
+  struct wire_uint_8_list *public_key;
 } wire_PublicKey;
 
 typedef struct wire_list_public_key {
@@ -35,13 +35,13 @@ typedef struct wire_StringList {
 } wire_StringList;
 
 typedef struct wire_Signature {
-  int32_t *derivation;
+  int32_t derivation;
   struct wire_uint_8_list *signature;
 } wire_Signature;
 
-typedef struct wire_Identifier_Basic {
-  struct wire_PublicKey *field0;
-} wire_Identifier_Basic;
+typedef struct wire_Identifier {
+  struct wire_uint_8_list *id;
+} wire_Identifier;
 
 typedef struct wire_DigestType_Blake3_256 {
 
@@ -96,30 +96,6 @@ typedef struct wire_DigestType {
   union DigestTypeKind *kind;
 } wire_DigestType;
 
-typedef struct wire_Digest {
-  struct wire_DigestType *derivation;
-  struct wire_uint_8_list *digest;
-} wire_Digest;
-
-typedef struct wire_Identifier_SelfAddressing {
-  struct wire_Digest *field0;
-} wire_Identifier_SelfAddressing;
-
-typedef struct wire_Identifier_SelfSigning {
-  struct wire_Signature *field0;
-} wire_Identifier_SelfSigning;
-
-typedef union IdentifierKind {
-  struct wire_Identifier_Basic *Basic;
-  struct wire_Identifier_SelfAddressing *SelfAddressing;
-  struct wire_Identifier_SelfSigning *SelfSigning;
-} IdentifierKind;
-
-typedef struct wire_Identifier {
-  int32_t tag;
-  union IdentifierKind *kind;
-} wire_Identifier;
-
 typedef struct wire_list_identifier {
   struct wire_Identifier *ptr;
   int32_t len;
@@ -143,9 +119,17 @@ typedef struct WireSyncReturnStruct {
 
 void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
+void wire_new_public_key(int64_t port_, int32_t kt, struct wire_uint_8_list *key_b64);
+
+void wire_signature_from_hex(int64_t port_, int32_t st, struct wire_uint_8_list *signature);
+
+void wire_signature_from_b64(int64_t port_, int32_t st, struct wire_uint_8_list *signature);
+
 void wire_with_initial_oobis(int64_t port_,
                              struct wire_Config *config,
                              struct wire_uint_8_list *oobis_json);
+
+void wire_change_controller(int64_t port_, struct wire_uint_8_list *db_path);
 
 void wire_init_kel(int64_t port_,
                    struct wire_uint_8_list *input_app_dir,
@@ -212,35 +196,13 @@ void wire_finalize_mailbox_query(int64_t port_,
 
 void wire_resolve_oobi(int64_t port_, struct wire_uint_8_list *oobi_json);
 
-void wire_query(int64_t port_,
-                struct wire_Identifier *identifier,
-                struct wire_uint_8_list *oobis_json);
-
 void wire_process_stream(int64_t port_, struct wire_uint_8_list *stream);
 
 void wire_get_kel(int64_t port_, struct wire_Identifier *identifier);
 
 void wire_get_current_public_key(int64_t port_, struct wire_uint_8_list *attachment);
 
-void wire_new__static_method__PublicKey(int64_t port_,
-                                        int32_t kt,
-                                        struct wire_uint_8_list *key_b64);
-
-void wire_new__static_method__Digest(int64_t port_,
-                                     struct wire_DigestType *dt,
-                                     struct wire_uint_8_list *digest_data);
-
-void wire_new_from_hex__static_method__Signature(int64_t port_,
-                                                 int32_t st,
-                                                 struct wire_uint_8_list *signature);
-
-void wire_new_from_b64__static_method__Signature(int64_t port_,
-                                                 int32_t st,
-                                                 struct wire_uint_8_list *signature);
-
-void wire_new__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
-
-void wire_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
+void wire_new_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
 
 void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
 
@@ -252,23 +214,13 @@ struct wire_StringList *new_StringList_0(int32_t len);
 
 struct wire_Config *new_box_autoadd_config_0(void);
 
-struct wire_Digest *new_box_autoadd_digest_0(void);
-
 struct wire_DigestType *new_box_autoadd_digest_type_0(void);
 
 struct wire_Identifier *new_box_autoadd_identifier_0(void);
 
-struct wire_PublicKey *new_box_autoadd_public_key_0(void);
-
 struct wire_Signature *new_box_autoadd_signature_0(void);
 
-struct wire_DigestType *new_box_digest_type_0(void);
-
-int32_t *new_box_key_type_0(int32_t value);
-
 struct wire_Signature *new_box_signature_0(void);
-
-int32_t *new_box_signature_type_0(int32_t value);
 
 struct wire_list_data_and_signature *new_list_data_and_signature_0(int32_t len);
 
@@ -282,17 +234,15 @@ union DigestTypeKind *inflate_DigestType_Blake2B256(void);
 
 union DigestTypeKind *inflate_DigestType_Blake2S256(void);
 
-union IdentifierKind *inflate_Identifier_Basic(void);
-
-union IdentifierKind *inflate_Identifier_SelfAddressing(void);
-
-union IdentifierKind *inflate_Identifier_SelfSigning(void);
-
 void free_WireSyncReturnStruct(struct WireSyncReturnStruct val);
 
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
+    dummy_var ^= ((int64_t) (void*) wire_new_public_key);
+    dummy_var ^= ((int64_t) (void*) wire_signature_from_hex);
+    dummy_var ^= ((int64_t) (void*) wire_signature_from_b64);
     dummy_var ^= ((int64_t) (void*) wire_with_initial_oobis);
+    dummy_var ^= ((int64_t) (void*) wire_change_controller);
     dummy_var ^= ((int64_t) (void*) wire_init_kel);
     dummy_var ^= ((int64_t) (void*) wire_incept);
     dummy_var ^= ((int64_t) (void*) wire_finalize_inception);
@@ -306,38 +256,24 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_query_mailbox);
     dummy_var ^= ((int64_t) (void*) wire_finalize_mailbox_query);
     dummy_var ^= ((int64_t) (void*) wire_resolve_oobi);
-    dummy_var ^= ((int64_t) (void*) wire_query);
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
     dummy_var ^= ((int64_t) (void*) wire_get_current_public_key);
-    dummy_var ^= ((int64_t) (void*) wire_new__static_method__PublicKey);
-    dummy_var ^= ((int64_t) (void*) wire_new__static_method__Digest);
-    dummy_var ^= ((int64_t) (void*) wire_new_from_hex__static_method__Signature);
-    dummy_var ^= ((int64_t) (void*) wire_new_from_b64__static_method__Signature);
-    dummy_var ^= ((int64_t) (void*) wire_new__static_method__Identifier);
-    dummy_var ^= ((int64_t) (void*) wire_from_str__static_method__Identifier);
+    dummy_var ^= ((int64_t) (void*) wire_new_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);
     dummy_var ^= ((int64_t) (void*) new_StringList_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_config_0);
-    dummy_var ^= ((int64_t) (void*) new_box_autoadd_digest_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_digest_type_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_identifier_0);
-    dummy_var ^= ((int64_t) (void*) new_box_autoadd_public_key_0);
     dummy_var ^= ((int64_t) (void*) new_box_autoadd_signature_0);
-    dummy_var ^= ((int64_t) (void*) new_box_digest_type_0);
-    dummy_var ^= ((int64_t) (void*) new_box_key_type_0);
     dummy_var ^= ((int64_t) (void*) new_box_signature_0);
-    dummy_var ^= ((int64_t) (void*) new_box_signature_type_0);
     dummy_var ^= ((int64_t) (void*) new_list_data_and_signature_0);
     dummy_var ^= ((int64_t) (void*) new_list_identifier_0);
     dummy_var ^= ((int64_t) (void*) new_list_public_key_0);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
     dummy_var ^= ((int64_t) (void*) inflate_DigestType_Blake2B256);
     dummy_var ^= ((int64_t) (void*) inflate_DigestType_Blake2S256);
-    dummy_var ^= ((int64_t) (void*) inflate_Identifier_Basic);
-    dummy_var ^= ((int64_t) (void*) inflate_Identifier_SelfAddressing);
-    dummy_var ^= ((int64_t) (void*) inflate_Identifier_SelfSigning);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturnStruct);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
     return dummy_var;
