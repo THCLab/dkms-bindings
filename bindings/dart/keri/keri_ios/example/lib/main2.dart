@@ -68,6 +68,7 @@ class _MyAppState extends State<MyApp> {
                     onPressed: () async {
                       currentKey = await signer.getCurrentPubKey();
                       nextKey = await signer.getNextPubKey();
+                      print(nextKey);
                       vec1.add(await KeriPlatformInterface.instance
                           .newPublicKey(
                           kt: KeyType.Ed25519, keyB64: currentKey));

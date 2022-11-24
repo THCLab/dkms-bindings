@@ -53,7 +53,7 @@ fn wire_signature_from_hex_impl(
         move || {
             let api_st = st.wire2api();
             let api_signature = signature.wire2api();
-            move |task_callback| Ok(mirror_Signature(signature_from_hex(api_st, api_signature)))
+            move |task_callback| Ok(signature_from_hex(api_st, api_signature))
         },
     )
 }
@@ -71,7 +71,7 @@ fn wire_signature_from_b64_impl(
         move || {
             let api_st = st.wire2api();
             let api_signature = signature.wire2api();
-            move |task_callback| Ok(mirror_Signature(signature_from_b64(api_st, api_signature)))
+            move |task_callback| Ok(signature_from_b64(api_st, api_signature))
         },
     )
 }
@@ -496,9 +496,6 @@ fn wire_new__static_method__DataAndSignature_impl(
 struct mirror_KeyType(KeyType);
 
 #[derive(Clone)]
-struct mirror_Signature(Signature);
-
-#[derive(Clone)]
 struct mirror_SignatureType(SignatureType);
 
 // Section: static checks
@@ -513,11 +510,6 @@ const _: fn() = || {
         KeyType::Ed448 => {}
         KeyType::X25519 => {}
         KeyType::X448 => {}
-    }
-    {
-        let Signature = None::<Signature>.unwrap();
-        let _: SignatureType = Signature.derivation;
-        let _: Vec<u8> = Signature.signature;
     }
     match None::<SignatureType>.unwrap() {
         SignatureType::Ed25519Sha512 => {}
@@ -619,11 +611,7 @@ impl support::IntoDartExceptPrimitive for Config {}
 
 impl support::IntoDart for DataAndSignature {
     fn into_dart(self) -> support::DartAbi {
-        vec![
-            self.data.into_dart(),
-            mirror_Signature((*self.signature)).into_dart(),
-        ]
-        .into_dart()
+        vec![self.data.into_dart(), (*self.signature).into_dart()].into_dart()
     }
 }
 impl support::IntoDartExceptPrimitive for DataAndSignature {}
@@ -671,25 +659,21 @@ impl support::IntoDartExceptPrimitive for PublicKey {}
 
 impl support::IntoDart for PublicKeySignaturePair {
     fn into_dart(self) -> support::DartAbi {
-        vec![
-            self.key.into_dart(),
-            mirror_Signature(self.signature).into_dart(),
-        ]
-        .into_dart()
+        vec![self.key.into_dart(), self.signature.into_dart()].into_dart()
     }
 }
 impl support::IntoDartExceptPrimitive for PublicKeySignaturePair {}
 
-impl support::IntoDart for mirror_Signature {
+impl support::IntoDart for Signature {
     fn into_dart(self) -> support::DartAbi {
         vec![
-            mirror_SignatureType(self.0.derivation).into_dart(),
-            self.0.signature.into_dart(),
+            mirror_SignatureType(self.derivation).into_dart(),
+            self.signature.into_dart(),
         ]
         .into_dart()
     }
 }
-impl support::IntoDartExceptPrimitive for mirror_Signature {}
+impl support::IntoDartExceptPrimitive for Signature {}
 
 impl support::IntoDart for mirror_SignatureType {
     fn into_dart(self) -> support::DartAbi {
