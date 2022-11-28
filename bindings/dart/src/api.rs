@@ -69,17 +69,17 @@ pub struct PublicKey {
     pub public_key: Vec<u8>,
 }
 
-pub fn new_public_key(kt: KeyType, key_b64: String) -> Result<PublicKey> {
+pub fn new_public_key(kt: KeyType, key_b64_url_safe: String) -> Result<PublicKey> {
     let expected_len = kt.code_len() + kt.derivative_b64_len();
-    if key_b64.len() == expected_len {
-        let decoded_key = base64::decode(key_b64).map_err(|e| Error::Base64Error(e))?;
+    if key_b64_url_safe.len() == expected_len {
+        let decoded_key = base64::decode_config(key_b64_url_safe, base64::URL_SAFE).map_err(|e| Error::Base64Error(e))?;
         let pk = PublicKey {
             derivation: kt,
             public_key: decoded_key,
         };
         Ok(pk.into())
     } else {
-        Err(Error::KeyLengthError(key_b64.len(), expected_len).into())
+        Err(Error::KeyLengthError(key_b64_url_safe.len(), expected_len).into())
     }
 }
 
