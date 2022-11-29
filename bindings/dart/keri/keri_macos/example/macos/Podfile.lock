@@ -1,16 +1,27 @@
 PODS:
+  - asymmetric_crypto_primitives (0.0.1):
+    - FlutterMacOS
+    - Sodium
   - FlutterMacOS (1.0.0)
   - keri_macos (0.0.1):
     - FlutterMacOS
   - path_provider_macos (0.0.1):
     - FlutterMacOS
+  - Sodium (0.9.1)
 
 DEPENDENCIES:
+  - asymmetric_crypto_primitives (from `Flutter/ephemeral/.symlinks/plugins/asymmetric_crypto_primitives/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - keri_macos (from `Flutter/ephemeral/.symlinks/plugins/keri_macos/macos`)
   - path_provider_macos (from `Flutter/ephemeral/.symlinks/plugins/path_provider_macos/macos`)
 
+SPEC REPOS:
+  trunk:
+    - Sodium
+
 EXTERNAL SOURCES:
+  asymmetric_crypto_primitives:
+    :path: Flutter/ephemeral/.symlinks/plugins/asymmetric_crypto_primitives/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
   keri_macos:
@@ -19,9 +30,11 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/path_provider_macos/macos
 
 SPEC CHECKSUMS:
+  asymmetric_crypto_primitives: 08b726d8cc26445048c6213dce17208056dcfffa
   FlutterMacOS: 85f90bfb3f1703249cf1539e4dfbff31e8584698
   keri_macos: 2c043201e625018f6e650b15d1008377fb1acde1
   path_provider_macos: 3c0c3b4b0d4a76d2bf989a913c2de869c5641a19
+  Sodium: 23d11554ecd556196d313cf6130d406dfe7ac6da
 
 PODFILE CHECKSUM: a884f6dd3f7494f3892ee6c81feea3a3abbf9153
 

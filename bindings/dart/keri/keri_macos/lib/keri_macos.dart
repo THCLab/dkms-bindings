@@ -7,7 +7,7 @@ import 'exceptions.dart';
 
 import 'package:keri_platform_interface/keri_platform_interface.dart';
 
-class KeriMacos extends KeriPlatformInterface{
+class KeriMacos extends KeriPlatformInterface {
   static final dylib = DynamicLibrary.executable();
   static final api = KeriDartImpl(dylib);
 
@@ -20,8 +20,8 @@ class KeriMacos extends KeriPlatformInterface{
   @override
   Future<bool> initKel(
       {required String inputAppDir,
-        Config? optionalConfigs,
-        dynamic hint}) async {
+      Config? optionalConfigs,
+      dynamic hint}) async {
     if (optionalConfigs != null) {
       try {
         return await api.initKel(
@@ -58,10 +58,10 @@ class KeriMacos extends KeriPlatformInterface{
   @override
   Future<String> incept(
       {required List<PublicKey> publicKeys,
-        required List<PublicKey> nextPubKeys,
-        required List<String> witnesses,
-        required int witnessThreshold,
-        dynamic hint}) async {
+      required List<PublicKey> nextPubKeys,
+      required List<String> witnesses,
+      required int witnessThreshold,
+      dynamic hint}) async {
     try {
       return await api.incept(
           publicKeys: publicKeys,
@@ -96,8 +96,8 @@ class KeriMacos extends KeriPlatformInterface{
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
   Future<Identifier> finalizeInception(
       {required String event,
-        required Signature signature,
-        dynamic hint}) async {
+      required Signature signature,
+      dynamic hint}) async {
     try {
       return await api.finalizeInception(event: event, signature: signature);
     } on FfiException catch (e) {
@@ -124,12 +124,12 @@ class KeriMacos extends KeriPlatformInterface{
   ///Creates rotation event that needs to be signed externally.
   Future<String> rotate(
       {required Identifier controller,
-        required List<PublicKey> currentKeys,
-        required List<PublicKey> newNextKeys,
-        required List<String> witnessToAdd,
-        required List<String> witnessToRemove,
-        required int witnessThreshold,
-        dynamic hint}) async {
+      required List<PublicKey> currentKeys,
+      required List<PublicKey> newNextKeys,
+      required List<String> witnessToAdd,
+      required List<String> witnessToRemove,
+      required int witnessThreshold,
+      dynamic hint}) async {
     try {
       return await api.rotate(
           identifier: controller,
@@ -174,8 +174,8 @@ class KeriMacos extends KeriPlatformInterface{
   ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
   Future<String> addWatcher(
       {required Identifier controller,
-        required String watcherOobi,
-        dynamic hint}) async {
+      required String watcherOobi,
+      dynamic hint}) async {
     try {
       return await api.addWatcher(
           identifier: controller, watcherOobi: watcherOobi);
@@ -207,9 +207,9 @@ class KeriMacos extends KeriPlatformInterface{
   ///Verifies provided signatures against event and saves it.
   Future<bool> finalizeEvent(
       {required Identifier identifier,
-        required String event,
-        required Signature signature,
-        dynamic hint}) async {
+      required String event,
+      required Signature signature,
+      dynamic hint}) async {
     try {
       return await api.finalizeEvent(
           identifier: identifier, event: event, signature: signature);
@@ -346,8 +346,8 @@ class KeriMacos extends KeriPlatformInterface{
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
   Future<String> anchorDigest(
       {required Identifier controller,
-        required List<String> sais,
-        dynamic hint}) async {
+      required List<String> sais,
+      dynamic hint}) async {
     try {
       return await api.anchorDigest(identifier: controller, sais: sais);
     } on FfiException catch (e) {
@@ -378,9 +378,9 @@ class KeriMacos extends KeriPlatformInterface{
   ///Creates new Interaction Event along with arbitrary data.
   Future<String> anchor(
       {required Identifier controller,
-        required String data,
-        required DigestType algo,
-        dynamic hint}) async {
+      required String data,
+      required DigestType algo,
+      dynamic hint}) async {
     try {
       return await api.anchor(identifier: controller, data: data, algo: algo);
     } on FfiException catch (e) {
@@ -420,9 +420,9 @@ class KeriMacos extends KeriPlatformInterface{
   //ToDo
   Future<List<String>> queryMailbox(
       {required Identifier whoAsk,
-        required Identifier aboutWho,
-        required List<String> witness,
-        dynamic hint}) async {
+      required Identifier aboutWho,
+      required List<String> witness,
+      dynamic hint}) async {
     try {
       return await api.queryMailbox(
           whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
@@ -442,9 +442,9 @@ class KeriMacos extends KeriPlatformInterface{
   //ToDo
   Future<List<ActionRequired>> finalizeMailboxQuery(
       {required Identifier identifier,
-        required String queryEvent,
-        required Signature signature,
-        dynamic hint}) async {
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) async {
     try {
       return await api.finalizeMailboxQuery(
           identifier: identifier, queryEvent: queryEvent, signature: signature);
@@ -463,8 +463,8 @@ class KeriMacos extends KeriPlatformInterface{
 
   Future<Signature> signatureFromHex(
       {required SignatureType st,
-        required String signature,
-        dynamic hint}) async {
+      required String signature,
+      dynamic hint}) async {
     try {
       return await api.signatureFromHex(st: st, signature: signature);
     } on FfiException catch (e) {
@@ -478,11 +478,11 @@ class KeriMacos extends KeriPlatformInterface{
 
   Future<GroupInception> inceptGroup(
       {required Identifier identifier,
-        required List<Identifier> participants,
-        required int signatureThreshold,
-        required List<String> initialWitnesses,
-        required int witnessThreshold,
-        dynamic hint}) async {
+      required List<Identifier> participants,
+      required int signatureThreshold,
+      required List<String> initialWitnesses,
+      required int witnessThreshold,
+      dynamic hint}) async {
     try {
       return await api.inceptGroup(
           identifier: identifier,
@@ -513,10 +513,10 @@ class KeriMacos extends KeriPlatformInterface{
 
   Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
-        required String groupEvent,
-        required Signature signature,
-        required List<DataAndSignature> toForward,
-        dynamic hint}) async {
+      required String groupEvent,
+      required Signature signature,
+      required List<DataAndSignature> toForward,
+      dynamic hint}) async {
     try {
       return await api.finalizeGroupIncept(
           identifier: identifier,

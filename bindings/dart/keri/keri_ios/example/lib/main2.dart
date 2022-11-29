@@ -1,13 +1,10 @@
-import 'dart:io';
-
-import 'package:asymmetric_crypto_primitives/asymmetric_crypto_primitives.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:keri_platform_interface/keri_platform_interface.dart';
 import 'package:keri_platform_interface/bridge_generated.dart';
+import 'dart:async';
+import 'package:keri_platform_interface/keri_platform_interface.dart';
+
+//import 'package:keri_windows/bridge_generated.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,7 +18,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late var signer;
   String currentKey = '';
   String nextKey = '';
   String icpEvent = '';
@@ -36,7 +32,7 @@ class _MyAppState extends State<MyApp> {
   String rotationEvent = '';
   String signature2 = '';
   bool finalizedEvent = false;
-  String dataForAnchor = 'important data';
+  String dataForAnchor = 'data';
   String anchorEvent = '';
   String signature3 = '';
   bool finalizedAnchor = false;
@@ -48,8 +44,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> initKel() async {
-    signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
+    print(dir);
     var inited = await KeriPlatformInterface.instance.initKel(inputAppDir: dir);
   }
 
@@ -66,9 +62,9 @@ class _MyAppState extends State<MyApp> {
               children: [
                 RawMaterialButton(
                     onPressed: () async {
-                      currentKey = await signer.getCurrentPubKey();
-                      nextKey = await signer.getNextPubKey();
-                      print(nextKey);
+                      currentKey =
+                      '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
+                      nextKey = 'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
                       vec1.add(await KeriPlatformInterface.instance
                           .newPublicKey(
                           kt: KeyType.Ed25519, keyB64: currentKey));
@@ -99,6 +95,7 @@ class _MyAppState extends State<MyApp> {
                           witnesses: vec3,
                           witnessThreshold: 0);
                       setState(() {});
+                      print(icpEvent);
                     },
                     child: const Text('Incept'),
                     shape: RoundedRectangleBorder(
@@ -116,7 +113,8 @@ class _MyAppState extends State<MyApp> {
                 icpEvent.isNotEmpty
                     ? RawMaterialButton(
                     onPressed: () async {
-                      signature = await signer.sign(icpEvent);
+                      signature =
+                      '0CDD8D47A4FA43116D627E1410F84DB5016251EC04DFDFFC036F2307EDD44FEF27F7F721349E4FF40740A8984723BDD03BE0ABAAE97741436D2F45FB588E0E05';
                       setState(() {});
                     },
                     child: const Text('Sign event'),
@@ -162,9 +160,10 @@ class _MyAppState extends State<MyApp> {
                 controllerId.isNotEmpty
                     ? RawMaterialButton(
                     onPressed: () async {
-                      await signer.rotateForEd25519();
-                      currentKey = await signer.getCurrentPubKey();
-                      nextKey = await signer.getNextPubKey();
+                      currentKey =
+                      'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
+                      nextKey =
+                      'vyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE=';
                       currentKeys.add(await KeriPlatformInterface.instance
                           .newPublicKey(
                           kt: KeyType.Ed25519, keyB64: currentKey));
@@ -180,6 +179,7 @@ class _MyAppState extends State<MyApp> {
                           witnessToRemove: [],
                           witnessThreshold: 0);
                       setState(() {});
+                      print(rotationEvent);
                     },
                     child: const Text('Rotate'),
                     shape: RoundedRectangleBorder(
@@ -197,7 +197,8 @@ class _MyAppState extends State<MyApp> {
                 rotationEvent.isNotEmpty
                     ? RawMaterialButton(
                     onPressed: () async {
-                      signature2 = await signer.sign(rotationEvent);
+                      signature2 =
+                      '29FA3CD56DD1F6DED19A035A48CBDFB010F64158824BA66825423413C56E90B5B4D85DBFBA15D5A0029E838967FA119888DFD44DAAF38AA66336A16F55C01000';
                       setState(() {});
                     },
                     child: const Text('Sign event'),
@@ -256,6 +257,7 @@ class _MyAppState extends State<MyApp> {
                           data: dataForAnchor,
                           algo: DigestType.blake3256());
                       setState(() {});
+                      print(anchorEvent);
                     },
                     child: const Text('Anchor'),
                     shape: RoundedRectangleBorder(
@@ -273,7 +275,8 @@ class _MyAppState extends State<MyApp> {
                 anchorEvent.isNotEmpty
                     ? RawMaterialButton(
                     onPressed: () async {
-                      signature3 = await signer.sign(anchorEvent);
+                      signature3 =
+                      'CB16207214C91415809068126F6846E86B0404D1ACFEEF5CE853DED53CD70EED2BC0368E048CB68ADC1D637FE2DB09F624126387FF02C2E48FD2E3B02BE4D30F';
                       setState(() {});
                     },
                     child: const Text('Sign event'),
