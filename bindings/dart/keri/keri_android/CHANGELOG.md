@@ -9,3 +9,7 @@ Dependency change
 ## 0.0.3
 
 Added implementation
+
+## 0.0.4 
+
+Adjusted to new keriox version
