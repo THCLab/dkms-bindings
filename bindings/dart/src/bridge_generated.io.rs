@@ -2,8 +2,12 @@ use super::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_new_public_key(port_: i64, kt: i32, key_b64: *mut wire_uint_8_list) {
-    wire_new_public_key_impl(port_, kt, key_b64)
+pub extern "C" fn wire_new_public_key(
+    port_: i64,
+    kt: i32,
+    key_b64_url_safe: *mut wire_uint_8_list,
+) {
+    wire_new_public_key_impl(port_, kt, key_b64_url_safe)
 }
 
 #[no_mangle]

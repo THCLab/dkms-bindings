@@ -15,7 +15,7 @@ part 'bridge_generated.freezed.dart';
 
 abstract class KeriDart {
   Future<PublicKey> newPublicKey(
-      {required KeyType kt, required String keyB64, dynamic hint});
+      {required KeyType kt, required String keyB64UrlSafe, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNewPublicKeyConstMeta;
 
@@ -319,20 +319,20 @@ class KeriDartImpl implements KeriDart {
       KeriDartImpl(module as ExternalLibrary);
   KeriDartImpl.raw(this._platform);
   Future<PublicKey> newPublicKey(
-          {required KeyType kt, required String keyB64, dynamic hint}) =>
+          {required KeyType kt, required String keyB64UrlSafe, dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => _platform.inner.wire_new_public_key(
-            port_, api2wire_key_type(kt), _platform.api2wire_String(keyB64)),
+        callFfi: (port_) => _platform.inner.wire_new_public_key(port_,
+            api2wire_key_type(kt), _platform.api2wire_String(keyB64UrlSafe)),
         parseSuccessData: _wire2api_public_key,
         constMeta: kNewPublicKeyConstMeta,
-        argValues: [kt, keyB64],
+        argValues: [kt, keyB64UrlSafe],
         hint: hint,
       ));
 
   FlutterRustBridgeTaskConstMeta get kNewPublicKeyConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "new_public_key",
-        argNames: ["kt", "keyB64"],
+        argNames: ["kt", "keyB64UrlSafe"],
       );
 
   Future<Signature> signatureFromHex(
@@ -1243,12 +1243,12 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   void wire_new_public_key(
     int port_,
     int kt,
-    ffi.Pointer<wire_uint_8_list> key_b64,
+    ffi.Pointer<wire_uint_8_list> key_b64_url_safe,
   ) {
     return _wire_new_public_key(
       port_,
       kt,
-      key_b64,
+      key_b64_url_safe,
     );
   }
 

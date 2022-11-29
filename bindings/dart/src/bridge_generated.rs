@@ -22,7 +22,7 @@ use flutter_rust_bridge::*;
 fn wire_new_public_key_impl(
     port_: MessagePort,
     kt: impl Wire2Api<KeyType> + UnwindSafe,
-    key_b64: impl Wire2Api<String> + UnwindSafe,
+    key_b64_url_safe: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -32,8 +32,8 @@ fn wire_new_public_key_impl(
         },
         move || {
             let api_kt = kt.wire2api();
-            let api_key_b64 = key_b64.wire2api();
-            move |task_callback| new_public_key(api_kt, api_key_b64)
+            let api_key_b64_url_safe = key_b64_url_safe.wire2api();
+            move |task_callback| new_public_key(api_kt, api_key_b64_url_safe)
         },
     )
 }
