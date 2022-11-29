@@ -8,10 +8,7 @@ import 'exceptions.dart';
 import 'package:keri_platform_interface/keri_platform_interface.dart';
 
 class KeriMacos extends KeriPlatformInterface{
-  static const base = 'dartkeriox';
-  static const path = 'lib$base.so';
-
-  static final dylib = DynamicLibrary.open(path);
+  static final dylib = DynamicLibrary.executable();
   static final api = KeriDartImpl(dylib);
 
   ///Registers new instance of [KeriPlatformInterface].
