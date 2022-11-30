@@ -3,7 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  asymmetric_crypto_primitives
   keri_windows
+  local_auth_windows
+  nacl_win
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

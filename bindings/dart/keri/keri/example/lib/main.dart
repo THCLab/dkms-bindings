@@ -50,6 +50,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> inittKel() async {
     signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
+    var file = File('$dir/counter.txt');
+    await file.writeAsString('miau');
+    print(await file.readAsString());
     var inited = await initKel(inputAppDir: 'inputAppDir');
   }
 
@@ -68,6 +71,7 @@ class _MyAppState extends State<MyApp> {
                     onPressed: () async {
                       currentKey = await signer.getCurrentPubKey();
                       nextKey = await signer.getNextPubKey();
+                      print(currentKey);
                       vec1.add(await newPublicKey(
                           kt: KeyType.Ed25519, keyB64: currentKey));
                       vec2.add(await newPublicKey(

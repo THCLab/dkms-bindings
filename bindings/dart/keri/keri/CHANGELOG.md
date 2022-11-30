@@ -29,3 +29,7 @@ Added support for Windows
 ## 1.0.0
 
 Initial support for multisig (windows and android only)
+
+## 1.1.0
+
+Split into federated plugin

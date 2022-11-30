@@ -13,8 +13,8 @@ Future<bool> initKel(
     dynamic hint}) async {
   if (optionalConfigs != null) {
     try {
-      return await KeriPlatformInterface.instance.initKel(
-          inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
+      return await KeriPlatformInterface.instance
+          .initKel(inputAppDir: inputAppDir, optionalConfigs: optionalConfigs);
     } on FfiException catch (e) {
       if (e.message.contains('Improper location scheme structure')) {
         throw IncorrectOptionalConfigsException(
@@ -32,7 +32,8 @@ Future<bool> initKel(
     }
   } else {
     try {
-      return await KeriPlatformInterface.instance.initKel(inputAppDir: inputAppDir);
+      return await KeriPlatformInterface.instance
+          .initKel(inputAppDir: inputAppDir);
     } on FfiException catch (e) {
       if (e.message.contains('Error while event processing')) {
         throw UnavailableDirectoryException(
@@ -83,11 +84,10 @@ Future<String> incept(
 
 ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
 Future<Identifier> finalizeInception(
-    {required String event,
-    required Signature signature,
-    dynamic hint}) async {
+    {required String event, required Signature signature, dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.finalizeInception(event: event, signature: signature);
+    return await KeriPlatformInterface.instance
+        .finalizeInception(event: event, signature: signature);
   } on FfiException catch (e) {
     if (e.message.contains('hex decode error')) {
       throw IncorrectSignatureException(
@@ -165,8 +165,8 @@ Future<String> addWatcher(
     required String watcherOobi,
     dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.addWatcher(
-        controller: controller, watcherOobi: watcherOobi);
+    return await KeriPlatformInterface.instance
+        .addWatcher(controller: controller, watcherOobi: watcherOobi);
   } on FfiException catch (e) {
     if (e.message.contains('Can\'t parse oobi json:')) {
       throw IncorrectWatcherOobiException(
@@ -231,8 +231,7 @@ Future<bool> finalizeEvent(
 }
 
 ///Checks and saves provided identifier's endpoint information.
-Future<bool> resolveOobi(
-    {required String oobiJson, dynamic hint}) async {
+Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
   try {
     return await KeriPlatformInterface.instance.resolveOobi(oobiJson: oobiJson);
   } on FfiException catch (e) {
@@ -323,7 +322,8 @@ Future<String> getKel({required Identifier cont, dynamic hint}) async {
 Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
     {required String attachment, dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.getCurrentPublicKey(attachment: attachment);
+    return await KeriPlatformInterface.instance
+        .getCurrentPublicKey(attachment: attachment);
   } on FfiException catch (e) {
     if (e.message.contains('Can\'t parse attachment')) {
       throw AttachmentException(
@@ -339,7 +339,8 @@ Future<String> anchorDigest(
     required List<String> sais,
     dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.anchorDigest(controller: controller, sais: sais);
+    return await KeriPlatformInterface.instance
+        .anchorDigest(controller: controller, sais: sais);
   } on FfiException catch (e) {
     if (e.message.contains('Unknown id')) {
       throw IdentifierException(
@@ -372,7 +373,8 @@ Future<String> anchor(
     required DigestType algo,
     dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.anchor(controller: controller, data: data, algo: algo);
+    return await KeriPlatformInterface.instance
+        .anchor(controller: controller, data: data, algo: algo);
   } on FfiException catch (e) {
     if (e.message.contains('Unknown id')) {
       throw IdentifierException(
@@ -394,8 +396,7 @@ Future<String> anchor(
   }
 }
 
-Future<Identifier> newIdentifier(
-    {required String idStr, dynamic hint}) async {
+Future<Identifier> newIdentifier({required String idStr, dynamic hint}) async {
   try {
     return await KeriPlatformInterface.instance.newIdentifier(idStr: idStr);
   } on FfiException catch (e) {
@@ -414,8 +415,8 @@ Future<List<String>> queryMailbox(
     required List<String> witness,
     dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.queryMailbox(
-        whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
+    return await KeriPlatformInterface.instance
+        .queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
   } on FfiException catch (e) {
     if (e.message.contains('Can\'t parse identifier prefix')) {
       throw WitnessParsingException(
@@ -456,7 +457,8 @@ Future<Signature> signatureFromHex(
     required String signature,
     dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.signatureFromHex(st: st, signature: signature);
+    return await KeriPlatformInterface.instance
+        .signatureFromHex(st: st, signature: signature);
   } on FfiException catch (e) {
     if (e.message.contains('hex decode error')) {
       throw IncorrectSignatureException(
@@ -533,7 +535,8 @@ Future<Identifier> finalizeGroupIncept(
 Future<PublicKey> newPublicKey(
     {required KeyType kt, required String keyB64, dynamic hint}) async {
   try {
-    return await KeriPlatformInterface.instance.newPublicKey(kt: kt, keyB64: keyB64);
+    return await KeriPlatformInterface.instance
+        .newPublicKey(kt: kt, keyB64: keyB64);
   } on FfiException catch (e) {
     if (e.message.contains('wrong key length')) {
       throw IncorrectKeyFormatException(
@@ -544,11 +547,9 @@ Future<PublicKey> newPublicKey(
 }
 
 Future<DataAndSignature> newDataAndSignature(
-    {required String data,
-    required Signature signature,
-    dynamic hint}) async {
-  return await KeriPlatformInterface.instance.newDataAndSignature(
-      data: data, signature: signature);
+    {required String data, required Signature signature, dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .newDataAndSignature(data: data, signature: signature);
 }
 
 // static Future<bool> changeController({required String dbPath, dynamic hint})async{

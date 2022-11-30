@@ -5,10 +5,12 @@
 import FlutterMacOS
 import Foundation
 
-import keri
+import asymmetric_crypto_primitives
+import keri_macos
 import path_provider_macos
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  KeriPlugin.register(with: registry.registrar(forPlugin: "KeriPlugin"))
+  AsymmetricCryptoPrimitivesPlugin.register(with: registry.registrar(forPlugin: "AsymmetricCryptoPrimitivesPlugin"))
+  KeriMacosPlugin.register(with: registry.registrar(forPlugin: "KeriMacosPlugin"))
   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
 }

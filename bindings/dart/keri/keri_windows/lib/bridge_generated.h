@@ -115,7 +115,7 @@ typedef struct WireSyncReturnStruct {
 
 void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
-void wire_new_public_key(int64_t port_, int32_t kt, struct wire_uint_8_list *key_b64);
+void wire_new_public_key(int64_t port_, int32_t kt, struct wire_uint_8_list *key_b64_url_safe);
 
 void wire_signature_from_hex(int64_t port_, int32_t st, struct wire_uint_8_list *signature);
 
