@@ -33,3 +33,11 @@ Initial support for multisig (windows and android only)
 ## 1.1.0
 
 Split into federated plugin
+
+## 1.1.1
+
+Error fix
+
+## 1.1.2
+
+Added types
