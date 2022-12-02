@@ -1,3 +1,5 @@
+import 'dart:ffi';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/services.dart';
@@ -7,6 +9,9 @@ import 'package:keri/keri.dart';
 //import 'package:test/expect.dart' as ex;
 
 void main() {
+  // var dylib = DynamicLibrary.open(Platform.script.resolve("example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/windows/dartkeriox/dartkeriox.dll").toFilePath());
+  // var api = KeriDartImpl(dylib);
+
   var publicKey1 = '6gWY4Y+k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0=';
   var publicKey2 = 'GoP8qjXbUcnpMWtDeRuN/AT0pA7F5gFjrv8UdxrEJW0=';
   const publicKey3 = 'vyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE=';
@@ -28,7 +33,7 @@ void main() {
             optionalConfigs: Config(initialOobis: 'cat'));
         fail("exception not thrown");
       } catch (e) {
-        expect(e, IncorrectOptionalConfigsException);
+        expect(e, isInstanceOf<IncorrectOptionalConfigsException>());
       }
     });
 
