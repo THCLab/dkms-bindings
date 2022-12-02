@@ -50,9 +50,6 @@ class _MyAppState extends State<MyApp> {
   Future<void> inittKel() async {
     signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
-    var file = File('$dir/counter.txt');
-    await file.writeAsString('miau');
-    print(await file.readAsString());
     var inited = await initKel(inputAppDir: 'inputAppDir');
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:keri/exceptions.dart';
 import 'package:keri_platform_interface/keri_platform_interface.dart';
 import 'package:keri_platform_interface/bridge_generated.dart';
+export 'package:keri_platform_interface/bridge_generated.dart';
 
 ///Initializes database for storing events.
 Future<bool> initKel(
@@ -292,10 +293,10 @@ Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
 // }
 
 //CZY JEST POTRZEBNA?
-// Future<void> processStream(
-//     {required String stream, dynamic hint}) async {
-//   await KeriPlatformInterface.instance.processStream(stream: stream);
-// }
+Future<void> processStream(
+    {required String stream, dynamic hint}) async {
+  await KeriPlatformInterface.instance.processStream(stream: stream);
+}
 
 ///Returns Key Event Log in the CESR representation for current Identifier when given a controller.
 Future<String> getKel({required Identifier cont, dynamic hint}) async {
@@ -552,6 +553,6 @@ Future<DataAndSignature> newDataAndSignature(
       .newDataAndSignature(data: data, signature: signature);
 }
 
-// static Future<bool> changeController({required String dbPath, dynamic hint})async{
-//   return await api.changeController(dbPath: dbPath);
-// }
+Future<bool> changeController({required String dbPath, dynamic hint})async{
+  return await KeriPlatformInterface.instance.changeController(dbPath: dbPath);
+}

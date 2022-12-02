@@ -17,3 +17,7 @@ Adjusted to new keriox version
 ## 0.0.5
 
 Key base64 fix
+
+## 0.0.6
+
+New jniLibs

@@ -156,4 +156,12 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
       dynamic hint}) async {
     throw UnimplementedError('newDataAndSignature() has not been implemented.');
   }
+
+  Future<bool> changeController({required String dbPath, dynamic hint}) async {
+    throw UnimplementedError('changeController() has not been implemented.');
+  }
+
+  Future<void> processStream({required String stream, dynamic hint}) async {
+    throw UnimplementedError('processStream() has not been implemented.');
+  }
 }

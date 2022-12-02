@@ -9,3 +9,7 @@ Fix nullable variables
 ## 0.0.3
 
 Dependency change
+
+## 0.0.4
+
+Added new functions

@@ -41,3 +41,15 @@ Error fix
 ## 1.1.2
 
 Added types
+
+## 1.1.3
+
+Dependencies update
+
+## 1.1.4
+
+Added export
+
+## 1.1.5
+
+Dependencies update
