@@ -293,8 +293,7 @@ Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
 // }
 
 //CZY JEST POTRZEBNA?
-Future<void> processStream(
-    {required String stream, dynamic hint}) async {
+Future<void> processStream({required String stream, dynamic hint}) async {
   await KeriPlatformInterface.instance.processStream(stream: stream);
 }
 
@@ -553,6 +552,6 @@ Future<DataAndSignature> newDataAndSignature(
       .newDataAndSignature(data: data, signature: signature);
 }
 
-Future<bool> changeController({required String dbPath, dynamic hint})async{
+Future<bool> changeController({required String dbPath, dynamic hint}) async {
   return await KeriPlatformInterface.instance.changeController(dbPath: dbPath);
 }

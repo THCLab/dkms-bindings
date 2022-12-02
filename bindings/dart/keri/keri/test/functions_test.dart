@@ -33,7 +33,8 @@ void main() {
             optionalConfigs: Config(initialOobis: 'cat'));
         fail("exception not thrown");
       } catch (e) {
-        expect(e, isInstanceOf<IncorrectOptionalConfigsException>());
+        expect(e.runtimeType, isA<IncorrectOptionalConfigsException>());
+        //expect(e, isInstanceOf<IncorrectOptionalConfigsException>());
       }
     });
 
@@ -56,11 +57,9 @@ void main() {
     test('The inception passes', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       expect(
           await incept(
@@ -75,11 +74,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = ['incorrect'];
       try {
         var icp_event = await incept(
@@ -98,11 +95,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [
         "{\"eid\":\"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}"
       ];
@@ -123,11 +118,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [
         "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}"
       ];
@@ -146,11 +139,9 @@ void main() {
     test('The inception fails, because the controller wasn\'t initiated',
         () async {
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [
         "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}"
       ];
@@ -171,11 +162,9 @@ void main() {
     test('The finalize inception passes', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -195,11 +184,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -222,11 +209,9 @@ void main() {
     test('The finalize inception fails, because the initKel() was not executed',
         () async {
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event =
           '{"v":"KERI10JSON00012b_","t":"icp","d":"ENHwqUzQVZqy6ugSvgpzzMVMB2PaymhQm9cU0cPdPlwE","i":"ENHwqUzQVZqy6ugSvgpzzMVMB2PaymhQm9cU0cPdPlwE","s":"0","kt":"1","k":["D6gWY4Y-k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0"],"nt":"1","n":["ERnMydUxS3HsugRxKTx104D1YLQG6AouPwW0weJo9UYM"],"bt":"0","b":[],"c":[],"a":[]}';
@@ -248,11 +233,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -277,11 +260,9 @@ void main() {
     test('The rotation passes', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -299,10 +280,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       expect(
           await rotate(
               controller: controller,
@@ -317,11 +298,9 @@ void main() {
     test('The rotation fails, because of wrong witnessToAdd', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -339,10 +318,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       try {
         await rotate(
             controller: controller,
@@ -360,11 +339,9 @@ void main() {
     test('The rotation fails, because of wrong witnessToRemove', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -382,10 +359,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       try {
         await rotate(
             controller: controller,
@@ -403,11 +380,9 @@ void main() {
     test('The rotation fails, because of wrong witness prefix', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -425,10 +400,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       try {
         await rotate(
             controller: controller,
@@ -450,11 +425,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -472,10 +445,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       try {
         await rotate(
             controller: controller,
@@ -496,11 +469,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -518,10 +489,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       try {
         await rotate(
             controller: await newIdentifier(
@@ -544,11 +515,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -576,11 +545,9 @@ void main() {
     test('addWatcher fails, because watcher Oobi is incorrect.', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -644,11 +611,9 @@ void main() {
     test('finalizeEvent passes', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -666,10 +631,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       var rotation_event = await rotate(
           controller: controller,
           currentKeys: currentKeys,
@@ -690,11 +655,9 @@ void main() {
     test('finalizeEvent fails, because signature is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -712,10 +675,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       var rotation_event = await rotate(
           controller: controller,
           currentKeys: currentKeys,
@@ -741,11 +704,9 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -763,10 +724,10 @@ void main() {
       publicKey2 = publicKey3;
       List<PublicKey> currentKeys = [];
       List<PublicKey> newNextKeys = [];
-      currentKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
-      newNextKeys.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      currentKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      newNextKeys
+          .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       var rotation_event = await rotate(
           controller: controller,
           currentKeys: currentKeys,
@@ -831,11 +792,9 @@ void main() {
     test('anchorDigest passes', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -851,8 +810,7 @@ void main() {
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
-      var anchor_event =
-          await anchorDigest(controller: controller, sais: sais);
+      var anchor_event = await anchorDigest(controller: controller, sais: sais);
       print(anchor_event);
       var signature2 =
           '4217975CFDB10693AC0463FB399C9A8F26051C1BEB3DE2A71BCB7C6438C360AE73E2A2E2E86BDD300E8A7ABF01856EB4A19DCBFCCDDED098404063DD8A07A302';
@@ -867,11 +825,9 @@ void main() {
     test('anchorDigest fails, because the sai is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -899,11 +855,9 @@ void main() {
     test('anchorDigest fails, because the controller is unknown', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -933,11 +887,9 @@ void main() {
     test('anchorDigest fails, because the controller is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -983,11 +935,9 @@ void main() {
     test('anchor passes', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -1019,11 +969,9 @@ void main() {
     test('anchor fails, because the controller is unknown', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -1054,11 +1002,9 @@ void main() {
     test('anchor fails, because the controller is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
       var icp_event = await incept(
           publicKeys: vec1,
@@ -1161,8 +1107,7 @@ void main() {
       await initKel(inputAppDir: 'keritest');
       List<PublicKey> vec1 = [];
       try {
-        vec1.add(
-            await newPublicKey(kt: KeyType.Ed25519, keyB64: 'failKey'));
+        vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: 'failKey'));
         fail("exception not thrown");
       } catch (e) {
         expect(e, IncorrectKeyFormatException);
@@ -1219,11 +1164,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1262,11 +1205,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1309,11 +1250,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1362,11 +1301,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1415,11 +1352,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1470,11 +1405,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1514,11 +1447,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -1574,11 +1505,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1618,11 +1547,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -1681,11 +1608,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1725,11 +1650,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -1788,11 +1711,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1832,11 +1753,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -1894,11 +1813,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -1938,11 +1855,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -2003,11 +1918,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -2047,11 +1960,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -2112,11 +2023,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -2156,11 +2065,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -2235,11 +2142,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -2279,11 +2184,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -2354,11 +2257,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -2398,11 +2299,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant
@@ -2477,11 +2376,9 @@ void main() {
 
       //Create identifier keys
       List<PublicKey> vec1 = [];
-      vec1.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
+      vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
-      vec2.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
+      vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [wit_location];
 
       //Incept identifier
@@ -2521,11 +2418,9 @@ void main() {
 
       //Create participant keys
       List<PublicKey> vec11 = [];
-      vec11.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
+      vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
-      vec22.add(
-          await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
+      vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
       List<String> vec33 = [wit_location];
 
       //Incept participant

@@ -13,3 +13,7 @@ Added implementation
 ## 0.0.4
 
 Adjusted to new keriox version
+
+## 0.0.5
+
+Made tests available on Windows

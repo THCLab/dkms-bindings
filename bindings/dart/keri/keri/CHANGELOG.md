@@ -53,3 +53,7 @@ Added export
 ## 1.1.5
 
 Dependencies update
+
+## 1.1.6
+
+Tests update

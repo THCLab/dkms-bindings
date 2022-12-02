@@ -6,12 +6,18 @@ import 'package:keri_platform_interface/bridge_generated.dart';
 import 'dart:ffi';
 //import 'bridge_generated.dart';
 import 'exceptions.dart';
+import 'dart:io';
 
 class KeriWindows extends KeriPlatformInterface {
   static const base = 'dartkeriox';
   static const path = '$base.dll';
 
-  static final dylib = DynamicLibrary.open(path);
+  static final dylib = Platform.environment.containsKey('FLUTTER_TEST')
+      ? DynamicLibrary.open(Platform.script
+          .resolve(
+              "example/windows/flutter/ephemeral/.plugin_symlinks/keri_windows/windows/dartkeriox/dartkeriox.dll")
+          .toFilePath())
+      : DynamicLibrary.open(path);
   static final api = KeriDartImpl(dylib);
 
   ///Registers new instance of [KeriPlatformInterface].
