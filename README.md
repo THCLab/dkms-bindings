@@ -1,3 +1,9 @@
+# License
+
+EUPL 1.2 
+
+We have distilled the most crucial license specifics to make your adoption seamless: [see here for details](https://github.com/THCLab/licensing).
+
 # Overview
 
 A utility clients (see available [below](#available-clients)) that expose higher level interface for managing [KERI](https://keri.one/) based Identifiers.
