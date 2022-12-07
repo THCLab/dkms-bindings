@@ -33,7 +33,7 @@ void main() {
             optionalConfigs: Config(initialOobis: 'cat'));
         fail("exception not thrown");
       } catch (e) {
-        expect(e.runtimeType, isA<IncorrectOptionalConfigsException>());
+        expect(e.runtimeType, IncorrectOptionalConfigsException);
         //expect(e, isInstanceOf<IncorrectOptionalConfigsException>());
       }
     });
