@@ -1,6 +1,7 @@
 use keri::event_parsing::codes::basic::Basic;
+use keri::event_parsing::primitives::CesrPrimitive;
 use keri::keys::PublicKey as KeriPublicKey;
-use keri::prefix::{BasicPrefix, IdentifierPrefix, Prefix};
+use keri::prefix::{BasicPrefix, IdentifierPrefix};
 
 use crate::api::{Identifier, PublicKey};
 

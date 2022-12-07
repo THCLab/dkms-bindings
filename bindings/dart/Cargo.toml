@@ -11,8 +11,8 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 flutter_rust_bridge = "1"
-keri = { git = "https://github.com/THCLab/keriox.git", rev="506bd4f" }
-controller = { git = "https://github.com/THCLab/keriox.git", rev="506bd4f" }
+keri = { git = "https://github.com/THCLab/keriox.git" }
+controller = { git = "https://github.com/THCLab/keriox.git"}
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"

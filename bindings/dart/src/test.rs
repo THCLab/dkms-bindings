@@ -1,7 +1,9 @@
 use anyhow::Result;
 use keri::{
-    event_parsing::codes::{basic::Basic, self_signing::SelfSigning},
-    prefix::Prefix,
+    event_parsing::{
+        codes::{basic::Basic, self_signing::SelfSigning},
+        primitives::CesrPrimitive,
+    },
     sai::derivation::SelfAddressing,
     signer::{CryptoBox, KeyManager},
 };
@@ -36,8 +38,8 @@ pub fn test_api() -> Result<()> {
 
     // Create temporary db file.
     let root = Builder::new().prefix("test-db").tempdir().unwrap();
-    let public_key = "6UMthURGxkWVEKxJ/m3OpgV3Be/STsM//4tONKaiTrA=".to_string();
-    let next_public_key = "xeIGdSW6mJsPqFysR6diH0/4lXXgyy36Hb9BzcLOp+s=".to_string();
+    let public_key = "6UMthURGxkWVEKxJ_m3OpgV3Be_STsM__4tONKaiTrA=".to_string();
+    let next_public_key = "xeIGdSW6mJsPqFysR6diH0_4lXXgyy36Hb9BzcLOp-s=".to_string();
 
     init_kel(root.path().to_str().unwrap().into(), None)?;
 
@@ -210,8 +212,8 @@ pub fn test_multisig() -> Result<()> {
 
     // Incept first group participant
     let key_manager = CryptoBox::new().unwrap();
-    let current_b64key = base64::encode(key_manager.public_key().key());
-    let next_b64key = base64::encode(key_manager.next_public_key().key());
+    let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
+    let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
 
     let pk = new_public_key(Basic::Ed25519, current_b64key)?;
     let npk = new_public_key(Basic::Ed25519, next_b64key)?;

@@ -1,16 +1,10 @@
-use crate::api::{Error, Signature, PublicKey, Digest};
-use controller::error::ControllerError;
+use crate::api::{Digest, Error, PublicKey, Signature};
 use keri::{
-    event_parsing::{attachment::attachment, Attachment},
+    event_parsing::primitives::CesrPrimitive,
     oobi::LocationScheme,
-    prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix, Prefix}, sai::SelfAddressingPrefix,
+    prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix},
+    sai::SelfAddressingPrefix,
 };
-
-pub fn parse_attachment(stream: &[u8]) -> Result<Attachment, Error> {
-    attachment(stream)
-        .map_err(|_e| Error::KelError(ControllerError::AttachmentParseError))
-        .map(|(_rest, att)| att)
-}
 
 pub fn parse_location_schemes(location_str: &str) -> Result<LocationScheme, Error> {
     serde_json::from_str::<LocationScheme>(location_str)
@@ -68,7 +62,10 @@ impl Into<BasicPrefix> for PublicKey {
 
 impl From<SelfSigningPrefix> for Signature {
     fn from(ssp: SelfSigningPrefix) -> Self {
-        Signature { derivation: ssp.get_code(), signature: ssp.derivative() }
+        Signature {
+            derivation: ssp.get_code(),
+            signature: ssp.derivative(),
+        }
     }
 }
 

@@ -12,20 +12,19 @@ pub use keri::keys::PublicKey as KeriPublicKey;
 pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
 use keri::{
     actor::{event_generator, prelude::Message},
+    event_message::cesr_adapter::EventType,
     event_parsing::{
         codes::{basic::Basic, self_signing::SelfSigning, DerivationCode},
-        message::query_message,
-        Attachment, EventType,
+        group::Group,
+        parsers::{group::parse_group, parse_payload},
+        primitives::CesrPrimitive,
     },
     oobi::{LocationScheme, Role},
-    prefix::Prefix,
     sai::{derivation::SelfAddressing, SelfAddressingPrefix},
 };
 use tokio::runtime::Runtime;
 
-use crate::utils::{
-    join_keys_and_signatures, parse_attachment, parse_location_schemes, parse_witness_prefix,
-};
+use crate::utils::{join_keys_and_signatures, parse_location_schemes, parse_witness_prefix};
 pub use controller::utils::OptionalConfig;
 use thiserror::Error;
 
@@ -70,9 +69,10 @@ pub struct PublicKey {
 }
 
 pub fn new_public_key(kt: KeyType, key_b64_url_safe: String) -> Result<PublicKey> {
-    let expected_len = kt.code_len() + kt.derivative_b64_len();
+    let expected_len = kt.code_size() + kt.value_size();
     if key_b64_url_safe.len() == expected_len {
-        let decoded_key = base64::decode_config(key_b64_url_safe, base64::URL_SAFE).map_err(|e| Error::Base64Error(e))?;
+        let decoded_key = base64::decode_config(key_b64_url_safe, base64::URL_SAFE)
+            .map_err(|e| Error::Base64Error(e))?;
         let pk = PublicKey {
             derivation: kt,
             public_key: decoded_key,
@@ -104,7 +104,7 @@ pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
 }
 
 pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
-     Signature {
+    Signature {
         derivation: st,
         signature: hex::decode(signature)
             .map_err(|e| Error::HexError(e))
@@ -180,6 +180,9 @@ pub enum Error {
 
     #[error("Can't parse oobi json: {0}")]
     OobiParseError(String),
+
+    #[error("Can't parse attachment json")]
+    AttachmentParseError,
 
     #[error("base64 decode error")]
     Base64Error(#[from] base64::DecodeError),
@@ -377,7 +380,8 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
         .ok_or(Error::ControllerInitializationError)?
         .clone();
     let identifier_controller = IdentifierController::new(identifier.into(), controller);
-    let finalize_event_future = identifier_controller.finalize_event(event.as_bytes(), signature.into());
+    let finalize_event_future =
+        identifier_controller.finalize_event(event.as_bytes(), signature.into());
     let rt = Runtime::new().unwrap();
     rt.block_on(async { finalize_event_future.await })?;
     Ok(true)
@@ -514,9 +518,10 @@ pub fn finalize_mailbox_query(
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    let query = query_message(query_event.as_bytes())
-        .map_err(|e| Error::EventParsingError(e.to_string()))?
-        .1;
+
+    let (_, query) = parse_payload::<EventType>(&query_event.as_bytes())
+        .map_err(|_e| ControllerError::EventFormatError)?;
+
     let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
 
     match query {
@@ -593,21 +598,24 @@ pub struct PublicKeySignaturePair {
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex
 pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
-    let att = parse_attachment(attachment.as_bytes())?;
+    let att = parse_group(&attachment.as_bytes())
+        .map_err(|e| Error::AttachmentParseError)?
+        .1;
 
-    let keys = if let Attachment::SealSignaturesGroups(group) = att {
+    let keys = if let Group::TransferableIndexedSigGroups(group) = att {
         let r = group
-            .iter()
-            .map(|(seal, signatures)| -> Result<Vec<_>, Error> {
+            .into_iter()
+            .map(|(id, sn, digest, sigs)| -> Result<Vec<_>, Error> {
+                let signatures = sigs.into_iter().map(|s| s.into()).collect::<Vec<_>>();
                 let current_keys = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
                     .as_ref()
                     .ok_or(Error::ControllerInitializationError)?
                     .storage
-                    .get_keys_at_event(&seal.prefix, seal.sn, &seal.event_digest)
+                    .get_keys_at_event(&(id.into()), sn, &(digest.into()))
                     .map_err(|e| Error::UtilsError(e.to_string()))?
                     .ok_or(Error::UtilsError("Can't find event of given seal".into()))?
                     .public_keys;
-                join_keys_and_signatures(current_keys, signatures)
+                join_keys_and_signatures(current_keys, &signatures)
             })
             .collect::<Result<Vec<_>, Error>>();
         Ok(r.into_iter()
