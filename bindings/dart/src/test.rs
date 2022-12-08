@@ -11,9 +11,8 @@ use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_query, get_kel, incept_group, init_kel, new_public_key, process_stream,
-    query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config, DataAndSignature,
-    Identifier,
+    finalize_query, get_kel, incept_group, init_kel, new_public_key, process_stream, query_mailbox,
+    resolve_oobi, rotate, signature_from_hex, Action, Config, DataAndSignature, Identifier,
 };
 
 #[test]

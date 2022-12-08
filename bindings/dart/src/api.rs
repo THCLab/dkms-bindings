@@ -374,6 +374,14 @@ pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<Strin
     }
 }
 
+pub fn send_oobi_to_watcher(identifier: Identifier, oobis_json: String) -> Result<bool> {
+    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .send_oobi_to_watcher(&identifier.into(), &oobis_json)?;
+    Ok(true)
+}
+
 pub fn finalize_event(identifier: Identifier, event: String, signature: Signature) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
@@ -496,18 +504,14 @@ pub fn query_mailbox(
         .collect::<Result<Vec<_>>>()
 }
 
-
-pub fn query_watchers(
-    who_ask: Identifier,
-    about_who: Identifier,
-) -> Result<Vec<String>> {
+pub fn query_watchers(who_ask: Identifier, about_who: Identifier) -> Result<Vec<String>> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
 
     let identifier_controller = IdentifierController::new(who_ask.into(), controller);
-    
+
     identifier_controller
         .query_own_watchers(&about_who.into())?
         .iter()
