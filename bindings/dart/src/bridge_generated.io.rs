@@ -169,13 +169,22 @@ pub extern "C" fn wire_query_mailbox(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_finalize_mailbox_query(
+pub extern "C" fn wire_query_watchers(
+    port_: i64,
+    who_ask: *mut wire_Identifier,
+    about_who: *mut wire_Identifier,
+) {
+    wire_query_watchers_impl(port_, who_ask, about_who)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_finalize_query(
     port_: i64,
     identifier: *mut wire_Identifier,
     query_event: *mut wire_uint_8_list,
     signature: *mut wire_Signature,
 ) {
-    wire_finalize_mailbox_query_impl(port_, identifier, query_event, signature)
+    wire_finalize_query_impl(port_, identifier, query_event, signature)
 }
 
 #[no_mangle]

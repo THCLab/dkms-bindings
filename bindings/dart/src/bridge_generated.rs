@@ -361,7 +361,25 @@ fn wire_query_mailbox_impl(
         },
     )
 }
-fn wire_finalize_mailbox_query_impl(
+fn wire_query_watchers_impl(
+    port_: MessagePort,
+    who_ask: impl Wire2Api<Identifier> + UnwindSafe,
+    about_who: impl Wire2Api<Identifier> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "query_watchers",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_who_ask = who_ask.wire2api();
+            let api_about_who = about_who.wire2api();
+            move |task_callback| query_watchers(api_who_ask, api_about_who)
+        },
+    )
+}
+fn wire_finalize_query_impl(
     port_: MessagePort,
     identifier: impl Wire2Api<Identifier> + UnwindSafe,
     query_event: impl Wire2Api<String> + UnwindSafe,
@@ -369,7 +387,7 @@ fn wire_finalize_mailbox_query_impl(
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "finalize_mailbox_query",
+            debug_name: "finalize_query",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
@@ -377,9 +395,7 @@ fn wire_finalize_mailbox_query_impl(
             let api_identifier = identifier.wire2api();
             let api_query_event = query_event.wire2api();
             let api_signature = signature.wire2api();
-            move |task_callback| {
-                finalize_query(api_identifier, api_query_event, api_signature)
-            }
+            move |task_callback| finalize_query(api_identifier, api_query_event, api_signature)
         },
     )
 }

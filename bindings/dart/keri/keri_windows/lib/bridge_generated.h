@@ -185,10 +185,14 @@ void wire_query_mailbox(int64_t port_,
                         struct wire_Identifier *about_who,
                         struct wire_StringList *witness);
 
-void wire_finalize_mailbox_query(int64_t port_,
-                                 struct wire_Identifier *identifier,
-                                 struct wire_uint_8_list *query_event,
-                                 struct wire_Signature *signature);
+void wire_query_watchers(int64_t port_,
+                         struct wire_Identifier *who_ask,
+                         struct wire_Identifier *about_who);
+
+void wire_finalize_query(int64_t port_,
+                         struct wire_Identifier *identifier,
+                         struct wire_uint_8_list *query_event,
+                         struct wire_Signature *signature);
 
 void wire_resolve_oobi(int64_t port_, struct wire_uint_8_list *oobi_json);
 
@@ -250,7 +254,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_incept_group);
     dummy_var ^= ((int64_t) (void*) wire_finalize_group_incept);
     dummy_var ^= ((int64_t) (void*) wire_query_mailbox);
-    dummy_var ^= ((int64_t) (void*) wire_finalize_mailbox_query);
+    dummy_var ^= ((int64_t) (void*) wire_query_watchers);
+    dummy_var ^= ((int64_t) (void*) wire_finalize_query);
     dummy_var ^= ((int64_t) (void*) wire_resolve_oobi);
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);

@@ -127,13 +127,18 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kQueryMailboxConstMeta;
 
-  Future<List<ActionRequired>> finalizeMailboxQuery(
+  Future<List<String>> queryWatchers(
+      {required Identifier whoAsk, required Identifier aboutWho, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kQueryWatchersConstMeta;
+
+  Future<List<ActionRequired>> finalizeQuery(
       {required Identifier identifier,
       required String queryEvent,
       required Signature signature,
       dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kFinalizeMailboxQueryConstMeta;
+  FlutterRustBridgeTaskConstMeta get kFinalizeQueryConstMeta;
 
   Future<bool> resolveOobi({required String oobiJson, dynamic hint});
 
@@ -698,26 +703,47 @@ class KeriDartImpl implements KeriDart {
         argNames: ["whoAsk", "aboutWho", "witness"],
       );
 
-  Future<List<ActionRequired>> finalizeMailboxQuery(
+  Future<List<String>> queryWatchers(
+          {required Identifier whoAsk,
+          required Identifier aboutWho,
+          dynamic hint}) =>
+      _platform.executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => _platform.inner.wire_query_watchers(
+            port_,
+            _platform.api2wire_box_autoadd_identifier(whoAsk),
+            _platform.api2wire_box_autoadd_identifier(aboutWho)),
+        parseSuccessData: _wire2api_StringList,
+        constMeta: kQueryWatchersConstMeta,
+        argValues: [whoAsk, aboutWho],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kQueryWatchersConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "query_watchers",
+        argNames: ["whoAsk", "aboutWho"],
+      );
+
+  Future<List<ActionRequired>> finalizeQuery(
           {required Identifier identifier,
           required String queryEvent,
           required Signature signature,
           dynamic hint}) =>
       _platform.executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => _platform.inner.wire_finalize_mailbox_query(
+        callFfi: (port_) => _platform.inner.wire_finalize_query(
             port_,
             _platform.api2wire_box_autoadd_identifier(identifier),
             _platform.api2wire_String(queryEvent),
             _platform.api2wire_box_autoadd_signature(signature)),
         parseSuccessData: _wire2api_list_action_required,
-        constMeta: kFinalizeMailboxQueryConstMeta,
+        constMeta: kFinalizeQueryConstMeta,
         argValues: [identifier, queryEvent, signature],
         hint: hint,
       ));
 
-  FlutterRustBridgeTaskConstMeta get kFinalizeMailboxQueryConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kFinalizeQueryConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "finalize_mailbox_query",
+        debugName: "finalize_query",
         argNames: ["identifier", "queryEvent", "signature"],
       );
 
@@ -1631,13 +1657,33 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       void Function(int, ffi.Pointer<wire_Identifier>,
           ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_StringList>)>();
 
-  void wire_finalize_mailbox_query(
+  void wire_query_watchers(
+    int port_,
+    ffi.Pointer<wire_Identifier> who_ask,
+    ffi.Pointer<wire_Identifier> about_who,
+  ) {
+    return _wire_query_watchers(
+      port_,
+      who_ask,
+      about_who,
+    );
+  }
+
+  late final _wire_query_watchersPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_Identifier>)>>('wire_query_watchers');
+  late final _wire_query_watchers = _wire_query_watchersPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_finalize_query(
     int port_,
     ffi.Pointer<wire_Identifier> identifier,
     ffi.Pointer<wire_uint_8_list> query_event,
     ffi.Pointer<wire_Signature> signature,
   ) {
-    return _wire_finalize_mailbox_query(
+    return _wire_finalize_query(
       port_,
       identifier,
       query_event,
@@ -1645,17 +1691,16 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_finalize_mailbox_queryPtr = _lookup<
+  late final _wire_finalize_queryPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
               ffi.Int64,
               ffi.Pointer<wire_Identifier>,
               ffi.Pointer<wire_uint_8_list>,
-              ffi.Pointer<wire_Signature>)>>('wire_finalize_mailbox_query');
-  late final _wire_finalize_mailbox_query =
-      _wire_finalize_mailbox_queryPtr.asFunction<
-          void Function(int, ffi.Pointer<wire_Identifier>,
-              ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
+              ffi.Pointer<wire_Signature>)>>('wire_finalize_query');
+  late final _wire_finalize_query = _wire_finalize_queryPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_Identifier>,
+          ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
 
   void wire_resolve_oobi(
     int port_,
