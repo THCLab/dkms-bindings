@@ -378,7 +378,7 @@ fn wire_finalize_mailbox_query_impl(
             let api_query_event = query_event.wire2api();
             let api_signature = signature.wire2api();
             move |task_callback| {
-                finalize_mailbox_query(api_identifier, api_query_event, api_signature)
+                finalize_query(api_identifier, api_query_event, api_signature)
             }
         },
     )

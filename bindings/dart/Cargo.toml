@@ -11,8 +11,8 @@ crate-type = ["dylib"]
 
 [dependencies]
 flutter_rust_bridge = "1"
-keri = { git = "https://github.com/THCLab/keriox.git" }
-controller = { git = "https://github.com/THCLab/keriox.git"}
+keri = { git = "https://github.com/THCLab/keriox.git", branch = "add_watcher" }
+controller = { git = "https://github.com/THCLab/keriox.git", branch = "add_watcher"}
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"

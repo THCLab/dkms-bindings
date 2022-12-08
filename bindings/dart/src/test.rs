@@ -11,7 +11,7 @@ use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_mailbox_query, get_kel, incept_group, init_kel, new_public_key, process_stream,
+    finalize_query, get_kel, incept_group, init_kel, new_public_key, process_stream,
     query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config, DataAndSignature,
     Identifier,
 };
@@ -234,7 +234,7 @@ pub fn test_multisig() -> Result<()> {
     for qry in query {
         let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
         let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-        finalize_mailbox_query(identifier.clone(), qry, signature)?;
+        finalize_query(identifier.clone(), qry, signature)?;
     }
 
     let initiator_kel = get_kel(identifier.clone())?;
@@ -270,7 +270,7 @@ pub fn test_multisig() -> Result<()> {
     for qry in query {
         let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
         let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-        finalize_mailbox_query(participant.clone(), qry, signature)?;
+        finalize_query(participant.clone(), qry, signature)?;
     }
 
     let patricipant_kel = get_kel(participant.clone())?;
@@ -324,7 +324,7 @@ pub fn test_multisig() -> Result<()> {
     let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     // here second time the same multisig icp is processed
-    let action_required = finalize_mailbox_query(participant.clone(), qry, signature)?;
+    let action_required = finalize_query(participant.clone(), qry, signature)?;
     assert_eq!((&action_required).len(), 1);
 
     let action = &action_required[0];
@@ -367,7 +367,7 @@ pub fn test_multisig() -> Result<()> {
     let qry = query[0].clone();
     let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-    let action_required = finalize_mailbox_query(identifier.clone(), qry, signature);
+    let action_required = finalize_query(identifier.clone(), qry, signature);
     assert_eq!((&action_required?).len(), 0);
 
     // Group inception should not be accepted yet. Lack of receipt.
@@ -385,7 +385,7 @@ pub fn test_multisig() -> Result<()> {
     let qry = query[0].clone();
     let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-    let action_required = finalize_mailbox_query(identifier, qry, signature);
+    let action_required = finalize_query(identifier, qry, signature);
     assert_eq!((&action_required?).len(), 0);
 
     // Group inception should be accepted now.
@@ -404,7 +404,7 @@ pub fn test_multisig() -> Result<()> {
     let qry = query[0].clone();
     let hex_signature = hex::encode(participants_key_manager.sign(qry.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-    let action_required = finalize_mailbox_query(participant, qry, signature);
+    let action_required = finalize_query(participant, qry, signature);
     assert_eq!((&action_required?).len(), 0);
 
     // Group inception should be accepted now.

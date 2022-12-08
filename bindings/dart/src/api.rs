@@ -496,6 +496,25 @@ pub fn query_mailbox(
         .collect::<Result<Vec<_>>>()
 }
 
+
+pub fn query_watchers(
+    who_ask: Identifier,
+    about_who: Identifier,
+) -> Result<Vec<String>> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+
+    let identifier_controller = IdentifierController::new(who_ask.into(), controller);
+    
+    identifier_controller
+        .query_own_watchers(&about_who.into())?
+        .iter()
+        .map(|qry| -> Result<String> { Ok(String::from_utf8(qry.serialize()?)?) })
+        .collect::<Result<Vec<_>>>()
+}
+
 #[derive(Debug)]
 pub enum Action {
     MultisigRequest,
@@ -509,7 +528,7 @@ pub struct ActionRequired {
     pub additiona_data: String,
 }
 
-pub fn finalize_mailbox_query(
+pub fn finalize_query(
     identifier: Identifier,
     query_event: String,
     signature: Signature,
@@ -527,7 +546,7 @@ pub fn finalize_mailbox_query(
     match query {
         EventType::Qry(ref qry) => {
             let finalize_qry_future =
-                identifier_controller.finalize_mailbox_query(vec![(qry.clone(), signature.into())]);
+                identifier_controller.finalize_query(vec![(qry.clone(), signature.into())]);
 
             let rt = Runtime::new().unwrap();
             let out = rt
