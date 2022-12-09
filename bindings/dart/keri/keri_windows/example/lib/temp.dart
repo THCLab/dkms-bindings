@@ -108,7 +108,7 @@ class _MyAppState extends State<MyApp> {
                   witness_id_list.add(witness_id);
                   var query = await KeriPlatformInterface.instance.queryMailbox(whoAsk: identifier, aboutWho: identifier, witness: witness_id_list);
                   var sig_query = await signer.sign(query[0]);
-                  await KeriPlatformInterface.instance.finalizeMailboxQuery(identifier: identifier, queryEvent: query[0], signature: await KeriPlatformInterface.instance.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: sig_query));
+                  await KeriPlatformInterface.instance.finalizeQuery(identifier: identifier, queryEvent: query[0], signature: await KeriPlatformInterface.instance.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: sig_query));
                   initiatorKel = await KeriPlatformInterface.instance.getKel(cont: identifier);
                   setState((){});
                   final Timer periodicTimer = Timer.periodic(

@@ -2034,6 +2034,23 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           'free_WireSyncReturnStruct');
   late final _free_WireSyncReturnStruct = _free_WireSyncReturnStructPtr
       .asFunction<void Function(WireSyncReturnStruct)>();
+
+  @override
+  void drop_dart_object(int ptr) {
+    // TODO: implement drop_dart_object
+  }
+
+  @override
+  Object get_dart_object(int ptr) {
+    // TODO: implement get_dart_object
+    throw UnimplementedError();
+  }
+
+  @override
+  int new_dart_opaque(Object obj) {
+    // TODO: implement new_dart_opaque
+    throw UnimplementedError();
+  }
 }
 
 class wire_uint_8_list extends ffi.Struct {
