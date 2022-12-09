@@ -54,6 +54,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<String> getLocalPath() async {
     final directory = await getApplicationDocumentsDirectory();
+    print(directory);
     return directory.path;
   }
 
@@ -98,16 +99,25 @@ class _MyAppState extends State<MyApp> {
                       event: icp_event,
                       signature: await KeriPlatformInterface.instance.signatureFromHex(
                           st: SignatureType.Ed25519Sha512, signature: signature));
+
+                  witness_id_list.add(witness_id);
+                  var query = await KeriPlatformInterface.instance.queryMailbox(whoAsk: identifier, aboutWho: identifier, witness: witness_id_list);
+                  print(query);
+                  var sig_query = await signer.sign(query[0]);
+                  await KeriPlatformInterface.instance.finalizeQuery(identifier: identifier, queryEvent: query[0], signature: await KeriPlatformInterface.instance.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: sig_query));
+
+                  var kel = await KeriPlatformInterface.instance.getKel(cont: identifier);
+
                   var watcher_oobi = '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://127.0.0.1:3236/"}';
+                  await KeriPlatformInterface.instance.resolveOobi(oobiJson: watcher_oobi);
                   var add_watcher_message = await KeriPlatformInterface.instance
                       .addWatcher(controller: identifier, watcherOobi: watcher_oobi);
                   print("\nController generate end role message to add witness: $add_watcher_message");
                   var watcher_sig = await signer.sign(add_watcher_message);
                   var ev = await KeriPlatformInterface.instance.finalizeEvent(identifier: identifier, event: add_watcher_message, signature: await KeriPlatformInterface.instance.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: watcher_sig));
 
-                  witness_id_list.add(witness_id);
-                  var query = await KeriPlatformInterface.instance.queryMailbox(whoAsk: identifier, aboutWho: identifier, witness: witness_id_list);
-                  var sig_query = await signer.sign(query[0]);
+                  query = await KeriPlatformInterface.instance.queryMailbox(whoAsk: identifier, aboutWho: identifier, witness: witness_id_list);
+                  sig_query = await signer.sign(query[0]);
                   await KeriPlatformInterface.instance.finalizeQuery(identifier: identifier, queryEvent: query[0], signature: await KeriPlatformInterface.instance.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: sig_query));
                   initiatorKel = await KeriPlatformInterface.instance.getKel(cont: identifier);
                   setState((){});

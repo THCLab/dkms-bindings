@@ -4,6 +4,7 @@ import 'package:keri_platform_interface/keri_platform_interface.dart';
 import 'package:keri_platform_interface/bridge_generated.dart';
 import 'dart:ffi';
 import 'exceptions.dart';
+export 'exceptions.dart';
 import 'dart:io';
 
 class KeriWindows extends KeriPlatformInterface {
@@ -566,8 +567,8 @@ class KeriWindows extends KeriPlatformInterface {
       {required Identifier identifier,
         required String queryEvent,
         required Signature signature,
-        dynamic hint}) {
-    throw UnimplementedError('finalizeQuery() has not been implemented.');
+        dynamic hint}) async{
+    return await api.finalizeQuery(identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
 
 }
