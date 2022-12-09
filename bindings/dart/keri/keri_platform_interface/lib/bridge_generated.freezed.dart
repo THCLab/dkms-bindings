@@ -31,15 +31,15 @@ mixin _$DigestType {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -71,15 +71,15 @@ mixin _$DigestType {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -102,16 +102,18 @@ mixin _$DigestType {
 abstract class $DigestTypeCopyWith<$Res> {
   factory $DigestTypeCopyWith(
           DigestType value, $Res Function(DigestType) then) =
-      _$DigestTypeCopyWithImpl<$Res>;
+      _$DigestTypeCopyWithImpl<$Res, DigestType>;
 }
 
 /// @nodoc
-class _$DigestTypeCopyWithImpl<$Res> implements $DigestTypeCopyWith<$Res> {
+class _$DigestTypeCopyWithImpl<$Res, $Val extends DigestType>
+    implements $DigestTypeCopyWith<$Res> {
   _$DigestTypeCopyWithImpl(this._value, this._then);
 
-  final DigestType _value;
   // ignore: unused_field
-  final $Res Function(DigestType) _then;
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 }
 
 /// @nodoc
@@ -123,14 +125,11 @@ abstract class _$$DigestType_Blake3_256CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_Blake3_256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake3_256>
     implements _$$DigestType_Blake3_256CopyWith<$Res> {
   __$$DigestType_Blake3_256CopyWithImpl(_$DigestType_Blake3_256 _value,
       $Res Function(_$DigestType_Blake3_256) _then)
-      : super(_value, (v) => _then(v as _$DigestType_Blake3_256));
-
-  @override
-  _$DigestType_Blake3_256 get _value => super._value as _$DigestType_Blake3_256;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -171,15 +170,15 @@ class _$DigestType_Blake3_256 implements DigestType_Blake3_256 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return blake3256?.call();
   }
@@ -223,15 +222,15 @@ class _$DigestType_Blake3_256 implements DigestType_Blake3_256 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return blake3256?.call(this);
   }
@@ -270,14 +269,11 @@ abstract class _$$DigestType_SHA3_256CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_SHA3_256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA3_256>
     implements _$$DigestType_SHA3_256CopyWith<$Res> {
   __$$DigestType_SHA3_256CopyWithImpl(
       _$DigestType_SHA3_256 _value, $Res Function(_$DigestType_SHA3_256) _then)
-      : super(_value, (v) => _then(v as _$DigestType_SHA3_256));
-
-  @override
-  _$DigestType_SHA3_256 get _value => super._value as _$DigestType_SHA3_256;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -318,15 +314,15 @@ class _$DigestType_SHA3_256 implements DigestType_SHA3_256 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return sha3256?.call();
   }
@@ -370,15 +366,15 @@ class _$DigestType_SHA3_256 implements DigestType_SHA3_256 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return sha3256?.call(this);
   }
@@ -417,14 +413,11 @@ abstract class _$$DigestType_SHA2_256CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_SHA2_256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA2_256>
     implements _$$DigestType_SHA2_256CopyWith<$Res> {
   __$$DigestType_SHA2_256CopyWithImpl(
       _$DigestType_SHA2_256 _value, $Res Function(_$DigestType_SHA2_256) _then)
-      : super(_value, (v) => _then(v as _$DigestType_SHA2_256));
-
-  @override
-  _$DigestType_SHA2_256 get _value => super._value as _$DigestType_SHA2_256;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -465,15 +458,15 @@ class _$DigestType_SHA2_256 implements DigestType_SHA2_256 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return sha2256?.call();
   }
@@ -517,15 +510,15 @@ class _$DigestType_SHA2_256 implements DigestType_SHA2_256 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return sha2256?.call(this);
   }
@@ -564,14 +557,11 @@ abstract class _$$DigestType_Blake3_512CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_Blake3_512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake3_512>
     implements _$$DigestType_Blake3_512CopyWith<$Res> {
   __$$DigestType_Blake3_512CopyWithImpl(_$DigestType_Blake3_512 _value,
       $Res Function(_$DigestType_Blake3_512) _then)
-      : super(_value, (v) => _then(v as _$DigestType_Blake3_512));
-
-  @override
-  _$DigestType_Blake3_512 get _value => super._value as _$DigestType_Blake3_512;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -612,15 +602,15 @@ class _$DigestType_Blake3_512 implements DigestType_Blake3_512 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return blake3512?.call();
   }
@@ -664,15 +654,15 @@ class _$DigestType_Blake3_512 implements DigestType_Blake3_512 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return blake3512?.call(this);
   }
@@ -711,14 +701,11 @@ abstract class _$$DigestType_SHA3_512CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_SHA3_512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA3_512>
     implements _$$DigestType_SHA3_512CopyWith<$Res> {
   __$$DigestType_SHA3_512CopyWithImpl(
       _$DigestType_SHA3_512 _value, $Res Function(_$DigestType_SHA3_512) _then)
-      : super(_value, (v) => _then(v as _$DigestType_SHA3_512));
-
-  @override
-  _$DigestType_SHA3_512 get _value => super._value as _$DigestType_SHA3_512;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -759,15 +746,15 @@ class _$DigestType_SHA3_512 implements DigestType_SHA3_512 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return sha3512?.call();
   }
@@ -811,15 +798,15 @@ class _$DigestType_SHA3_512 implements DigestType_SHA3_512 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return sha3512?.call(this);
   }
@@ -858,14 +845,11 @@ abstract class _$$DigestType_Blake2B512CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_Blake2B512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2B512>
     implements _$$DigestType_Blake2B512CopyWith<$Res> {
   __$$DigestType_Blake2B512CopyWithImpl(_$DigestType_Blake2B512 _value,
       $Res Function(_$DigestType_Blake2B512) _then)
-      : super(_value, (v) => _then(v as _$DigestType_Blake2B512));
-
-  @override
-  _$DigestType_Blake2B512 get _value => super._value as _$DigestType_Blake2B512;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -906,15 +890,15 @@ class _$DigestType_Blake2B512 implements DigestType_Blake2B512 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return blake2B512?.call();
   }
@@ -958,15 +942,15 @@ class _$DigestType_Blake2B512 implements DigestType_Blake2B512 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return blake2B512?.call(this);
   }
@@ -1005,14 +989,11 @@ abstract class _$$DigestType_SHA2_512CopyWith<$Res> {
 
 /// @nodoc
 class __$$DigestType_SHA2_512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA2_512>
     implements _$$DigestType_SHA2_512CopyWith<$Res> {
   __$$DigestType_SHA2_512CopyWithImpl(
       _$DigestType_SHA2_512 _value, $Res Function(_$DigestType_SHA2_512) _then)
-      : super(_value, (v) => _then(v as _$DigestType_SHA2_512));
-
-  @override
-  _$DigestType_SHA2_512 get _value => super._value as _$DigestType_SHA2_512;
+      : super(_value, _then);
 }
 
 /// @nodoc
@@ -1053,15 +1034,15 @@ class _$DigestType_SHA2_512 implements DigestType_SHA2_512 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return sha2512?.call();
   }
@@ -1105,15 +1086,15 @@ class _$DigestType_SHA2_512 implements DigestType_SHA2_512 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return sha2512?.call(this);
   }
@@ -1148,26 +1129,25 @@ abstract class _$$DigestType_Blake2B256CopyWith<$Res> {
   factory _$$DigestType_Blake2B256CopyWith(_$DigestType_Blake2B256 value,
           $Res Function(_$DigestType_Blake2B256) then) =
       __$$DigestType_Blake2B256CopyWithImpl<$Res>;
+  @useResult
   $Res call({Uint8List field0});
 }
 
 /// @nodoc
 class __$$DigestType_Blake2B256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2B256>
     implements _$$DigestType_Blake2B256CopyWith<$Res> {
   __$$DigestType_Blake2B256CopyWithImpl(_$DigestType_Blake2B256 _value,
       $Res Function(_$DigestType_Blake2B256) _then)
-      : super(_value, (v) => _then(v as _$DigestType_Blake2B256));
+      : super(_value, _then);
 
-  @override
-  _$DigestType_Blake2B256 get _value => super._value as _$DigestType_Blake2B256;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? field0 = freezed,
+    Object? field0 = null,
   }) {
     return _then(_$DigestType_Blake2B256(
-      field0 == freezed
+      null == field0
           ? _value.field0
           : field0 // ignore: cast_nullable_to_non_nullable
               as Uint8List,
@@ -1202,6 +1182,7 @@ class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$DigestType_Blake2B256CopyWith<_$DigestType_Blake2B256> get copyWith =>
       __$$DigestType_Blake2B256CopyWithImpl<_$DigestType_Blake2B256>(
           this, _$identity);
@@ -1225,15 +1206,15 @@ class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return blake2B256?.call(field0);
   }
@@ -1277,15 +1258,15 @@ class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return blake2B256?.call(this);
   }
@@ -1326,26 +1307,25 @@ abstract class _$$DigestType_Blake2S256CopyWith<$Res> {
   factory _$$DigestType_Blake2S256CopyWith(_$DigestType_Blake2S256 value,
           $Res Function(_$DigestType_Blake2S256) then) =
       __$$DigestType_Blake2S256CopyWithImpl<$Res>;
+  @useResult
   $Res call({Uint8List field0});
 }
 
 /// @nodoc
 class __$$DigestType_Blake2S256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2S256>
     implements _$$DigestType_Blake2S256CopyWith<$Res> {
   __$$DigestType_Blake2S256CopyWithImpl(_$DigestType_Blake2S256 _value,
       $Res Function(_$DigestType_Blake2S256) _then)
-      : super(_value, (v) => _then(v as _$DigestType_Blake2S256));
+      : super(_value, _then);
 
-  @override
-  _$DigestType_Blake2S256 get _value => super._value as _$DigestType_Blake2S256;
-
+  @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? field0 = freezed,
+    Object? field0 = null,
   }) {
     return _then(_$DigestType_Blake2S256(
-      field0 == freezed
+      null == field0
           ? _value.field0
           : field0 // ignore: cast_nullable_to_non_nullable
               as Uint8List,
@@ -1380,6 +1360,7 @@ class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
 
   @JsonKey(ignore: true)
   @override
+  @pragma('vm:prefer-inline')
   _$$DigestType_Blake2S256CopyWith<_$DigestType_Blake2S256> get copyWith =>
       __$$DigestType_Blake2S256CopyWithImpl<_$DigestType_Blake2S256>(
           this, _$identity);
@@ -1403,15 +1384,15 @@ class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult Function()? blake3256,
-    TResult Function()? sha3256,
-    TResult Function()? sha2256,
-    TResult Function()? blake3512,
-    TResult Function()? sha3512,
-    TResult Function()? blake2B512,
-    TResult Function()? sha2512,
-    TResult Function(Uint8List field0)? blake2B256,
-    TResult Function(Uint8List field0)? blake2S256,
+    TResult? Function()? blake3256,
+    TResult? Function()? sha3256,
+    TResult? Function()? sha2256,
+    TResult? Function()? blake3512,
+    TResult? Function()? sha3512,
+    TResult? Function()? blake2B512,
+    TResult? Function()? sha2512,
+    TResult? Function(Uint8List field0)? blake2B256,
+    TResult? Function(Uint8List field0)? blake2S256,
   }) {
     return blake2S256?.call(field0);
   }
@@ -1455,15 +1436,15 @@ class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult Function(DigestType_Blake3_256 value)? blake3256,
-    TResult Function(DigestType_SHA3_256 value)? sha3256,
-    TResult Function(DigestType_SHA2_256 value)? sha2256,
-    TResult Function(DigestType_Blake3_512 value)? blake3512,
-    TResult Function(DigestType_SHA3_512 value)? sha3512,
-    TResult Function(DigestType_Blake2B512 value)? blake2B512,
-    TResult Function(DigestType_SHA2_512 value)? sha2512,
-    TResult Function(DigestType_Blake2B256 value)? blake2B256,
-    TResult Function(DigestType_Blake2S256 value)? blake2S256,
+    TResult? Function(DigestType_Blake3_256 value)? blake3256,
+    TResult? Function(DigestType_SHA3_256 value)? sha3256,
+    TResult? Function(DigestType_SHA2_256 value)? sha2256,
+    TResult? Function(DigestType_Blake3_512 value)? blake3512,
+    TResult? Function(DigestType_SHA3_512 value)? sha3512,
+    TResult? Function(DigestType_Blake2B512 value)? blake2B512,
+    TResult? Function(DigestType_SHA2_512 value)? sha2512,
+    TResult? Function(DigestType_Blake2B256 value)? blake2B256,
+    TResult? Function(DigestType_Blake2S256 value)? blake2S256,
   }) {
     return blake2S256?.call(this);
   }

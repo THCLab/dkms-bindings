@@ -1,6 +1,6 @@
 name: keri_platform_interface
 description: A common platform interface for the Keri plugin.
-version: 0.0.4
+version: 0.0.5
 repository: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri
 
 environment:
@@ -8,6 +8,8 @@ environment:
   flutter: ">=2.5.0"
 
 dependencies:
+  build_runner: ^2.3.2
+  ffi: ^2.0.1
   flutter:
     sdk: flutter
   flutter_rust_bridge: ^1.49.2
@@ -20,5 +22,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  ffigen: ^6.0.1
 
 

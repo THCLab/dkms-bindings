@@ -260,6 +260,24 @@ fn wire_add_watcher_impl(
         },
     )
 }
+fn wire_send_oobi_to_watcher_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    oobis_json: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "send_oobi_to_watcher",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_oobis_json = oobis_json.wire2api();
+            move |task_callback| send_oobi_to_watcher(api_identifier, api_oobis_json)
+        },
+    )
+}
 fn wire_finalize_event_impl(
     port_: MessagePort,
     identifier: impl Wire2Api<Identifier> + UnwindSafe,

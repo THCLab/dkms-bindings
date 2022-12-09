@@ -181,6 +181,7 @@ class KeriWindows extends KeriPlatformInterface {
   }
 
   ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
+  @override
   Future<String> addWatcher(
       {required Identifier controller,
       required String watcherOobi,

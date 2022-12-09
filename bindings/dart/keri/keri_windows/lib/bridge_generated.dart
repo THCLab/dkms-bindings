@@ -92,6 +92,13 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kAddWatcherConstMeta;
 
+  Future<bool> sendOobiToWatcher(
+      {required Identifier identifier,
+      required String oobisJson,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSendOobiToWatcherConstMeta;
+
   Future<bool> finalizeEvent(
       {required Identifier identifier,
       required String event,
@@ -591,6 +598,27 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "add_watcher",
         argNames: ["identifier", "watcherOobi"],
+      );
+
+  Future<bool> sendOobiToWatcher(
+          {required Identifier identifier,
+          required String oobisJson,
+          dynamic hint}) =>
+      _platform.executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => _platform.inner.wire_send_oobi_to_watcher(
+            port_,
+            _platform.api2wire_box_autoadd_identifier(identifier),
+            _platform.api2wire_String(oobisJson)),
+        parseSuccessData: _wire2api_bool,
+        constMeta: kSendOobiToWatcherConstMeta,
+        argValues: [identifier, oobisJson],
+        hint: hint,
+      ));
+
+  FlutterRustBridgeTaskConstMeta get kSendOobiToWatcherConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "send_oobi_to_watcher",
+        argNames: ["identifier", "oobisJson"],
       );
 
   Future<bool> finalizeEvent(
@@ -1536,6 +1564,27 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_add_watcher = _wire_add_watcherPtr.asFunction<
       void Function(
           int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_send_oobi_to_watcher(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> oobis_json,
+  ) {
+    return _wire_send_oobi_to_watcher(
+      port_,
+      identifier,
+      oobis_json,
+    );
+  }
+
+  late final _wire_send_oobi_to_watcherPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_send_oobi_to_watcher');
+  late final _wire_send_oobi_to_watcher =
+      _wire_send_oobi_to_watcherPtr.asFunction<
+          void Function(int, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_finalize_event(
     int port_,

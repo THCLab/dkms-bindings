@@ -13,3 +13,7 @@ Dependency change
 ## 0.0.4
 
 Added new functions
+
+## 0.0.5
+
+Added `sendOobiToWatcher`, `finalizeQuery` instead of `finalizeMailboxQuery` and `queryWatchers`

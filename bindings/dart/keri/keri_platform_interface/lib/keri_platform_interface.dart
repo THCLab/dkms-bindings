@@ -122,15 +122,6 @@ abstract class KeriPlatformInterface extends PlatformInterface {
     throw UnimplementedError('queryMailbox() has not been implemented.');
   }
 
-  Future<List<ActionRequired>> finalizeMailboxQuery(
-      {required Identifier identifier,
-      required String queryEvent,
-      required Signature signature,
-      dynamic hint}) async {
-    throw UnimplementedError(
-        'finalizeMailboxQuery() has not been implemented.');
-  }
-
   Future<Signature> signatureFromHex(
       {required SignatureType st,
       required String signature,
@@ -175,5 +166,27 @@ abstract class KeriPlatformInterface extends PlatformInterface {
 
   Future<void> processStream({required String stream, dynamic hint}) async {
     throw UnimplementedError('processStream() has not been implemented.');
+  }
+
+  Future<bool> sendOobiToWatcher(
+      {required Identifier identifier,
+      required String oobisJson,
+      dynamic hint}) {
+    throw UnimplementedError('sendOobiToWatcher() has not been implemented.');
+  }
+
+  Future<List<String>> queryWatchers(
+      {required Identifier whoAsk,
+      required Identifier aboutWho,
+      dynamic hint}) {
+    throw UnimplementedError('queryWatchers() has not been implemented.');
+  }
+
+  Future<List<ActionRequired>> finalizeQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) {
+    throw UnimplementedError('finalizeQuery() has not been implemented.');
   }
 }

@@ -119,6 +119,15 @@ pub extern "C" fn wire_add_watcher(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_send_oobi_to_watcher(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    oobis_json: *mut wire_uint_8_list,
+) {
+    wire_send_oobi_to_watcher_impl(port_, identifier, oobis_json)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_finalize_event(
     port_: i64,
     identifier: *mut wire_Identifier,

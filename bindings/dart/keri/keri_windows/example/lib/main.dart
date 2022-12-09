@@ -143,6 +143,10 @@ class _MyAppState extends State<MyApp> {
                                           st: SignatureType.Ed25519Sha512,
                                           signature: signature));
                           controllerId = controller.id;
+                          var watcher_oobi = '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://127.0.0.1:3236/"}';
+                          var add_watcher_message = await KeriPlatformInterface.instance
+                              .addWatcher(controller: controller, watcherOobi: watcher_oobi);
+                          print("\nController generate end role message to add witness: $add_watcher_message");
                           setState(() {});
                         },
                         child: const Text('Finalize Inception'),
