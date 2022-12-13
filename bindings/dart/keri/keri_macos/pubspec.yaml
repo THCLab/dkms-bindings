@@ -1,6 +1,6 @@
 name: keri_macos
 description: Keri plugin implementation for MacOS.
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri_macos
 
 environment:
@@ -14,7 +14,7 @@ dependencies:
   flutter_rust_bridge: ^1.49.2
   freezed: ^2.1.0+1
   freezed_annotation: ^2.2.0
-  keri_platform_interface: ^0.0.2
+  keri_platform_interface: ^0.0.5
   meta: ^1.7.0
   ffi: ^2.0.1
   build_runner: ^2.3.2
