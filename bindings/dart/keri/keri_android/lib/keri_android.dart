@@ -440,28 +440,6 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
-  //ToDo
-  Future<List<ActionRequired>> finalizeMailboxQuery(
-      {required Identifier identifier,
-      required String queryEvent,
-      required Signature signature,
-      dynamic hint}) async {
-    try {
-      return await api.finalizeMailboxQuery(
-          identifier: identifier, queryEvent: queryEvent, signature: signature);
-    } on FfiException catch (e) {
-      if (e.message.contains('Can\'t parse event')) {
-        throw WrongEventException(
-            'Provided string is not a correct query event. Check the string once again.');
-      }
-      if (e.message.contains('Transport error: invalid response')) {
-        throw SignatureVerificationException(
-            'Signature verification failed - event signature does not match event keys.');
-      }
-      rethrow;
-    }
-  }
-
   Future<Signature> signatureFromHex(
       {required SignatureType st,
       required String signature,
@@ -544,7 +522,7 @@ class KeriAndroid extends KeriPlatformInterface {
   Future<PublicKey> newPublicKey(
       {required KeyType kt, required String keyB64, dynamic hint}) async {
     try {
-      return await api.newPublicKey(kt: kt, keyB64: keyB64);
+      return await api.newPublicKey(kt: kt, keyB64UrlSafe: keyB64);
     } on FfiException catch (e) {
       if (e.message.contains('wrong key length')) {
         throw IncorrectKeyFormatException(
@@ -561,5 +539,29 @@ class KeriAndroid extends KeriPlatformInterface {
   }) async {
     return await api.newStaticMethodDataAndSignature(
         data: data, signature: signature);
+  }
+
+  Future<bool> sendOobiToWatcher(
+      {required Identifier identifier,
+      required String oobisJson,
+      dynamic hint}) async {
+    return await api.sendOobiToWatcher(
+        identifier: identifier, oobisJson: oobisJson);
+  }
+
+  Future<List<String>> queryWatchers(
+      {required Identifier whoAsk,
+      required Identifier aboutWho,
+      dynamic hint}) async {
+    return await api.queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
+  }
+
+  Future<List<ActionRequired>> finalizeQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.finalizeQuery(
+        identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
 }

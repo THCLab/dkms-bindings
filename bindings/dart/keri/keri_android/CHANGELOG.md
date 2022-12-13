@@ -21,3 +21,7 @@ Key base64 fix
 ## 0.0.6
 
 New jniLibs
+
+## 0.0.7
+
+Aligned with `keri_platform_interface` 0.0.5
