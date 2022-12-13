@@ -70,7 +70,7 @@ class _MyAppState extends State<MyApp> {
                       nextKey = await signer.getNextPubKey();
                       vec1.add(await KeriPlatformInterface.instance
                           .newPublicKey(
-                          kt: KeyType.Ed25519, keyB64: currentKey));
+                              kt: KeyType.Ed25519, keyB64: currentKey));
                       vec2.add(await KeriPlatformInterface.instance
                           .newPublicKey(kt: KeyType.Ed25519, keyB64: nextKey));
                       setState(() {});
@@ -81,237 +81,237 @@ class _MyAppState extends State<MyApp> {
                         side: BorderSide(width: 1))),
                 currentKey.isNotEmpty
                     ? Text(
-                  "Public keys",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Public keys",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 Text(currentKey),
                 Text(nextKey),
                 currentKey.isNotEmpty ? const Divider() : Container(),
                 currentKey.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      icpEvent = await KeriPlatformInterface.instance
-                          .incept(
-                          publicKeys: vec1,
-                          nextPubKeys: vec2,
-                          witnesses: vec3,
-                          witnessThreshold: 0);
-                      setState(() {});
-                    },
-                    child: const Text('Incept'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          icpEvent = await KeriPlatformInterface.instance
+                              .incept(
+                                  publicKeys: vec1,
+                                  nextPubKeys: vec2,
+                                  witnesses: vec3,
+                                  witnessThreshold: 0);
+                          setState(() {});
+                        },
+                        child: const Text('Incept'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 icpEvent.isNotEmpty
                     ? Text(
-                  "ICP event",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "ICP event",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 icpEvent.isNotEmpty ? Text(icpEvent) : Container(),
                 icpEvent.isNotEmpty ? const Divider() : Container(),
                 icpEvent.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      signature = await signer.sign(icpEvent);
-                      setState(() {});
-                    },
-                    child: const Text('Sign event'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          signature = await signer.sign(icpEvent);
+                          setState(() {});
+                        },
+                        child: const Text('Sign event'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 signature.isNotEmpty
                     ? Text(
-                  "Signature",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Signature",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 signature.isNotEmpty ? Text(signature) : Container(),
                 signature.isNotEmpty ? const Divider() : Container(),
                 signature.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      controller = await KeriPlatformInterface.instance
-                          .finalizeInception(
-                          event: icpEvent,
-                          signature: await KeriPlatformInterface
-                              .instance
-                              .signatureFromHex(
-                              st: SignatureType.Ed25519Sha512,
-                              signature: signature));
-                      controllerId = controller.id;
-                      setState(() {});
-                    },
-                    child: const Text('Finalize Inception'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          controller = await KeriPlatformInterface.instance
+                              .finalizeInception(
+                                  event: icpEvent,
+                                  signature: await KeriPlatformInterface
+                                      .instance
+                                      .signatureFromHex(
+                                          st: SignatureType.Ed25519Sha512,
+                                          signature: signature));
+                          controllerId = controller.id;
+                          setState(() {});
+                        },
+                        child: const Text('Finalize Inception'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 controllerId.isNotEmpty
                     ? Text(
-                  "Controller identifier",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Controller identifier",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 controllerId.isNotEmpty ? Text(controllerId) : Container(),
                 controllerId.isNotEmpty ? const Divider() : Container(),
                 controllerId.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      await signer.rotateForEd25519();
-                      currentKey = await signer.getCurrentPubKey();
-                      nextKey = await signer.getNextPubKey();
-                      currentKeys.add(await KeriPlatformInterface.instance
-                          .newPublicKey(
-                          kt: KeyType.Ed25519, keyB64: currentKey));
-                      newNextKeys.add(await KeriPlatformInterface.instance
-                          .newPublicKey(
-                          kt: KeyType.Ed25519, keyB64: nextKey));
-                      rotationEvent = await KeriPlatformInterface.instance
-                          .rotate(
-                          controller: controller,
-                          currentKeys: currentKeys,
-                          newNextKeys: newNextKeys,
-                          witnessToAdd: [],
-                          witnessToRemove: [],
-                          witnessThreshold: 0);
-                      setState(() {});
-                    },
-                    child: const Text('Rotate'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          await signer.rotateForEd25519();
+                          currentKey = await signer.getCurrentPubKey();
+                          nextKey = await signer.getNextPubKey();
+                          currentKeys.add(await KeriPlatformInterface.instance
+                              .newPublicKey(
+                                  kt: KeyType.Ed25519, keyB64: currentKey));
+                          newNextKeys.add(await KeriPlatformInterface.instance
+                              .newPublicKey(
+                                  kt: KeyType.Ed25519, keyB64: nextKey));
+                          rotationEvent = await KeriPlatformInterface.instance
+                              .rotate(
+                                  controller: controller,
+                                  currentKeys: currentKeys,
+                                  newNextKeys: newNextKeys,
+                                  witnessToAdd: [],
+                                  witnessToRemove: [],
+                                  witnessThreshold: 0);
+                          setState(() {});
+                        },
+                        child: const Text('Rotate'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 rotationEvent.isNotEmpty
                     ? Text(
-                  "Rotation event",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Rotation event",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 rotationEvent.isNotEmpty ? Text(rotationEvent) : Container(),
                 rotationEvent.isNotEmpty ? const Divider() : Container(),
                 rotationEvent.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      signature2 = await signer.sign(rotationEvent);
-                      setState(() {});
-                    },
-                    child: const Text('Sign event'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          signature2 = await signer.sign(rotationEvent);
+                          setState(() {});
+                        },
+                        child: const Text('Sign event'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 signature2.isNotEmpty
                     ? Text(
-                  "Signature",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Signature",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 signature2.isNotEmpty ? Text(signature2) : Container(),
                 signature2.isNotEmpty ? const Divider() : Container(),
                 signature2.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      finalizedEvent = await KeriPlatformInterface.instance
-                          .finalizeEvent(
-                          identifier: controller,
-                          event: rotationEvent,
-                          signature: await KeriPlatformInterface
-                              .instance
-                              .signatureFromHex(
-                              st: SignatureType.Ed25519Sha512,
-                              signature: signature2));
-                      setState(() {});
-                    },
-                    child: const Text('Finalize event'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          finalizedEvent = await KeriPlatformInterface.instance
+                              .finalizeEvent(
+                                  identifier: controller,
+                                  event: rotationEvent,
+                                  signature: await KeriPlatformInterface
+                                      .instance
+                                      .signatureFromHex(
+                                          st: SignatureType.Ed25519Sha512,
+                                          signature: signature2));
+                          setState(() {});
+                        },
+                        child: const Text('Finalize event'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 finalizedEvent
                     ? Text(
-                  "Rotation event finalized",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Rotation event finalized",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 finalizedEvent ? const Divider() : Container(),
                 finalizedEvent
                     ? Text(
-                  "Data for anchor",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Data for anchor",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 finalizedEvent ? Text(dataForAnchor) : Container(),
                 finalizedEvent ? const Divider() : Container(),
                 finalizedEvent
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      anchorEvent = await KeriPlatformInterface.instance
-                          .anchor(
-                          controller: controller,
-                          data: dataForAnchor,
-                          algo: DigestType.blake3256());
-                      setState(() {});
-                    },
-                    child: const Text('Anchor'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          anchorEvent = await KeriPlatformInterface.instance
+                              .anchor(
+                                  controller: controller,
+                                  data: dataForAnchor,
+                                  algo: DigestType.blake3256());
+                          setState(() {});
+                        },
+                        child: const Text('Anchor'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 anchorEvent.isNotEmpty
                     ? Text(
-                  "Anchor event",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Anchor event",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 anchorEvent.isNotEmpty ? Text(anchorEvent) : Container(),
                 anchorEvent.isNotEmpty ? const Divider() : Container(),
                 anchorEvent.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      signature3 = await signer.sign(anchorEvent);
-                      setState(() {});
-                    },
-                    child: const Text('Sign event'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          signature3 = await signer.sign(anchorEvent);
+                          setState(() {});
+                        },
+                        child: const Text('Sign event'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 signature3.isNotEmpty
                     ? Text(
-                  "Signature",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Signature",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 signature3.isNotEmpty ? Text(signature3) : Container(),
                 signature3.isNotEmpty ? const Divider() : Container(),
                 signature3.isNotEmpty
                     ? RawMaterialButton(
-                    onPressed: () async {
-                      finalizedAnchor = await KeriPlatformInterface.instance
-                          .finalizeEvent(
-                          identifier: controller,
-                          event: anchorEvent,
-                          signature: await KeriPlatformInterface
-                              .instance
-                              .signatureFromHex(
-                              st: SignatureType.Ed25519Sha512,
-                              signature: signature3));
-                      setState(() {});
-                    },
-                    child: const Text('Finalize event'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                        side: BorderSide(width: 1)))
+                        onPressed: () async {
+                          finalizedAnchor = await KeriPlatformInterface.instance
+                              .finalizeEvent(
+                                  identifier: controller,
+                                  event: anchorEvent,
+                                  signature: await KeriPlatformInterface
+                                      .instance
+                                      .signatureFromHex(
+                                          st: SignatureType.Ed25519Sha512,
+                                          signature: signature3));
+                          setState(() {});
+                        },
+                        child: const Text('Finalize event'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                            side: BorderSide(width: 1)))
                     : Container(),
                 finalizedAnchor
                     ? Text(
-                  "Anchor event finalized",
-                  style: TextStyle(color: Colors.green),
-                )
+                        "Anchor event finalized",
+                        style: TextStyle(color: Colors.green),
+                      )
                     : Container(),
                 finalizedAnchor ? const Divider() : Container(),
               ],

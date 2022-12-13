@@ -7,7 +7,7 @@ import 'dart:ffi';
 //import 'bridge_generated.dart';
 import 'exceptions.dart';
 
-class KeriIos extends KeriPlatformInterface{
+class KeriIos extends KeriPlatformInterface {
   static const base = 'rust_part';
   static final dylib = DynamicLibrary.process();
   static final api = KeriDartImpl(dylib);
@@ -21,8 +21,8 @@ class KeriIos extends KeriPlatformInterface{
   @override
   Future<bool> initKel(
       {required String inputAppDir,
-        Config? optionalConfigs,
-        dynamic hint}) async {
+      Config? optionalConfigs,
+      dynamic hint}) async {
     if (optionalConfigs != null) {
       try {
         return await api.initKel(
@@ -59,10 +59,10 @@ class KeriIos extends KeriPlatformInterface{
   @override
   Future<String> incept(
       {required List<PublicKey> publicKeys,
-        required List<PublicKey> nextPubKeys,
-        required List<String> witnesses,
-        required int witnessThreshold,
-        dynamic hint}) async {
+      required List<PublicKey> nextPubKeys,
+      required List<String> witnesses,
+      required int witnessThreshold,
+      dynamic hint}) async {
     try {
       return await api.incept(
           publicKeys: publicKeys,
@@ -97,8 +97,8 @@ class KeriIos extends KeriPlatformInterface{
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
   Future<Identifier> finalizeInception(
       {required String event,
-        required Signature signature,
-        dynamic hint}) async {
+      required Signature signature,
+      dynamic hint}) async {
     try {
       return await api.finalizeInception(event: event, signature: signature);
     } on FfiException catch (e) {
@@ -125,12 +125,12 @@ class KeriIos extends KeriPlatformInterface{
   ///Creates rotation event that needs to be signed externally.
   Future<String> rotate(
       {required Identifier controller,
-        required List<PublicKey> currentKeys,
-        required List<PublicKey> newNextKeys,
-        required List<String> witnessToAdd,
-        required List<String> witnessToRemove,
-        required int witnessThreshold,
-        dynamic hint}) async {
+      required List<PublicKey> currentKeys,
+      required List<PublicKey> newNextKeys,
+      required List<String> witnessToAdd,
+      required List<String> witnessToRemove,
+      required int witnessThreshold,
+      dynamic hint}) async {
     try {
       return await api.rotate(
           identifier: controller,
@@ -175,8 +175,8 @@ class KeriIos extends KeriPlatformInterface{
   ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
   Future<String> addWatcher(
       {required Identifier controller,
-        required String watcherOobi,
-        dynamic hint}) async {
+      required String watcherOobi,
+      dynamic hint}) async {
     try {
       return await api.addWatcher(
           identifier: controller, watcherOobi: watcherOobi);
@@ -208,9 +208,9 @@ class KeriIos extends KeriPlatformInterface{
   ///Verifies provided signatures against event and saves it.
   Future<bool> finalizeEvent(
       {required Identifier identifier,
-        required String event,
-        required Signature signature,
-        dynamic hint}) async {
+      required String event,
+      required Signature signature,
+      dynamic hint}) async {
     try {
       return await api.finalizeEvent(
           identifier: identifier, event: event, signature: signature);
@@ -347,8 +347,8 @@ class KeriIos extends KeriPlatformInterface{
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
   Future<String> anchorDigest(
       {required Identifier controller,
-        required List<String> sais,
-        dynamic hint}) async {
+      required List<String> sais,
+      dynamic hint}) async {
     try {
       return await api.anchorDigest(identifier: controller, sais: sais);
     } on FfiException catch (e) {
@@ -379,9 +379,9 @@ class KeriIos extends KeriPlatformInterface{
   ///Creates new Interaction Event along with arbitrary data.
   Future<String> anchor(
       {required Identifier controller,
-        required String data,
-        required DigestType algo,
-        dynamic hint}) async {
+      required String data,
+      required DigestType algo,
+      dynamic hint}) async {
     try {
       return await api.anchor(identifier: controller, data: data, algo: algo);
     } on FfiException catch (e) {
@@ -421,9 +421,9 @@ class KeriIos extends KeriPlatformInterface{
   //ToDo
   Future<List<String>> queryMailbox(
       {required Identifier whoAsk,
-        required Identifier aboutWho,
-        required List<String> witness,
-        dynamic hint}) async {
+      required Identifier aboutWho,
+      required List<String> witness,
+      dynamic hint}) async {
     try {
       return await api.queryMailbox(
           whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
@@ -440,32 +440,10 @@ class KeriIos extends KeriPlatformInterface{
     }
   }
 
-  //ToDo
-  Future<List<ActionRequired>> finalizeMailboxQuery(
-      {required Identifier identifier,
-        required String queryEvent,
-        required Signature signature,
-        dynamic hint}) async {
-    try {
-      return await api.finalizeMailboxQuery(
-          identifier: identifier, queryEvent: queryEvent, signature: signature);
-    } on FfiException catch (e) {
-      if (e.message.contains('Can\'t parse event')) {
-        throw WrongEventException(
-            'Provided string is not a correct query event. Check the string once again.');
-      }
-      if (e.message.contains('Transport error: invalid response')) {
-        throw SignatureVerificationException(
-            'Signature verification failed - event signature does not match event keys.');
-      }
-      rethrow;
-    }
-  }
-
   Future<Signature> signatureFromHex(
       {required SignatureType st,
-        required String signature,
-        dynamic hint}) async {
+      required String signature,
+      dynamic hint}) async {
     try {
       return await api.signatureFromHex(st: st, signature: signature);
     } on FfiException catch (e) {
@@ -479,11 +457,11 @@ class KeriIos extends KeriPlatformInterface{
 
   Future<GroupInception> inceptGroup(
       {required Identifier identifier,
-        required List<Identifier> participants,
-        required int signatureThreshold,
-        required List<String> initialWitnesses,
-        required int witnessThreshold,
-        dynamic hint}) async {
+      required List<Identifier> participants,
+      required int signatureThreshold,
+      required List<String> initialWitnesses,
+      required int witnessThreshold,
+      dynamic hint}) async {
     try {
       return await api.inceptGroup(
           identifier: identifier,
@@ -514,10 +492,10 @@ class KeriIos extends KeriPlatformInterface{
 
   Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
-        required String groupEvent,
-        required Signature signature,
-        required List<DataAndSignature> toForward,
-        dynamic hint}) async {
+      required String groupEvent,
+      required Signature signature,
+      required List<DataAndSignature> toForward,
+      dynamic hint}) async {
     try {
       return await api.finalizeGroupIncept(
           identifier: identifier,
@@ -544,7 +522,7 @@ class KeriIos extends KeriPlatformInterface{
   Future<PublicKey> newPublicKey(
       {required KeyType kt, required String keyB64, dynamic hint}) async {
     try {
-      return await api.newPublicKey(kt: kt, keyB64: keyB64);
+      return await api.newPublicKey(kt: kt, keyB64UrlSafe: keyB64);
     } on FfiException catch (e) {
       if (e.message.contains('wrong key length')) {
         throw IncorrectKeyFormatException(
@@ -561,5 +539,29 @@ class KeriIos extends KeriPlatformInterface{
   }) async {
     return await api.newStaticMethodDataAndSignature(
         data: data, signature: signature);
+  }
+
+  Future<bool> sendOobiToWatcher(
+      {required Identifier identifier,
+      required String oobisJson,
+      dynamic hint}) async {
+    return await api.sendOobiToWatcher(
+        identifier: identifier, oobisJson: oobisJson);
+  }
+
+  Future<List<String>> queryWatchers(
+      {required Identifier whoAsk,
+      required Identifier aboutWho,
+      dynamic hint}) async {
+    return await api.queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
+  }
+
+  Future<List<ActionRequired>> finalizeQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.finalizeQuery(
+        identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
 }
