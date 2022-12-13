@@ -11,7 +11,7 @@ Future<bool> initKel(
     {required String inputAppDir,
     Config? optionalConfigs,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance.initKel(inputAppDir: inputAppDir);
+  return await KeriPlatformInterface.instance.initKel(inputAppDir: inputAppDir);
 }
 
 ///Creates inception event that needs to be signed externally.
@@ -21,19 +21,18 @@ Future<String> incept(
     required List<String> witnesses,
     required int witnessThreshold,
     dynamic hint}) async {
-
-    return await KeriPlatformInterface.instance.incept(
-        publicKeys: publicKeys,
-        nextPubKeys: nextPubKeys,
-        witnesses: witnesses,
-        witnessThreshold: witnessThreshold);
+  return await KeriPlatformInterface.instance.incept(
+      publicKeys: publicKeys,
+      nextPubKeys: nextPubKeys,
+      witnesses: witnesses,
+      witnessThreshold: witnessThreshold);
 }
 
 ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
 Future<Identifier> finalizeInception(
     {required String event, required Signature signature, dynamic hint}) async {
-    return await KeriPlatformInterface.instance
-        .finalizeInception(event: event, signature: signature);
+  return await KeriPlatformInterface.instance
+      .finalizeInception(event: event, signature: signature);
 }
 
 ///Creates rotation event that needs to be signed externally.
@@ -45,13 +44,13 @@ Future<String> rotate(
     required List<String> witnessToRemove,
     required int witnessThreshold,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance.rotate(
-        controller: controller,
-        currentKeys: currentKeys,
-        newNextKeys: newNextKeys,
-        witnessToAdd: witnessToAdd,
-        witnessToRemove: witnessToRemove,
-        witnessThreshold: witnessThreshold);
+  return await KeriPlatformInterface.instance.rotate(
+      controller: controller,
+      currentKeys: currentKeys,
+      newNextKeys: newNextKeys,
+      witnessToAdd: witnessToAdd,
+      witnessToRemove: witnessToRemove,
+      witnessThreshold: witnessThreshold);
 }
 
 ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
@@ -59,9 +58,8 @@ Future<String> addWatcher(
     {required Identifier controller,
     required String watcherOobi,
     dynamic hint}) async {
-
-    return await KeriPlatformInterface.instance
-        .addWatcher(controller: controller, watcherOobi: watcherOobi);
+  return await KeriPlatformInterface.instance
+      .addWatcher(controller: controller, watcherOobi: watcherOobi);
 }
 
 ///Verifies provided signatures against event and saves it.
@@ -70,15 +68,13 @@ Future<bool> finalizeEvent(
     required String event,
     required Signature signature,
     dynamic hint}) async {
-
-    return await KeriPlatformInterface.instance.finalizeEvent(
-        identifier: identifier, event: event, signature: signature);
+  return await KeriPlatformInterface.instance.finalizeEvent(
+      identifier: identifier, event: event, signature: signature);
 }
 
 ///Checks and saves provided identifier's endpoint information.
 Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
-
-    return await KeriPlatformInterface.instance.resolveOobi(oobiJson: oobiJson);
+  return await KeriPlatformInterface.instance.resolveOobi(oobiJson: oobiJson);
 }
 
 ///Query designated watcher about other identifier's public keys data.
@@ -128,15 +124,14 @@ Future<void> processStream({required String stream, dynamic hint}) async {
 
 ///Returns Key Event Log in the CESR representation for current Identifier when given a controller.
 Future<String> getKel({required Identifier cont, dynamic hint}) async {
-    return await KeriPlatformInterface.instance.getKel(cont: cont);
+  return await KeriPlatformInterface.instance.getKel(cont: cont);
 }
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex.
 Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
     {required String attachment, dynamic hint}) async {
-
-    return await KeriPlatformInterface.instance
-        .getCurrentPublicKey(attachment: attachment);
+  return await KeriPlatformInterface.instance
+      .getCurrentPublicKey(attachment: attachment);
 }
 
 ///Creates new Interaction Event along with provided Self Addressing Identifiers.
@@ -144,8 +139,8 @@ Future<String> anchorDigest(
     {required Identifier controller,
     required List<String> sais,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance
-        .anchorDigest(controller: controller, sais: sais);
+  return await KeriPlatformInterface.instance
+      .anchorDigest(controller: controller, sais: sais);
 }
 
 ///Creates new Interaction Event along with arbitrary data.
@@ -154,12 +149,12 @@ Future<String> anchor(
     required String data,
     required DigestType algo,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance
-        .anchor(controller: controller, data: data, algo: algo);
+  return await KeriPlatformInterface.instance
+      .anchor(controller: controller, data: data, algo: algo);
 }
 
 Future<Identifier> newIdentifier({required String idStr, dynamic hint}) async {
-    return await KeriPlatformInterface.instance.newIdentifier(idStr: idStr);
+  return await KeriPlatformInterface.instance.newIdentifier(idStr: idStr);
 }
 
 //ToDo
@@ -168,26 +163,16 @@ Future<List<String>> queryMailbox(
     required Identifier aboutWho,
     required List<String> witness,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance
-        .queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
-}
-
-//ToDo
-Future<List<ActionRequired>> finalizeMailboxQuery(
-    {required Identifier identifier,
-    required String queryEvent,
-    required Signature signature,
-    dynamic hint}) async {
-    return await KeriPlatformInterface.instance.finalizeMailboxQuery(
-        identifier: identifier, queryEvent: queryEvent, signature: signature);
+  return await KeriPlatformInterface.instance
+      .queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
 }
 
 Future<Signature> signatureFromHex(
     {required SignatureType st,
     required String signature,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance
-        .signatureFromHex(st: st, signature: signature);
+  return await KeriPlatformInterface.instance
+      .signatureFromHex(st: st, signature: signature);
 }
 
 Future<GroupInception> inceptGroup(
@@ -197,12 +182,12 @@ Future<GroupInception> inceptGroup(
     required List<String> initialWitnesses,
     required int witnessThreshold,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance.inceptGroup(
-        identifier: identifier,
-        participants: participants,
-        signatureThreshold: signatureThreshold,
-        initialWitnesses: initialWitnesses,
-        witnessThreshold: witnessThreshold);
+  return await KeriPlatformInterface.instance.inceptGroup(
+      identifier: identifier,
+      participants: participants,
+      signatureThreshold: signatureThreshold,
+      initialWitnesses: initialWitnesses,
+      witnessThreshold: witnessThreshold);
 }
 
 Future<Identifier> finalizeGroupIncept(
@@ -211,17 +196,17 @@ Future<Identifier> finalizeGroupIncept(
     required Signature signature,
     required List<DataAndSignature> toForward,
     dynamic hint}) async {
-    return await KeriPlatformInterface.instance.finalizeGroupIncept(
-        identifier: identifier,
-        groupEvent: groupEvent,
-        signature: signature,
-        toForward: toForward);
+  return await KeriPlatformInterface.instance.finalizeGroupIncept(
+      identifier: identifier,
+      groupEvent: groupEvent,
+      signature: signature,
+      toForward: toForward);
 }
 
 Future<PublicKey> newPublicKey(
     {required KeyType kt, required String keyB64, dynamic hint}) async {
-    return await KeriPlatformInterface.instance
-        .newPublicKey(kt: kt, keyB64: keyB64);
+  return await KeriPlatformInterface.instance
+      .newPublicKey(kt: kt, keyB64: keyB64);
 }
 
 Future<DataAndSignature> newDataAndSignature(
@@ -232,4 +217,29 @@ Future<DataAndSignature> newDataAndSignature(
 
 Future<bool> changeController({required String dbPath, dynamic hint}) async {
   return await KeriPlatformInterface.instance.changeController(dbPath: dbPath);
+}
+
+Future<bool> sendOobiToWatcher(
+    {required Identifier identifier,
+    required String oobisJson,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .sendOobiToWatcher(identifier: identifier, oobisJson: oobisJson);
+}
+
+Future<List<String>> queryWatchers(
+    {required Identifier whoAsk,
+    required Identifier aboutWho,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
+}
+
+Future<List<ActionRequired>> finalizeQuery(
+    {required Identifier identifier,
+    required String queryEvent,
+    required Signature signature,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.finalizeQuery(
+      identifier: identifier, queryEvent: queryEvent, signature: signature);
 }

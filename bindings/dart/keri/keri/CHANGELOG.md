@@ -57,3 +57,7 @@ Dependencies update
 ## 1.1.6
 
 Tests update
+
+## 1.2.0
+
+Align with `keri_platform_interface` 0.0.5

@@ -1,6 +1,6 @@
 name: keri_windows
 description: Keri plugin implementation for Windows.
-version: 0.0.5
+version: 0.0.6
 homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri_windows
 
 environment:

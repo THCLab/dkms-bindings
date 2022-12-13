@@ -1240,9 +1240,8 @@ void main() {
     });
   });
 
-  group("finalizeMailboxQuery", () {
-    test('finalizeMailboxQuery fails, because signature is incorrect',
-        () async {
+  group("finalizeQuery", () {
+    test('finalizeQuery fails, because signature is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
 
       String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
@@ -1281,7 +1280,7 @@ void main() {
       var signature2 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
       try {
-        await finalizeMailboxQuery(
+        await finalizeQuery(
             identifier: identifier,
             queryEvent: query,
             signature: await signatureFromHex(
@@ -1292,8 +1291,7 @@ void main() {
       }
     });
 
-    test('finalizeMailboxQuery fails, because query event is incorrect',
-        () async {
+    test('finalizeQuery fails, because query event is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
 
       String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
@@ -1332,7 +1330,7 @@ void main() {
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
       try {
-        await finalizeMailboxQuery(
+        await finalizeQuery(
             identifier: identifier,
             queryEvent: 'fail',
             signature: await signatureFromHex(
@@ -1344,7 +1342,7 @@ void main() {
     });
 
     //Fails, will be corrected soon
-    test('finalizeMailboxQuery fails, because identifier is unknown', () async {
+    test('finalizeQuery fails, because identifier is unknown', () async {
       await initKel(inputAppDir: 'keritest');
 
       String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
@@ -1383,7 +1381,7 @@ void main() {
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
       try {
-        await finalizeMailboxQuery(
+        await finalizeQuery(
             identifier: await newIdentifier(
                 idStr: 'Efrtu2CqKiP7YbWQ0c7X0VJU2i5E4V4frrlB72ytPBjQ'),
             queryEvent: query,
@@ -1436,7 +1434,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -1475,7 +1473,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -1536,7 +1534,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -1575,7 +1573,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -1639,7 +1637,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -1678,7 +1676,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -1742,7 +1740,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -1781,7 +1779,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -1844,7 +1842,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -1883,7 +1881,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -1949,7 +1947,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -1988,7 +1986,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -2054,7 +2052,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -2093,7 +2091,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -2173,7 +2171,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -2212,7 +2210,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -2288,7 +2286,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -2327,7 +2325,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -2407,7 +2405,7 @@ void main() {
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: identifier,
           queryEvent: query,
           signature: await signatureFromHex(
@@ -2446,7 +2444,7 @@ void main() {
       //Signed query2
       var signature4 =
           '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-      await finalizeMailboxQuery(
+      await finalizeQuery(
           identifier: participant,
           queryEvent: query2,
           signature: await signatureFromHex(
@@ -2527,7 +2525,7 @@ void main() {
     //Signed query
     var signature2 =
         'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
-    await finalizeMailboxQuery(
+    await finalizeQuery(
         identifier: identifier,
         queryEvent: query,
         signature: await signatureFromHex(
@@ -2566,7 +2564,7 @@ void main() {
     //Signed query2
     var signature4 =
         '5079E6644087D3AD854E8C8EBC5215671190EB407BA4A99A2C4B292C185BBB72849276284FE9BD9CFE85F00D02F710BA6399F1F3919E76680207D75CEEDF5102';
-    await finalizeMailboxQuery(
+    await finalizeQuery(
         identifier: participant,
         queryEvent: query2,
         signature: await signatureFromHex(
@@ -2610,7 +2608,7 @@ void main() {
         '{"v":"KERI10JSON00018e_","t":"qry","d":"EDhRwPEWsAhk45GokK_eSX1HjWIkyuU0fDg-clNk4SrU","dt":"2022-10-21T15:09:49.403737+00:00","r":"mbx","rr":"","q":{"pre":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","src":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
     var signature6 =
         'BB07D321C483A5593CD9CFC3981046D5CFF61C2AC025020A11C780C20B0D8A1C1AE749002C44FAB52269CDB2C5D975CDF87447BD28D8FBEA67F590D57B89FF03';
-    List<ActionRequired> finalizeQuery3 = await finalizeMailboxQuery(
+    List<ActionRequired> finalizeQuery3 = await finalizeQuery(
         identifier: participant,
         queryEvent: query3,
         signature: await signatureFromHex(
@@ -2646,7 +2644,7 @@ void main() {
         '{"v":"KERI10JSON00018e_","t":"qry","d":"E2PheXm-3wCE0QrmeQm0RUxPZOWPio-CHHVftt3tPMdk","dt":"2022-10-24T11:47:52.172662+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","src":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
     var signature7 =
         '2E849AD6255F2680A3CD64561FBC3EF27A8C8B10EDE673E4EDEB00FE75AAB9FF4A2B497D00C9C2B9BE77A44A3FB81E15779C1C47F379DBE1224D4ADC2DBC8F0C';
-    await finalizeMailboxQuery(
+    await finalizeQuery(
         identifier: identifier,
         queryEvent: query4,
         signature: await signatureFromHex(
@@ -2659,7 +2657,7 @@ void main() {
         '{"v":"KERI10JSON00018e_","t":"qry","d":"Enr4_i6V2cn15u1gVdh6scKDGTEelTiV3gmxpzoPniQw","dt":"2022-10-24T11:52:03.898695+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","src":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
     var signature8 =
         '3B770222210028A459489FB4590575B98BFC47F983A748415DCEC9452C76A9A0BCD1887C95214AAEE2E789F32D15581E9029750C1FCEC8FA660DA485CD1E4D04';
-    await finalizeMailboxQuery(
+    await finalizeQuery(
         identifier: identifier,
         queryEvent: query5,
         signature: await signatureFromHex(
@@ -2674,7 +2672,7 @@ void main() {
         '{"v":"KERI10JSON00018e_","t":"qry","d":"Ejc77kBLkrBfLVkSub8IKcgySzzvwiaOSytQswZBZhv0","dt":"2022-10-24T11:55:45.251661+00:00","r":"mbx","rr":"","q":{"pre":"EHoKPbM5hQpXdVfSDXk82rCFmHWWLAmku1mh1RbogZ0w","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","src":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
     var signature9 =
         '668A2F1EDB09E2E8268B5F8B4E822A8DB89DE62FA8DB1CD3D9A482D33A044BF28E4D42DC04DCED71A8911F3EE59D041A39F81AB18B99257A6EA10C4859ED1E04';
-    await finalizeMailboxQuery(
+    await finalizeQuery(
         identifier: participant,
         queryEvent: query6,
         signature: await signatureFromHex(

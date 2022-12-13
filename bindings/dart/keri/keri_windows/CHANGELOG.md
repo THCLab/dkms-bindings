@@ -17,3 +17,7 @@ Adjusted to new keriox version
 ## 0.0.5
 
 Made tests available on Windows
+
+## 0.0.6
+
+Aligned with `keri_platform_interface` 0.0.5

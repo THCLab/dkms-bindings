@@ -332,42 +332,42 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.1.6"
+    version: "1.2.0"
   keri_android:
     dependency: transitive
     description:
       name: keri_android
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.6"
+    version: "0.0.7"
   keri_ios:
     dependency: transitive
     description:
       name: keri_ios
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.2"
   keri_macos:
     dependency: transitive
     description:
       name: keri_macos
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.2"
   keri_platform_interface:
     dependency: transitive
     description:
       name: keri_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.4"
+    version: "0.0.5"
   keri_windows:
     dependency: transitive
     description:
       name: keri_windows
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.5"
+    version: "0.0.6"
   lints:
     dependency: transitive
     description:

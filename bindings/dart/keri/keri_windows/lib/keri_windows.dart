@@ -551,24 +551,25 @@ class KeriWindows extends KeriPlatformInterface {
 
   Future<bool> sendOobiToWatcher(
       {required Identifier identifier,
-        required String oobisJson,
-        dynamic hint}) async{
-    return await api.sendOobiToWatcher(identifier: identifier, oobisJson: oobisJson);
+      required String oobisJson,
+      dynamic hint}) async {
+    return await api.sendOobiToWatcher(
+        identifier: identifier, oobisJson: oobisJson);
   }
 
   Future<List<String>> queryWatchers(
       {required Identifier whoAsk,
-        required Identifier aboutWho,
-        dynamic hint}) async{
-   return await api.queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
+      required Identifier aboutWho,
+      dynamic hint}) async {
+    return await api.queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
   }
 
   Future<List<ActionRequired>> finalizeQuery(
       {required Identifier identifier,
-        required String queryEvent,
-        required Signature signature,
-        dynamic hint}) async{
-    return await api.finalizeQuery(identifier: identifier, queryEvent: queryEvent, signature: signature);
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.finalizeQuery(
+        identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
-
 }
