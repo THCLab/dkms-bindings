@@ -61,3 +61,11 @@ Tests update
 ## 1.2.0
 
 Align with `keri_platform_interface` 0.0.5
+
+## 1.2.1
+
+Transport error fix in `keri_android`
+
+## 1.2.2
+
+New .so files in `keri_android

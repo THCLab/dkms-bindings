@@ -25,3 +25,11 @@ New jniLibs
 ## 0.0.7
 
 Aligned with `keri_platform_interface` 0.0.5
+
+## 0.0.8
+
+Fixed transport error
+
+## 0.0.9
+
+Changed .so file
