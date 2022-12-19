@@ -33,3 +33,7 @@ Fixed transport error
 ## 0.0.9
 
 Changed .so file
+
+## 0.0.10
+
+New `.so` files that add mailbox logs

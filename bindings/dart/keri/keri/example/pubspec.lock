@@ -332,21 +332,21 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.2.3"
+    version: "1.2.4"
   keri_android:
     dependency: transitive
     description:
       name: keri_android
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.9"
+    version: "0.0.10"
   keri_ios:
     dependency: transitive
     description:
       name: keri_ios
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.3"
+    version: "0.0.4"
   keri_macos:
     dependency: transitive
     description:

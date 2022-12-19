@@ -73,3 +73,7 @@ New `.so` files in `keri_android`
 ## 1.2.3
 
 New `.a` file in `keri_ios`
+
+## 1.2.4
+
+New `.a` and `.so` files that add mailbox logs
