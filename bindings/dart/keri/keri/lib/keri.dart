@@ -1,4 +1,3 @@
-
 import 'package:keri_platform_interface/keri_platform_interface.dart';
 import 'package:keri_platform_interface/bridge_generated.dart';
 export 'package:keri_platform_interface/bridge_generated.dart';
