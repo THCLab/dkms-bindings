@@ -68,4 +68,8 @@ Transport error fix in `keri_android`
 
 ## 1.2.2
 
-New .so files in `keri_android
+New `.so` files in `keri_android`
+
+## 1.2.3
+
+New `.a` file in `keri_ios`
