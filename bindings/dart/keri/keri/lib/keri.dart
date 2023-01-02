@@ -149,11 +149,13 @@ Future<String> anchor(
       .anchor(controller: controller, data: data, algo: algo);
 }
 
+///Creates an `Identifier` object from the id string.
 Future<Identifier> newIdentifier({required String idStr, dynamic hint}) async {
   return await KeriPlatformInterface.instance.newIdentifier(idStr: idStr);
 }
 
 //ToDo
+///Queries own or different mailbox about an identifier.
 Future<List<String>> queryMailbox(
     {required Identifier whoAsk,
     required Identifier aboutWho,
@@ -163,6 +165,7 @@ Future<List<String>> queryMailbox(
       .queryMailbox(whoAsk: whoAsk, aboutWho: aboutWho, witness: witness);
 }
 
+///Creates a `Signature` object from given type and hex string.
 Future<Signature> signatureFromHex(
     {required SignatureType st,
     required String signature,
@@ -171,6 +174,7 @@ Future<Signature> signatureFromHex(
       .signatureFromHex(st: st, signature: signature);
 }
 
+///Creates group inception event that needs to be signed externally.
 Future<GroupInception> inceptGroup(
     {required Identifier identifier,
     required List<Identifier> participants,
@@ -186,6 +190,7 @@ Future<GroupInception> inceptGroup(
       witnessThreshold: witnessThreshold);
 }
 
+///Finalizes group inception
 Future<Identifier> finalizeGroupIncept(
     {required Identifier identifier,
     required String groupEvent,
@@ -199,12 +204,14 @@ Future<Identifier> finalizeGroupIncept(
       toForward: toForward);
 }
 
+///Creates a `PublicKey` object from given key type and Base64 string.
 Future<PublicKey> newPublicKey(
     {required KeyType kt, required String keyB64, dynamic hint}) async {
   return await KeriPlatformInterface.instance
       .newPublicKey(kt: kt, keyB64: keyB64);
 }
 
+///Creates a `DataAndSignature` object from given data and its hex string signature.
 Future<DataAndSignature> newDataAndSignature(
     {required String data, required Signature signature, dynamic hint}) async {
   return await KeriPlatformInterface.instance
@@ -215,6 +222,7 @@ Future<bool> changeController({required String dbPath, dynamic hint}) async {
   return await KeriPlatformInterface.instance.changeController(dbPath: dbPath);
 }
 
+///Sends given oobi to a connected watcher
 Future<bool> sendOobiToWatcher(
     {required Identifier identifier,
     required String oobisJson,
@@ -223,6 +231,7 @@ Future<bool> sendOobiToWatcher(
       .sendOobiToWatcher(identifier: identifier, oobisJson: oobisJson);
 }
 
+///Queries the watchers about an identifier.
 Future<List<String>> queryWatchers(
     {required Identifier whoAsk,
     required Identifier aboutWho,
@@ -231,6 +240,7 @@ Future<List<String>> queryWatchers(
       .queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
 }
 
+///Verifies provided signatures against mailbox query and saves it.
 Future<List<ActionRequired>> finalizeQuery(
     {required Identifier identifier,
     required String queryEvent,

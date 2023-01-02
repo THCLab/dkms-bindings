@@ -181,7 +181,7 @@ abstract class KeriPlatformInterface extends PlatformInterface {
       dynamic hint}) {
     throw UnimplementedError('queryWatchers() has not been implemented.');
   }
-
+  
   Future<List<ActionRequired>> finalizeQuery(
       {required Identifier identifier,
       required String queryEvent,

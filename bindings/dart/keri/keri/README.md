@@ -21,12 +21,14 @@ Currently supported functions are:
 * `anchorDigest` - Creates new Interaction Event along with provided Self Addressing Identifiers.
 * `newIdentifier` - Creates an `Identifier` object from the id string.
 * `queryMailbox` - Queries own or different mailbox about an identifier.
-* `finalizeMailboxQuery` - Verifies provided signatures against mailbox query and saves it.
+* `finalizeQuery` - Verifies provided signatures against mailbox query and saves it.
 * `signatureFromHex` - Creates a `Signature` object from given type and hex string.
 * `inceptGroup` - Creates group inception event that needs to be signed externally.
 * `finalizeGroupIncept` - Finalizes group inception
 * `newPublicKey` - Creates a `PublicKey` object from given key type and Base64 string.
 * `newDataAndSignature` - Creates a `DataAndSignature` object from given data and its hex string signature.
+* `queryWatchers` - Queries the watchers about an identifier.
+* `sendOobiToWatcher` - Sends given oobi to a connected watcher 
 
 ## Glossary
 
