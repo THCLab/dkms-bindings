@@ -11,8 +11,9 @@ use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_query, get_kel, incept_group, init_kel, new_public_key, process_stream, query_mailbox,
-    resolve_oobi, rotate, signature_from_hex, Action, Config, DataAndSignature, Identifier,
+    finalize_query, get_kel, incept_group, init_kel, new_public_key, notify_witnesses,
+    process_stream, query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config,
+    DataAndSignature, Identifier,
 };
 
 #[test]
@@ -31,25 +32,33 @@ pub fn test_new_key() -> Result<()> {
 }
 
 #[test]
+pub fn test_signature_from_hex() -> Result<()> {
+    let signature = "F426738DFEC3EED52D36CB2B825ADFB3D06D98B3AF986EAE2F70B8E536C60C1C7DC41E49D30199D107AB57BD43D458A14064AB3A963A51450DBDE253CD94BB0C".to_string();
+    let _sig = signature_from_hex(SelfSigning::Ed25519Sha512, signature);
+
+    Ok(())
+}
+
+#[test]
 pub fn test_api() -> Result<()> {
     use crate::api::{finalize_inception, get_kel, incept, init_kel};
     use tempfile::Builder;
 
     // Create temporary db file.
     let root = Builder::new().prefix("test-db").tempdir().unwrap();
-    let public_key = "6UMthURGxkWVEKxJ_m3OpgV3Be_STsM__4tONKaiTrA=".to_string();
-    let next_public_key = "xeIGdSW6mJsPqFysR6diH0_4lXXgyy36Hb9BzcLOp-s=".to_string();
+    let public_key = "hcBkAr-U14x2zW-mw1pvPXOOZPUjXLVUnt-b13tpQvg=".to_string();
+    let next_public_key = "hPaigCAM-HoeHx5H1lZnTJpoGR4GEN0diyt2j4qZurg=".to_string();
 
     init_kel(root.path().to_str().unwrap().into(), None)?;
 
-    let pk = new_public_key(Basic::Ed25519NT, public_key)?;
-    let npk = new_public_key(Basic::Ed25519NT, next_public_key.into())?;
-    // println!("pk: {:?}", key_prefix_from_b64(&pk.key, pk.algorithm).unwrap().to_str());
+    let pk = new_public_key(Basic::Ed25519, public_key)?;
+    let npk = new_public_key(Basic::Ed25519, next_public_key.into())?;
     let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
-    println!("icp: {}", icp_event);
 
+    let expected_icp = r#"{"v":"KERI10JSON00012b_","t":"icp","d":"EHJ-ufEDTUc9BDhXrOEKUEmlKRIQ41LVa-1QsxzEeuMy","i":"EHJ-ufEDTUc9BDhXrOEKUEmlKRIQ41LVa-1QsxzEeuMy","s":"0","kt":"1","k":["DIXAZAK_lNeMds1vpsNabz1zjmT1I1y1VJ7fm9d7aUL4"],"nt":"1","n":["EPO4i4pfpPM4nN6f1Cu-DsI3RUM0mdO27hBNbB6x2ga8"],"bt":"0","b":[],"c":[],"a":[]}"#;
+    assert_eq!(icp_event, expected_icp);
     // sign icp event
-    let signature = "F426738DFEC3EED52D36CB2B825ADFB3D06D98B3AF986EAE2F70B8E536C60C1C7DC41E49D30199D107AB57BD43D458A14064AB3A963A51450DBDE253CD94BB0C".to_string();
+    let signature = "264f1d560485c5e114c5be0295bc556cb5e9ab2515b0666c3a61c6d6e9af5d353ffd53b941ba7626bcc7dacb8943317624d04c34f7eceecc934c9b9947c7df0c".to_string();
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, signature);
 
     let controller = finalize_inception(icp_event, signature)?;
@@ -206,8 +215,8 @@ pub fn test_multisig() -> Result<()> {
     // Tests assumses that witness DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA is listening on http://127.0.0.1:3232
     // It can be run from keriox/components/witness using command:
     // cargo run -- -c ./src/witness.json
-    let witness_id = "DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA".to_string();
-    let wit_location = r#"{"eid":"DSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}"#.to_string();
+    let witness_id = "BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC".to_string();
+    let wit_location = r#"{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://127.0.0.1:3232/"}"#.to_string();
 
     // Incept first group participant
     let key_manager = CryptoBox::new().unwrap();
@@ -221,6 +230,9 @@ pub fn test_multisig() -> Result<()> {
 
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     let identifier = finalize_inception(icp_event, signature)?;
+
+    // Publish own event to witnesses
+    notify_witnesses(&identifier)?;
 
     // Quering own mailbox to get receipts
     // TODO always qry mailbox
@@ -243,8 +255,14 @@ pub fn test_multisig() -> Result<()> {
     process_stream(initiator_kel)?;
     // Incept second group participant
     let participants_key_manager = CryptoBox::new().unwrap();
-    let current_b64key = base64::encode(participants_key_manager.public_key().key());
-    let next_b64key = base64::encode(participants_key_manager.next_public_key().key());
+    let current_b64key = base64::encode_config(
+        participants_key_manager.public_key().key(),
+        base64::URL_SAFE,
+    );
+    let next_b64key = base64::encode_config(
+        participants_key_manager.next_public_key().key(),
+        base64::URL_SAFE,
+    );
 
     let participant_pk = new_public_key(Basic::Ed25519, current_b64key)?;
     let participant_npk = new_public_key(Basic::Ed25519, next_b64key)?;
@@ -258,6 +276,9 @@ pub fn test_multisig() -> Result<()> {
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
     let participant = finalize_inception(icp_event, signature)?;
+
+    // Publish own event to witnesses
+    notify_witnesses(&participant)?;
 
     // Quering own mailbox to get receipts
     let query = query_mailbox(
@@ -429,8 +450,8 @@ pub fn test_demo() -> Result<()> {
         .into();
 
     let mut key_manager = CryptoBox::new().unwrap();
-    let current_b64key = base64::encode(key_manager.public_key().key());
-    let next_b64key = base64::encode(key_manager.next_public_key().key());
+    let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
+    let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
 
     init_kel(root_path, None)?;
 
@@ -445,8 +466,8 @@ pub fn test_demo() -> Result<()> {
     let controller = finalize_inception(icp_event, signature)?;
 
     key_manager.rotate()?;
-    let current_b64key = base64::encode(key_manager.public_key().key());
-    let next_b64key = base64::encode(key_manager.next_public_key().key());
+    let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
+    let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
     let pk = new_public_key(Basic::Ed25519, current_b64key)?;
     let npk = new_public_key(Basic::Ed25519, next_b64key)?;
 

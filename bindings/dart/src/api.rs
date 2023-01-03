@@ -391,6 +391,18 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
     Ok(true)
 }
 
+pub fn notify_witnesses(identifier: &Identifier) -> Result<bool> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let notify_future = identifier_controller.notify_witnesses();
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async { notify_future.await })?;
+    Ok(true)
+}
+
 /// Struct for collecting data that need to be signed: generated event and
 /// exchange messages that are needed to forward multisig request to other group
 /// participants.
