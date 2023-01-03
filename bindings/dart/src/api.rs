@@ -403,6 +403,19 @@ pub fn notify_witnesses(identifier: &Identifier) -> Result<bool> {
     Ok(true)
 }
 
+pub fn broadcast_receipts(identifier: &Identifier, witness_list: Vec<Identifier>) -> Result<bool> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+    let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let wits: Vec<IdentifierPrefix> = witness_list.iter().map(|wit_id| wit_id.into()).collect();
+    let broadcast_future = identifier_controller.broadcast_receipts(&wits);
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async { broadcast_future.await })?;
+    Ok(true)
+}
+
 /// Struct for collecting data that need to be signed: generated event and
 /// exchange messages that are needed to forward multisig request to other group
 /// participants.
