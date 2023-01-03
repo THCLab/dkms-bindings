@@ -7,14 +7,17 @@ use std::{
 use controller::{error::ControllerError, identifier_controller::IdentifierController};
 use flutter_rust_bridge::{frb, support::lazy_static};
 
+use crate::utils::{join_keys_and_signatures, parse_location_schemes, parse_witness_prefix};
 use anyhow::{anyhow, Result};
+pub use controller::utils::OptionalConfig;
+pub use keri::event_parsing::codes::basic::Basic;
 pub use keri::keys::PublicKey as KeriPublicKey;
 pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
-use keri::{
+pub use keri::{
     actor::{event_generator, prelude::Message},
     event_message::cesr_adapter::EventType,
     event_parsing::{
-        codes::{basic::Basic, self_signing::SelfSigning, DerivationCode},
+        codes::{self_signing::SelfSigning, DerivationCode},
         group::Group,
         parsers::{group::parse_group, parse_payload},
         primitives::CesrPrimitive,
@@ -22,11 +25,8 @@ use keri::{
     oobi::{LocationScheme, Role},
     sai::{derivation::SelfAddressing, SelfAddressingPrefix},
 };
-use tokio::runtime::Runtime;
-
-use crate::utils::{join_keys_and_signatures, parse_location_schemes, parse_witness_prefix};
-pub use controller::utils::OptionalConfig;
 use thiserror::Error;
+use tokio::runtime::Runtime;
 
 pub type KeyType = Basic;
 #[frb(mirror(KeyType))]
@@ -72,12 +72,12 @@ pub fn new_public_key(kt: KeyType, key_b64_url_safe: String) -> Result<PublicKey
     let expected_len = kt.code_size() + kt.value_size();
     if key_b64_url_safe.len() == expected_len {
         let decoded_key = base64::decode_config(key_b64_url_safe, base64::URL_SAFE)
-            .map_err(|e| Error::Base64Error(e))?;
+            .map_err(Error::Base64Error)?;
         let pk = PublicKey {
             derivation: kt,
             public_key: decoded_key,
         };
-        Ok(pk.into())
+        Ok(pk)
     } else {
         Err(Error::KeyLengthError(key_b64_url_safe.len(), expected_len).into())
     }
@@ -97,18 +97,14 @@ pub struct Signature {
 pub fn signature_from_hex(st: SignatureType, signature: String) -> Signature {
     Signature {
         derivation: st,
-        signature: hex::decode(signature)
-            .map_err(|e| Error::HexError(e))
-            .unwrap(),
+        signature: hex::decode(signature).map_err(Error::HexError).unwrap(),
     }
 }
 
 pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
     Signature {
         derivation: st,
-        signature: hex::decode(signature)
-            .map_err(|e| Error::HexError(e))
-            .unwrap(),
+        signature: hex::decode(signature).map_err(Error::HexError).unwrap(),
     }
 }
 
@@ -283,10 +279,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
     let rt = Runtime::new().unwrap();
     let controller_id = rt.block_on(async { controller_id.await })?;
     println!("\ninception event: {}", event);
-    println!(
-        "\nController incepted id: {}",
-        controller_id.clone().to_str()
-    );
+    println!("\nController incepted id: {}", controller_id.to_str());
     Ok(Identifier::from(controller_id))
 }
 
@@ -332,8 +325,7 @@ pub fn rotate(
 }
 
 pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
-    let dig_type: SelfAddressing = algo.into();
-    let digest = dig_type.derive(data.as_bytes());
+    let digest = algo.derive(data.as_bytes());
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -375,10 +367,14 @@ pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<Strin
 }
 
 pub fn send_oobi_to_watcher(identifier: Identifier, oobis_json: String) -> Result<bool> {
-    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .send_oobi_to_watcher(&identifier.into(), &oobis_json)?;
+        .clone();
+    let identifier_controller: IdentifierPrefix = identifier.into();
+    let send_oobi_future = controller.send_oobi_to_watcher(&identifier_controller, &oobis_json);
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async { send_oobi_future.await })?;
     Ok(true)
 }
 
@@ -469,7 +465,7 @@ pub fn finalize_group_incept(
                      data: exn,
                      signature,
                  }| {
-                    let sig_type: SelfSigning = signature.derivation.clone();
+                    let sig_type: SelfSigning = signature.derivation;
                     let sig = SelfSigningPrefix::new(sig_type, signature.signature.clone());
                     (exn.as_bytes().to_vec(), sig)
                 },
@@ -542,7 +538,7 @@ pub fn finalize_query(
         .ok_or(Error::ControllerInitializationError)?
         .clone();
 
-    let (_, query) = parse_payload::<EventType>(&query_event.as_bytes())
+    let (_, query) = parse_payload::<EventType>(query_event.as_bytes())
         .map_err(|_e| ControllerError::EventFormatError)?;
 
     let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
@@ -608,8 +604,7 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
         .get_kel_messages_with_receipts(&identifier.into())?
         .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?
         .into_iter()
-        .map(|event| Message::Notice(event).to_cesr().unwrap())
-        .flatten()
+        .flat_map(|event| Message::Notice(event).to_cesr().unwrap())
         .collect();
     Ok(String::from_utf8(signed_event)?)
 }
@@ -621,8 +616,8 @@ pub struct PublicKeySignaturePair {
 
 /// Returns pairs: public key encoded in base64 and signature encoded in hex
 pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
-    let att = parse_group(&attachment.as_bytes())
-        .map_err(|e| Error::AttachmentParseError)?
+    let att = parse_group(attachment.as_bytes())
+        .map_err(|_e| Error::AttachmentParseError)?
         .1;
 
     let keys = if let Group::TransferableIndexedSigGroups(group) = att {
@@ -636,7 +631,7 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
                     .storage
                     .get_keys_at_event(&(id.into()), sn, &(digest.into()))
                     .map_err(|e| Error::UtilsError(e.to_string()))?
-                    .ok_or(Error::UtilsError("Can't find event of given seal".into()))?
+                    .ok_or_else(|| Error::UtilsError("Can't find event of given seal".into()))?
                     .public_keys;
                 join_keys_and_signatures(current_keys, &signatures)
             })

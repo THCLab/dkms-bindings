@@ -17,6 +17,7 @@ dependencies:
   keri_platform_interface: ^0.0.5
   keri_windows: ^0.0.6
   plugin_platform_interface: ^2.1.3
+  ffi: ^2.0.1
 
 dev_dependencies:
   flutter_test:
