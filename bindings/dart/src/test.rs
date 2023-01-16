@@ -231,7 +231,7 @@ pub fn test_multisig() -> Result<()> {
     let identifier = finalize_inception(icp_event, signature)?;
 
     // Publish own event to witnesses
-    notify_witnesses(identifier)?;
+    notify_witnesses(identifier.clone())?;
 
     // Quering own mailbox to get receipts
     // TODO always qry mailbox
@@ -277,7 +277,7 @@ pub fn test_multisig() -> Result<()> {
     let participant = finalize_inception(icp_event, signature)?;
 
     // Publish own event to witnesses
-    notify_witnesses(participant)?;
+    notify_witnesses(participant.clone())?;
 
     // Quering own mailbox to get receipts
     let query = query_mailbox(
