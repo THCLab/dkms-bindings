@@ -181,12 +181,23 @@ abstract class KeriPlatformInterface extends PlatformInterface {
       dynamic hint}) {
     throw UnimplementedError('queryWatchers() has not been implemented.');
   }
-  
+
   Future<List<ActionRequired>> finalizeQuery(
       {required Identifier identifier,
       required String queryEvent,
       required Signature signature,
       dynamic hint}) {
     throw UnimplementedError('finalizeQuery() has not been implemented.');
+  }
+
+  Future<bool> notifyWitnesses({required Identifier identifier, dynamic hint}) {
+    throw UnimplementedError('notifyWitnesses() has not been implemented.');
+  }
+
+  Future<bool> broadcastReceipts(
+      {required Identifier identifier,
+      required List<Identifier> witnessList,
+      dynamic hint}) {
+    throw UnimplementedError('broadcastReceipts() has not been implemented.');
   }
 }

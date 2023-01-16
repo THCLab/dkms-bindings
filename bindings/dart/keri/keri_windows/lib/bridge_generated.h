@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+typedef struct _Dart_Handle* Dart_Handle;
 
 typedef int64_t DartPort;
 
@@ -115,6 +116,14 @@ typedef struct WireSyncReturnStruct {
 
 void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
+Dart_Handle get_dart_object(uintptr_t ptr);
+
+void drop_dart_object(uintptr_t ptr);
+
+uintptr_t new_dart_opaque(Dart_Handle handle);
+
+intptr_t init_frb_dart_api_dl(void *obj);
+
 void wire_new_public_key(int64_t port_, int32_t kt, struct wire_uint_8_list *key_b64_url_safe);
 
 void wire_signature_from_hex(int64_t port_, int32_t st, struct wire_uint_8_list *signature);
@@ -170,6 +179,12 @@ void wire_finalize_event(int64_t port_,
                          struct wire_Identifier *identifier,
                          struct wire_uint_8_list *event,
                          struct wire_Signature *signature);
+
+void wire_notify_witnesses(int64_t port_, struct wire_Identifier *identifier);
+
+void wire_broadcast_receipts(int64_t port_,
+                             struct wire_Identifier *identifier,
+                             struct wire_list_identifier *witness_list);
 
 void wire_incept_group(int64_t port_,
                        struct wire_Identifier *identifier,
@@ -256,6 +271,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_add_watcher);
     dummy_var ^= ((int64_t) (void*) wire_send_oobi_to_watcher);
     dummy_var ^= ((int64_t) (void*) wire_finalize_event);
+    dummy_var ^= ((int64_t) (void*) wire_notify_witnesses);
+    dummy_var ^= ((int64_t) (void*) wire_broadcast_receipts);
     dummy_var ^= ((int64_t) (void*) wire_incept_group);
     dummy_var ^= ((int64_t) (void*) wire_finalize_group_incept);
     dummy_var ^= ((int64_t) (void*) wire_query_mailbox);
@@ -282,5 +299,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) inflate_DigestType_Blake2S256);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturnStruct);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
+    dummy_var ^= ((int64_t) (void*) get_dart_object);
+    dummy_var ^= ((int64_t) (void*) drop_dart_object);
+    dummy_var ^= ((int64_t) (void*) new_dart_opaque);
     return dummy_var;
 }

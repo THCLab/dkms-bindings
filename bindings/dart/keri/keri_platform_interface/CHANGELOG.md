@@ -17,3 +17,7 @@ Added new functions
 ## 0.0.5
 
 Added `sendOobiToWatcher`, `finalizeQuery` instead of `finalizeMailboxQuery` and `queryWatchers`
+
+### 0.0.6
+
+Added `notifyWitnesses` and `broadcastReceipts`

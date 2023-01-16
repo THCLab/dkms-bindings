@@ -21,3 +21,7 @@ Made tests available on Windows
 ## 0.0.6
 
 Aligned with `keri_platform_interface` 0.0.5
+
+## 0.0.7
+
+Added `notifyWitnesses` and `broadcastReceipts`
