@@ -138,6 +138,20 @@ pub extern "C" fn wire_finalize_event(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_notify_witnesses(port_: i64, identifier: *mut wire_Identifier) {
+    wire_notify_witnesses_impl(port_, identifier)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_broadcast_receipts(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    witness_list: *mut wire_list_identifier,
+) {
+    wire_broadcast_receipts_impl(port_, identifier, witness_list)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_incept_group(
     port_: i64,
     identifier: *mut wire_Identifier,

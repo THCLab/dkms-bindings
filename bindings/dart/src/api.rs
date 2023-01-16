@@ -391,7 +391,7 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
     Ok(true)
 }
 
-pub fn notify_witnesses(identifier: &Identifier) -> Result<bool> {
+pub fn notify_witnesses(identifier: Identifier) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -403,7 +403,7 @@ pub fn notify_witnesses(identifier: &Identifier) -> Result<bool> {
     Ok(true)
 }
 
-pub fn broadcast_receipts(identifier: &Identifier, witness_list: Vec<Identifier>) -> Result<bool> {
+pub fn broadcast_receipts(identifier: Identifier, witness_list: Vec<Identifier>) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?

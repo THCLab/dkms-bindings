@@ -300,6 +300,40 @@ fn wire_finalize_event_impl(
         },
     )
 }
+fn wire_notify_witnesses_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "notify_witnesses",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            move |task_callback| notify_witnesses(api_identifier)
+        },
+    )
+}
+fn wire_broadcast_receipts_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    witness_list: impl Wire2Api<Vec<Identifier>> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "broadcast_receipts",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_witness_list = witness_list.wire2api();
+            move |task_callback| broadcast_receipts(api_identifier, api_witness_list)
+        },
+    )
+}
 fn wire_incept_group_impl(
     port_: MessagePort,
     identifier: impl Wire2Api<Identifier> + UnwindSafe,

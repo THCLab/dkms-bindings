@@ -107,6 +107,17 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kFinalizeEventConstMeta;
 
+  Future<bool> notifyWitnesses({required Identifier identifier, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kNotifyWitnessesConstMeta;
+
+  Future<bool> broadcastReceipts(
+      {required Identifier identifier,
+      required List<Identifier> witnessList,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kBroadcastReceiptsConstMeta;
+
   Future<GroupInception> inceptGroup(
       {required Identifier identifier,
       required List<Identifier> participants,
@@ -650,6 +661,45 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "finalize_event",
         argNames: ["identifier", "event", "signature"],
+      );
+
+  Future<bool> notifyWitnesses({required Identifier identifier, dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_notify_witnesses(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kNotifyWitnessesConstMeta,
+      argValues: [identifier],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kNotifyWitnessesConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "notify_witnesses",
+        argNames: ["identifier"],
+      );
+
+  Future<bool> broadcastReceipts(
+      {required Identifier identifier,
+      required List<Identifier> witnessList,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_list_identifier(witnessList);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_broadcast_receipts(port_, arg0, arg1),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kBroadcastReceiptsConstMeta,
+      argValues: [identifier, witnessList],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kBroadcastReceiptsConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "broadcast_receipts",
+        argNames: ["identifier", "witnessList"],
       );
 
   Future<GroupInception> inceptGroup(
@@ -1698,6 +1748,43 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_finalize_event = _wire_finalize_eventPtr.asFunction<
       void Function(int, ffi.Pointer<wire_Identifier>,
           ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
+
+  void wire_notify_witnesses(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+  ) {
+    return _wire_notify_witnesses(
+      port_,
+      identifier,
+    );
+  }
+
+  late final _wire_notify_witnessesPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_Identifier>)>>('wire_notify_witnesses');
+  late final _wire_notify_witnesses = _wire_notify_witnessesPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_broadcast_receipts(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_list_identifier> witness_list,
+  ) {
+    return _wire_broadcast_receipts(
+      port_,
+      identifier,
+      witness_list,
+    );
+  }
+
+  late final _wire_broadcast_receiptsPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_list_identifier>)>>('wire_broadcast_receipts');
+  late final _wire_broadcast_receipts = _wire_broadcast_receiptsPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_Identifier>,
+          ffi.Pointer<wire_list_identifier>)>();
 
   void wire_incept_group(
     int port_,

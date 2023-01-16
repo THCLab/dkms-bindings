@@ -180,6 +180,12 @@ void wire_finalize_event(int64_t port_,
                          struct wire_uint_8_list *event,
                          struct wire_Signature *signature);
 
+void wire_notify_witnesses(int64_t port_, struct wire_Identifier *identifier);
+
+void wire_broadcast_receipts(int64_t port_,
+                             struct wire_Identifier *identifier,
+                             struct wire_list_identifier *witness_list);
+
 void wire_incept_group(int64_t port_,
                        struct wire_Identifier *identifier,
                        struct wire_list_identifier *participants,
@@ -265,6 +271,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_add_watcher);
     dummy_var ^= ((int64_t) (void*) wire_send_oobi_to_watcher);
     dummy_var ^= ((int64_t) (void*) wire_finalize_event);
+    dummy_var ^= ((int64_t) (void*) wire_notify_witnesses);
+    dummy_var ^= ((int64_t) (void*) wire_broadcast_receipts);
     dummy_var ^= ((int64_t) (void*) wire_incept_group);
     dummy_var ^= ((int64_t) (void*) wire_finalize_group_incept);
     dummy_var ^= ((int64_t) (void*) wire_query_mailbox);
