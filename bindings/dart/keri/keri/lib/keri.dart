@@ -249,3 +249,19 @@ Future<List<ActionRequired>> finalizeQuery(
   return await KeriPlatformInterface.instance.finalizeQuery(
       identifier: identifier, queryEvent: queryEvent, signature: signature);
 }
+
+///Publishes events to the witnesses
+Future<bool> notifyWitnesses(
+    {required Identifier identifier, dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .notifyWitnesses(identifier: identifier);
+}
+
+///Sends witnesses receipts between them
+Future<bool> broadcastReceipts(
+    {required Identifier identifier,
+    required List<Identifier> witnessList,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .broadcastReceipts(identifier: identifier, witnessList: witnessList);
+}

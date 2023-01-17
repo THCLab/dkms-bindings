@@ -29,6 +29,8 @@ Currently supported functions are:
 * `newDataAndSignature` - Creates a `DataAndSignature` object from given data and its hex string signature.
 * `queryWatchers` - Queries the watchers about an identifier.
 * `sendOobiToWatcher` - Sends given oobi to a connected watcher 
+* `notifyWitnesses` - Publishes events to the witnesses
+* `broadcastReceipts` - Sends witnesses receipts between them
 
 ## Glossary
 

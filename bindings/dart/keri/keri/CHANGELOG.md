@@ -77,3 +77,7 @@ New `.a` file in `keri_ios`
 ## 1.2.4
 
 New `.a` and `.so` files that add mailbox logs
+
+## 1.3.0
+
+Added `notifyWitnesses` and `broadcastReceipts` functions

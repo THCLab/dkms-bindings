@@ -2328,4 +2328,4 @@ class wire_list_data_and_signature extends ffi.Struct {
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<ffi.Bool Function(DartPort, ffi.Pointer<ffi.Void>)>>;
 typedef DartPort = ffi.Int64;
-typedef uintptr_t = ffi.UnsignedLong;
+typedef uintptr_t = ffi.UnsignedLongLong;

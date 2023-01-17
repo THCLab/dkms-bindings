@@ -7,14 +7,14 @@ packages:
       name: _fe_analyzer_shared
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "47.0.0"
+    version: "50.0.0"
   analyzer:
     dependency: transitive
     description:
       name: analyzer
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.7.0"
+    version: "5.2.0"
   archive:
     dependency: transitive
     description:
@@ -35,7 +35,7 @@ packages:
       name: asymmetric_crypto_primitives
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.4.2"
+    version: "0.4.5"
   async:
     dependency: transitive
     description:
@@ -236,7 +236,7 @@ packages:
       name: flutter_rust_bridge
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.51.0"
+    version: "1.54.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -248,7 +248,7 @@ packages:
       name: freezed
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.0+1"
+    version: "2.3.2"
   freezed_annotation:
     dependency: transitive
     description:
@@ -332,42 +332,42 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.2.4"
+    version: "1.3.0"
   keri_android:
     dependency: transitive
     description:
       name: keri_android
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.10"
+    version: "0.0.12"
   keri_ios:
     dependency: transitive
     description:
       name: keri_ios
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.4"
+    version: "0.0.6"
   keri_macos:
     dependency: transitive
     description:
       name: keri_macos
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.2"
+    version: "0.0.3"
   keri_platform_interface:
     dependency: transitive
     description:
       name: keri_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.5"
+    version: "0.0.6"
   keri_windows:
     dependency: transitive
     description:
       name: keri_windows
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.6"
+    version: "0.0.7"
   lints:
     dependency: transitive
     description:
@@ -451,7 +451,7 @@ packages:
       name: nacl_win
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.4"
   package_config:
     dependency: transitive
     description:
@@ -660,6 +660,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
+  tuple:
+    dependency: transitive
+    description:
+      name: tuple
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.1"
   typed_data:
     dependency: transitive
     description:
