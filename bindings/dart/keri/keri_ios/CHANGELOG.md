@@ -17,3 +17,7 @@ New `.a` file that adds mailbox logs
 ## 0.0.5
 
 Added `notifyWitnesses` and `broadcastReceipts`
+
+## 0.0.6
+
+Added `notifyWitnesses` and `broadcastReceipts` functions

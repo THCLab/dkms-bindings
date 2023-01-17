@@ -41,3 +41,7 @@ New `.so` files that add mailbox logs
 ## 0.0.11 
 
 Added `notifyWitnesses` and `broadcastReceipts`
+
+## 0.0.12
+
+Added `notifyWitnesses` and `broadcastReceipts` functions

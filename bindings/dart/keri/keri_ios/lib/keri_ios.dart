@@ -564,4 +564,17 @@ class KeriIos extends KeriPlatformInterface {
     return await api.finalizeQuery(
         identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
+
+  Future<bool> notifyWitnesses(
+      {required Identifier identifier, dynamic hint}) async {
+    return await api.notifyWitnesses(identifier: identifier);
+  }
+
+  Future<bool> broadcastReceipts(
+      {required Identifier identifier,
+        required List<Identifier> witnessList,
+        dynamic hint}) async {
+    return await api.broadcastReceipts(
+        identifier: identifier, witnessList: witnessList);
+  }
 }
