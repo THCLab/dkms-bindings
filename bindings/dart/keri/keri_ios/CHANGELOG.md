@@ -13,3 +13,7 @@ New `.a` file
 ## 0.0.4
 
 New `.a` file that adds mailbox logs
+
+## 0.0.5
+
+Added `notifyWitnesses` and `broadcastReceipts`
