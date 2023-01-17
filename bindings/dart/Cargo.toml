@@ -16,7 +16,7 @@ lto = true
 
 [dependencies]
 flutter_rust_bridge = "=1.54"
-keri = { git = "https://github.com/THCLab/keriox.git", features = ["controller"]}
+keri = { git = "https://github.com/THCLab/keriox.git"}
 controller = { git = "https://github.com/THCLab/keriox.git"}
 anyhow = { version = "1.0" }
 thiserror = "1.0"
