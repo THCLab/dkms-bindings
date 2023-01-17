@@ -573,14 +573,16 @@ class KeriWindows extends KeriPlatformInterface {
         identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
 
-  Future<bool> notifyWitnesses({required Identifier identifier, dynamic hint}) async{
+  Future<bool> notifyWitnesses(
+      {required Identifier identifier, dynamic hint}) async {
     return await api.notifyWitnesses(identifier: identifier);
   }
 
   Future<bool> broadcastReceipts(
       {required Identifier identifier,
-        required List<Identifier> witnessList,
-        dynamic hint}) async{
-    return await api.broadcastReceipts(identifier: identifier, witnessList: witnessList);
+      required List<Identifier> witnessList,
+      dynamic hint}) async {
+    return await api.broadcastReceipts(
+        identifier: identifier, witnessList: witnessList);
   }
 }

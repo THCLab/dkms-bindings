@@ -9,9 +9,6 @@ part of 'bridge_generated.dart';
 // FreezedGenerator
 // **************************************************************************
 
-
-
-
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(

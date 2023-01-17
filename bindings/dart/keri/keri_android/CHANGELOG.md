@@ -37,3 +37,7 @@ Changed .so file
 ## 0.0.10
 
 New `.so` files that add mailbox logs
+
+## 0.0.11 
+
+Added `notifyWitnesses` and `broadcastReceipts`
