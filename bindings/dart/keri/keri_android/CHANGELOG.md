@@ -53,3 +53,7 @@ Changed .so file
 ## 0.0.14
 
 Changed .so file
+
+## 0.0.15
+
+Changed .so file
