@@ -81,3 +81,11 @@ New `.a` and `.so` files that add mailbox logs
 ## 1.3.0
 
 Added `notifyWitnesses` and `broadcastReceipts` functions
+
+## 1.3.1
+
+New `.so` files in `keri_android`
+
+## 1.3.2
+
+New `.a` file in `keri_ios`
