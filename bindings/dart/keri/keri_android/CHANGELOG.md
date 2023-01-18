@@ -45,3 +45,7 @@ Added `notifyWitnesses` and `broadcastReceipts`
 ## 0.0.12
 
 Added `notifyWitnesses` and `broadcastReceipts` functions
+
+## 0.0.13
+
+Changed .so file
