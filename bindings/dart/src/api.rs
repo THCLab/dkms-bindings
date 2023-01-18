@@ -1,7 +1,7 @@
 use std::{
     path::PathBuf,
     slice,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, time::Duration,
 };
 
 use controller::{error::ControllerError, identifier_controller::IdentifierController};
@@ -145,6 +145,7 @@ impl Config {
         Ok(OptionalConfig {
             initial_oobis: Some(oobis),
             db_path: None,
+            escrow_duration: Some(Duration::from_secs(100)),
         })
     }
 }
@@ -211,6 +212,7 @@ pub fn change_controller(db_path: String) -> Result<bool> {
     let config = OptionalConfig {
         db_path: Some(PathBuf::from(db_path)),
         initial_oobis: None,
+        escrow_duration: Some(Duration::from_secs(100)),
     };
     let controller = controller::Controller::new(Some(config))?;
 
@@ -224,9 +226,11 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
             .build()
             .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))?
     } else {
+        // Default configs
         OptionalConfig {
             db_path: Some(PathBuf::from(input_app_dir)),
             initial_oobis: None,
+            escrow_duration: Some(Duration::from_secs(100)),
         }
     };
     let is_initialized = {
