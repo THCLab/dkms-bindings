@@ -21,3 +21,7 @@ Added `notifyWitnesses` and `broadcastReceipts`
 ## 0.0.6
 
 Added `notifyWitnesses` and `broadcastReceipts` functions
+
+## 0.0.7
+
+New `.a` file
