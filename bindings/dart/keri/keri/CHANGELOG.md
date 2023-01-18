@@ -89,3 +89,7 @@ New `.so` files in `keri_android`
 ## 1.3.2
 
 New `.a` file in `keri_ios`
+
+## 1.3.3
+
+New `.so` files in `keri_android`
