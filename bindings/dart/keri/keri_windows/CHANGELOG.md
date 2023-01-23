@@ -25,3 +25,7 @@ Aligned with `keri_platform_interface` 0.0.5
 ## 0.0.7
 
 Added `notifyWitnesses` and `broadcastReceipts`
+
+## 0.1.0
+
+Lengthen events escrowing time

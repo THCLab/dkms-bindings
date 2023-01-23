@@ -61,3 +61,7 @@ Changed .so file
 ## 0.0.16
 
 Changed .so file, event longer valid
+
+## 0.1.0
+
+Lengthen events escrowing time

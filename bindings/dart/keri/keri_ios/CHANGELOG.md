@@ -37,3 +37,7 @@ New `.a` file
 ## 0.0.10
 
 New `.a` file that keeps event longer valid
+
+## 0.1.0
+
+Lengthen events escrowing time

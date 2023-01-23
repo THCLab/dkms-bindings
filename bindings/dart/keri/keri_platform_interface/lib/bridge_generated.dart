@@ -286,11 +286,11 @@ class Identifier {
 }
 
 enum KeyType {
-  ECDSAsecp256k1NT,
+  ECDSAsecp256k1Nontrans,
   ECDSAsecp256k1,
-  Ed25519NT,
+  Ed25519Nontrans,
   Ed25519,
-  Ed448NT,
+  Ed448Nontrans,
   Ed448,
   X25519,
   X448,

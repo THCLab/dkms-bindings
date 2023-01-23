@@ -574,8 +574,8 @@ class KeriAndroid extends KeriPlatformInterface {
   @override
   Future<bool> broadcastReceipts(
       {required Identifier identifier,
-        required List<Identifier> witnessList,
-        dynamic hint}) async {
+      required List<Identifier> witnessList,
+      dynamic hint}) async {
     return await api.broadcastReceipts(
         identifier: identifier, witnessList: witnessList);
   }

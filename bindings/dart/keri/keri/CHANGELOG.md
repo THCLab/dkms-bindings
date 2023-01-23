@@ -109,3 +109,7 @@ New `.a` file in `keri_ios`
 ## 1.3.7
 
 New `.a` and `.so` files that keep event longer valid
+
+## 1.4.0
+
+Lengthen events escrowing time
