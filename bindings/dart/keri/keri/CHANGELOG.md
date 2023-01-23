@@ -97,3 +97,15 @@ New `.so` files in `keri_android`
 ## 1.3.4
 
 New `.so` files in `keri_android`
+
+## 1.3.5
+
+New `.a` file in `keri_ios`
+
+## 1.3.6
+
+New `.a` file in `keri_ios`
+
+## 1.3.7
+
+New `.a` and `.so` files that keep event longer valid

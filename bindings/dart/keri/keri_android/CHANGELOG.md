@@ -57,3 +57,7 @@ Changed .so file
 ## 0.0.15
 
 Changed .so file
+
+## 0.0.16
+
+Changed .so file, event longer valid
