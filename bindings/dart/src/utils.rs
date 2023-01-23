@@ -1,6 +1,6 @@
 use crate::api::{Digest, Error, PublicKey, Signature};
+use keri::prefix::CesrPrimitive;
 pub use keri::{
-    event_parsing::{codes::basic::Basic, primitives::CesrPrimitive},
     oobi::LocationScheme,
     prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix},
     sai::SelfAddressingPrefix,

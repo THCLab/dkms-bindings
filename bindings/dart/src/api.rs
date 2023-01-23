@@ -1,27 +1,27 @@
 use std::{
     path::PathBuf,
     slice,
-    sync::{Arc, Mutex}, time::Duration,
+    sync::{Arc, Mutex},
+    time::Duration,
 };
 
+use cesrox::{
+    derivation_code::DerivationCode,
+    group::{parsers::parse_group, Group},
+    primitives::codes::{basic::Basic, self_signing::SelfSigning},
+};
 use controller::{error::ControllerError, identifier_controller::IdentifierController};
 use flutter_rust_bridge::{frb, support::lazy_static};
+use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive};
 
 use crate::utils::{join_keys_and_signatures, parse_location_schemes, parse_witness_prefix};
 use anyhow::{anyhow, Result};
 pub use controller::utils::OptionalConfig;
-pub use keri::event_parsing::codes::basic::Basic;
 pub use keri::keys::PublicKey as KeriPublicKey;
 pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
 pub use keri::{
     actor::{event_generator, prelude::Message},
     event_message::cesr_adapter::EventType,
-    event_parsing::{
-        codes::{self_signing::SelfSigning, DerivationCode},
-        group::Group,
-        parsers::{group::parse_group, parse_payload},
-        primitives::CesrPrimitive,
-    },
     oobi::{LocationScheme, Role},
     sai::{derivation::SelfAddressing, SelfAddressingPrefix},
 };
@@ -31,11 +31,11 @@ use tokio::runtime::Runtime;
 pub type KeyType = Basic;
 #[frb(mirror(KeyType))]
 pub enum _KeyType {
-    ECDSAsecp256k1NT,
+    ECDSAsecp256k1Nontrans,
     ECDSAsecp256k1,
-    Ed25519NT,
+    Ed25519Nontrans,
     Ed25519,
-    Ed448NT,
+    Ed448Nontrans,
     Ed448,
     X25519,
     X448,
@@ -567,8 +567,8 @@ pub fn finalize_query(
         .ok_or(Error::ControllerInitializationError)?
         .clone();
 
-    let (_, query) = parse_payload::<EventType>(query_event.as_bytes())
-        .map_err(|_e| ControllerError::EventFormatError)?;
+    let query =
+        parse_event_type(query_event.as_bytes()).map_err(|_e| ControllerError::EventFormatError)?;
 
     let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
 
@@ -649,7 +649,7 @@ pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignatu
         .map_err(|_e| Error::AttachmentParseError)?
         .1;
 
-    let keys = if let Group::TransferableIndexedSigGroups(group) = att {
+    let keys = if let Group::TransIndexedSigGroups(group) = att {
         let r = group
             .into_iter()
             .map(|(id, sn, digest, sigs)| -> Result<Vec<_>, Error> {

@@ -1,7 +1,6 @@
-use keri::event_parsing::codes::basic::Basic;
-use keri::event_parsing::primitives::CesrPrimitive;
+use cesrox::primitives::codes::basic::Basic;
 use keri::keys::PublicKey as KeriPublicKey;
-use keri::prefix::{BasicPrefix, IdentifierPrefix};
+use keri::prefix::{BasicPrefix, CesrPrimitive, IdentifierPrefix};
 
 use crate::api::{Identifier, PublicKey};
 
@@ -25,11 +24,11 @@ impl Into<IdentifierPrefix> for Identifier {
 impl From<BasicPrefix> for PublicKey {
     fn from(bp: BasicPrefix) -> Self {
         let code = match bp {
-            BasicPrefix::ECDSAsecp256k1NT(_) => Basic::ECDSAsecp256k1NT,
+            BasicPrefix::ECDSAsecp256k1NT(_) => Basic::ECDSAsecp256k1Nontrans,
             BasicPrefix::ECDSAsecp256k1(_) => Basic::ECDSAsecp256k1,
-            BasicPrefix::Ed25519NT(_) => Basic::Ed25519NT,
+            BasicPrefix::Ed25519NT(_) => Basic::Ed25519Nontrans,
             BasicPrefix::Ed25519(_) => Basic::Ed25519,
-            BasicPrefix::Ed448NT(_) => Basic::Ed25519NT,
+            BasicPrefix::Ed448NT(_) => Basic::Ed25519Nontrans,
             BasicPrefix::Ed448(_) => Basic::Ed448,
             BasicPrefix::X25519(_) => Basic::X25519,
             BasicPrefix::X448(_) => Basic::X448,

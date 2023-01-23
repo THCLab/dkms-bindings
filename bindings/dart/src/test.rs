@@ -1,9 +1,9 @@
 use anyhow::Result;
+use cesrox::primitives::{
+    codes::{basic::Basic, self_signing::SelfSigning},
+    CesrPrimitive,
+};
 use keri::{
-    event_parsing::{
-        codes::{basic::Basic, self_signing::SelfSigning},
-        primitives::CesrPrimitive,
-    },
     sai::derivation::SelfAddressing,
     signer::{CryptoBox, KeyManager},
 };
@@ -23,10 +23,10 @@ pub fn test_new_key() -> Result<()> {
     let to_short_public_key = "-Ladn-aIv4Rzr9o5RvZfM9zLWa8R0u5Dtok2dhN5b-".to_string();
     let to_long_public_key = "-Ladn-aIv4Rzr9o5RvZfM9zLWa8R0u5Dtok2dhN5b-k=GGG".to_string();
 
-    assert!(new_public_key(Basic::Ed25519NT, public_key).is_ok());
-    assert!(new_public_key(Basic::Ed25519NT, not_base_64).is_err());
-    assert!(new_public_key(Basic::Ed25519NT, to_short_public_key).is_err());
-    assert!(new_public_key(Basic::Ed25519NT, to_long_public_key).is_err());
+    assert!(new_public_key(Basic::Ed25519Nontrans, public_key).is_ok());
+    assert!(new_public_key(Basic::Ed25519Nontrans, not_base_64).is_err());
+    assert!(new_public_key(Basic::Ed25519Nontrans, to_short_public_key).is_err());
+    assert!(new_public_key(Basic::Ed25519Nontrans, to_long_public_key).is_err());
 
     Ok(())
 }

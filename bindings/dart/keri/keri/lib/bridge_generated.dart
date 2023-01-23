@@ -286,11 +286,11 @@ class Identifier {
 }
 
 enum KeyType {
-  ECDSAsecp256k1NT,
+  ECDSAsecp256k1Nontrans,
   ECDSAsecp256k1,
-  Ed25519NT,
+  Ed25519Nontrans,
   Ed25519,
-  Ed448NT,
+  Ed448Nontrans,
   Ed448,
   X25519,
   X448,
@@ -2328,4 +2328,4 @@ class wire_list_data_and_signature extends ffi.Struct {
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<ffi.Bool Function(DartPort, ffi.Pointer<ffi.Void>)>>;
 typedef DartPort = ffi.Int64;
-typedef uintptr_t = ffi.UnsignedLongLong;
+typedef uintptr_t = ffi.UnsignedLong;

@@ -570,11 +570,11 @@ struct mirror_SignatureType(SignatureType);
 
 const _: fn() = || {
     match None::<KeyType>.unwrap() {
-        KeyType::ECDSAsecp256k1NT => {}
+        KeyType::ECDSAsecp256k1Nontrans => {}
         KeyType::ECDSAsecp256k1 => {}
-        KeyType::Ed25519NT => {}
+        KeyType::Ed25519Nontrans => {}
         KeyType::Ed25519 => {}
-        KeyType::Ed448NT => {}
+        KeyType::Ed448Nontrans => {}
         KeyType::Ed448 => {}
         KeyType::X25519 => {}
         KeyType::X448 => {}
@@ -613,11 +613,11 @@ impl Wire2Api<i32> for i32 {
 impl Wire2Api<KeyType> for i32 {
     fn wire2api(self) -> KeyType {
         match self {
-            0 => KeyType::ECDSAsecp256k1NT,
+            0 => KeyType::ECDSAsecp256k1Nontrans,
             1 => KeyType::ECDSAsecp256k1,
-            2 => KeyType::Ed25519NT,
+            2 => KeyType::Ed25519Nontrans,
             3 => KeyType::Ed25519,
-            4 => KeyType::Ed448NT,
+            4 => KeyType::Ed448Nontrans,
             5 => KeyType::Ed448,
             6 => KeyType::X25519,
             7 => KeyType::X448,
@@ -701,11 +701,11 @@ impl support::IntoDartExceptPrimitive for Identifier {}
 impl support::IntoDart for mirror_KeyType {
     fn into_dart(self) -> support::DartAbi {
         match self.0 {
-            KeyType::ECDSAsecp256k1NT => 0,
+            KeyType::ECDSAsecp256k1Nontrans => 0,
             KeyType::ECDSAsecp256k1 => 1,
-            KeyType::Ed25519NT => 2,
+            KeyType::Ed25519Nontrans => 2,
             KeyType::Ed25519 => 3,
-            KeyType::Ed448NT => 4,
+            KeyType::Ed448Nontrans => 4,
             KeyType::Ed448 => 5,
             KeyType::X25519 => 6,
             KeyType::X448 => 7,
