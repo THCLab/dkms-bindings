@@ -25,3 +25,15 @@ Added `notifyWitnesses` and `broadcastReceipts` functions
 ## 0.0.7
 
 New `.a` file
+
+## 0.0.8
+
+New `.a` file
+
+## 0.0.9
+
+New `.a` file
+
+## 0.0.10
+
+New `.a` file that keeps event longer valid

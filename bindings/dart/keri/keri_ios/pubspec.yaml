@@ -1,6 +1,6 @@
 name: keri_ios
 description: Keri plugin implementation for iOS devices only. See keri for all types.
-version: 0.0.7
+version: 0.0.10
 repository: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri_ios
 
 environment:
