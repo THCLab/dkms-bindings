@@ -2,7 +2,7 @@ use crate::api::{Digest, Error, PublicKey, Signature};
 use keri::prefix::CesrPrimitive;
 pub use keri::{
     oobi::LocationScheme,
-    prefix::{IndexedSignature, BasicPrefix, SelfSigningPrefix},
+    prefix::{BasicPrefix, IndexedSignature, SelfSigningPrefix},
 };
 use sai::SelfAddressingPrefix;
 

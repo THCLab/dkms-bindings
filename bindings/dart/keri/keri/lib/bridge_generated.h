@@ -3,6 +3,8 @@
 #include <stdlib.h>
 typedef struct _Dart_Handle* Dart_Handle;
 
+typedef struct DartCObject DartCObject;
+
 typedef int64_t DartPort;
 
 typedef bool (*DartPostCObjectFnType)(DartPort port_id, void *message);
@@ -108,11 +110,7 @@ typedef struct wire_list_data_and_signature {
   int32_t len;
 } wire_list_data_and_signature;
 
-typedef struct WireSyncReturnStruct {
-  uint8_t *ptr;
-  int32_t len;
-  bool success;
-} WireSyncReturnStruct;
+typedef struct DartCObject *WireSyncReturn;
 
 void store_dart_post_cobject(DartPostCObjectFnType ptr);
 
@@ -219,6 +217,13 @@ void wire_process_stream(int64_t port_, struct wire_uint_8_list *stream);
 
 void wire_get_kel(int64_t port_, struct wire_Identifier *identifier);
 
+void wire_sign_to_cesr(int64_t port_,
+                       struct wire_Identifier *identifier,
+                       struct wire_uint_8_list *data,
+                       struct wire_Signature *signature);
+
+void wire_verify_from_cesr(int64_t port_, struct wire_uint_8_list *stream);
+
 void wire_new_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
 
 void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
@@ -251,7 +256,7 @@ union DigestTypeKind *inflate_DigestType_Blake2B256(void);
 
 union DigestTypeKind *inflate_DigestType_Blake2S256(void);
 
-void free_WireSyncReturnStruct(struct WireSyncReturnStruct val);
+void free_WireSyncReturn(WireSyncReturn ptr);
 
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
@@ -279,6 +284,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_resolve_oobi);
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
+    dummy_var ^= ((int64_t) (void*) wire_sign_to_cesr);
+    dummy_var ^= ((int64_t) (void*) wire_verify_from_cesr);
     dummy_var ^= ((int64_t) (void*) wire_new_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);
@@ -294,7 +301,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
     dummy_var ^= ((int64_t) (void*) inflate_DigestType_Blake2B256);
     dummy_var ^= ((int64_t) (void*) inflate_DigestType_Blake2S256);
-    dummy_var ^= ((int64_t) (void*) free_WireSyncReturnStruct);
+    dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
     dummy_var ^= ((int64_t) (void*) get_dart_object);
     dummy_var ^= ((int64_t) (void*) drop_dart_object);

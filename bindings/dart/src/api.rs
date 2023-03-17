@@ -1,33 +1,30 @@
-use std::{
-    path::PathBuf,
-    slice,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
-
-use cesrox::{
-    derivation_code::DerivationCode,
-    primitives::codes::{basic::Basic, self_signing::SelfSigning},
+use cesrox::derivation_code::DerivationCode;
+pub use cesrox::primitives::codes::{
+    basic::Basic as KeyType, self_signing::SelfSigning as SignatureType,
 };
 use controller::{error::ControllerError, identifier_controller::IdentifierController};
 use flutter_rust_bridge::{frb, support::lazy_static};
 use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive};
+pub use sai::derivation::SelfAddressing as DigestType;
+use std::{
+    path::PathBuf,
+    slice,
+    sync::{Arc, Mutex},
+};
 
 use crate::utils::{parse_location_schemes, parse_witness_prefix};
 use anyhow::{anyhow, Result};
-pub use controller::config::ControllerConfig;
-pub use keri::keys::PublicKey as KeriPublicKey;
-pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
-pub use keri::{
+use controller::config::ControllerConfig;
+use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
+use keri::{
     actor::{event_generator, prelude::Message},
     event_message::cesr_adapter::EventType,
     oobi::{LocationScheme, Role},
 };
-use sai::{derivation::SelfAddressing, SelfAddressingPrefix};
+use sai::SelfAddressingPrefix;
 use thiserror::Error;
 use tokio::runtime::Runtime;
 
-pub type KeyType = Basic;
 #[frb(mirror(KeyType))]
 pub enum _KeyType {
     ECDSAsecp256k1Nontrans,
@@ -40,7 +37,6 @@ pub enum _KeyType {
     X448,
 }
 
-pub type DigestType = SelfAddressing;
 #[frb(mirror(DigestType))]
 pub enum _DigestType {
     Blake3_256,
@@ -54,7 +50,6 @@ pub enum _DigestType {
     Blake2S256(Vec<u8>),
 }
 
-pub type SignatureType = SelfSigning;
 #[frb(mirror(SignatureType))]
 pub enum _SignatureType {
     Ed25519Sha512,
@@ -220,8 +215,7 @@ pub fn change_controller(db_path: String) -> Result<bool> {
 
 pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<bool> {
     let config = if let Some(config) = optional_configs {
-        config
-            .build(PathBuf::from(input_app_dir))?
+        config.build(PathBuf::from(input_app_dir))?
     } else {
         // Default configs
         ControllerConfig {
@@ -490,7 +484,7 @@ pub fn finalize_group_incept(
                      data: exn,
                      signature,
                  }| {
-                    let sig_type: SelfSigning = signature.derivation;
+                    let sig_type: SignatureType = signature.derivation;
                     let sig = SelfSigningPrefix::new(sig_type, signature.signature.clone());
                     (exn.as_bytes().to_vec(), sig)
                 },
@@ -634,7 +628,7 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
     Ok(String::from_utf8(signed_event)?)
 }
 
-pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature)-> Result<String> {
+pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature) -> Result<String> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -644,11 +638,11 @@ pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature)-
     Ok(identifier_controller.sign_to_cesr(&data, signature.into(), 0)?)
 }
 
-pub fn verify_from_cesr(stream: &str) -> Result<bool> {
-     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+pub fn verify_from_cesr(stream: String) -> Result<bool> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .clone();
-    controller.verify_from_cesr(stream)?;
+    controller.verify_from_cesr(&stream)?;
     Ok(true)
 }

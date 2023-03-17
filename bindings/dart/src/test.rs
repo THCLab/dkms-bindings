@@ -3,17 +3,15 @@ use cesrox::primitives::{
     codes::{basic::Basic, self_signing::SelfSigning},
     CesrPrimitive,
 };
-use keri::{
-    signer::{CryptoBox, KeyManager},
-};
+use keri::signer::{CryptoBox, KeyManager};
 use sai::derivation::SelfAddressing;
 use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_query, get_kel, incept_group, init_kel, new_public_key, notify_witnesses,
-    process_stream, query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config,
-    DataAndSignature, Identifier, incept, finalize_inception, sign_to_cesr, verify_from_cesr,
+    finalize_inception, finalize_query, get_kel, incept, incept_group, init_kel, new_public_key,
+    notify_witnesses, process_stream, query_mailbox, resolve_oobi, rotate, sign_to_cesr,
+    signature_from_hex, verify_from_cesr, Action, Config, DataAndSignature, Identifier,
 };
 
 #[test]
@@ -93,7 +91,11 @@ pub fn test_optional_config() -> Result<()> {
     use tempfile::Builder;
 
     // Create temporary db file.
-    let root_path = Builder::new().prefix("test-db").tempdir().unwrap().into_path();
+    let root_path = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .into_path();
 
     let config = Config {
         initial_oobis: "random".into(),
@@ -576,7 +578,7 @@ pub fn test_sign_verify() -> Result<()> {
 
     let identifier = finalize_inception(icp_event, signature)?;
     let data_to_sing = r#"{"hello":"world"}"#;
-     
+
     let hex_signature = hex::encode(key_manager.sign(data_to_sing.as_bytes())?);
 
     // sign icp event
@@ -584,7 +586,7 @@ pub fn test_sign_verify() -> Result<()> {
     let signed = sign_to_cesr(identifier, data_to_sing.to_string(), signature)?;
     println!("signed: {}", &signed);
 
-    assert!(verify_from_cesr(&signed)?);
+    assert!(verify_from_cesr(signed)?);
 
     Ok(())
 }

@@ -226,6 +226,21 @@ pub extern "C" fn wire_get_kel(port_: i64, identifier: *mut wire_Identifier) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_sign_to_cesr(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    data: *mut wire_uint_8_list,
+    signature: *mut wire_Signature,
+) {
+    wire_sign_to_cesr_impl(port_, identifier, data, signature)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_verify_from_cesr(port_: i64, stream: *mut wire_uint_8_list) {
+    wire_verify_from_cesr_impl(port_, stream)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_new_from_str__static_method__Identifier(
     port_: i64,
     id_str: *mut wire_uint_8_list,
@@ -619,12 +634,24 @@ impl NewWithNullPtr for wire_Config {
     }
 }
 
+impl Default for wire_Config {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
 impl NewWithNullPtr for wire_DataAndSignature {
     fn new_with_null_ptr() -> Self {
         Self {
             data: core::ptr::null_mut(),
             signature: core::ptr::null_mut(),
         }
+    }
+}
+
+impl Default for wire_DataAndSignature {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
     }
 }
 
@@ -663,12 +690,24 @@ impl NewWithNullPtr for wire_Identifier {
     }
 }
 
+impl Default for wire_Identifier {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
 impl NewWithNullPtr for wire_PublicKey {
     fn new_with_null_ptr() -> Self {
         Self {
             derivation: Default::default(),
             public_key: core::ptr::null_mut(),
         }
+    }
+}
+
+impl Default for wire_PublicKey {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
     }
 }
 
@@ -681,11 +720,17 @@ impl NewWithNullPtr for wire_Signature {
     }
 }
 
+impl Default for wire_Signature {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
 // Section: sync execution mode utility
 
 #[no_mangle]
-pub extern "C" fn free_WireSyncReturnStruct(val: support::WireSyncReturnStruct) {
+pub extern "C" fn free_WireSyncReturn(ptr: support::WireSyncReturn) {
     unsafe {
-        let _ = support::vec_from_leak_ptr(val.ptr, val.len);
-    }
+        let _ = support::box_from_leak_ptr(ptr);
+    };
 }

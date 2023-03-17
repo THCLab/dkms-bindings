@@ -15,7 +15,7 @@ lto = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-flutter_rust_bridge = "=1.54"
+flutter_rust_bridge = "=1.71"
 keri = { git = "https://github.com/THCLab/keriox.git", branch = "signing"}
 controller = { git = "https://github.com/THCLab/keriox.git", branch = "signing"}
 sai = { git = "https://github.com/THCLab/cesrox" } 
@@ -28,8 +28,7 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 tokio = { version = "1.14.0", features = ["rt", "macros"] }
-openssl = { version = "0.10.42", features = ["vendored"] }
-openssl-sys = "0.9.78"
+openssl = { version = "0.10", features = ["vendored"] }
 
 
 [dev-dependencies]
