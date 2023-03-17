@@ -634,3 +634,21 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
     Ok(String::from_utf8(signed_event)?)
 }
 
+pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature)-> Result<String> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+
+    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+    Ok(identifier_controller.sign_to_cesr(&data, signature.into(), 0)?)
+}
+
+pub fn verify_from_cesr(stream: &str) -> Result<bool> {
+     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+    controller.verify_from_cesr(stream)?;
+    Ok(true)
+}

@@ -13,7 +13,7 @@ use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
     finalize_query, get_kel, incept_group, init_kel, new_public_key, notify_witnesses,
     process_stream, query_mailbox, resolve_oobi, rotate, signature_from_hex, Action, Config,
-    DataAndSignature, Identifier,
+    DataAndSignature, Identifier, incept, finalize_inception, sign_to_cesr, verify_from_cesr,
 };
 
 #[test]
@@ -544,6 +544,47 @@ pub fn test_demo() -> Result<()> {
     //     SelfSigning::Ed25519Sha512.derive(hex::decode(&key_signature_pair.signature.key).unwrap());
 
     // assert!(key_bp.verify(acdc.as_bytes(), &sig).unwrap());
+
+    Ok(())
+}
+
+#[test]
+pub fn test_sign_verify() -> Result<()> {
+    // Create temporary db file.
+    let root_path = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .path()
+        .to_str()
+        .unwrap()
+        .into();
+
+    let mut key_manager = CryptoBox::new().unwrap();
+    let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
+    let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
+
+    init_kel(root_path, None)?;
+
+    let pk = new_public_key(Basic::Ed25519, current_b64key)?;
+    let npk = new_public_key(Basic::Ed25519, next_b64key)?;
+    let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
+    let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
+
+    // sign icp event
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+
+    let identifier = finalize_inception(icp_event, signature)?;
+    let data_to_sing = r#"{"hello":"world"}"#;
+     
+    let hex_signature = hex::encode(key_manager.sign(data_to_sing.as_bytes())?);
+
+    // sign icp event
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signed = sign_to_cesr(identifier, data_to_sing.to_string(), signature)?;
+    println!("signed: {}", &signed);
+
+    assert!(verify_from_cesr(&signed)?);
 
     Ok(())
 }
