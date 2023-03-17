@@ -16,9 +16,10 @@ lto = true
 
 [dependencies]
 flutter_rust_bridge = "=1.54"
-keri = { git = "https://github.com/THCLab/keriox.git", branch = "set_escrow_duration"}
-controller = { git = "https://github.com/THCLab/keriox.git", branch = "set_escrow_duration"}
-cesrox = "0.1.3"
+keri = { git = "https://github.com/THCLab/keriox.git", branch = "signing"}
+controller = { git = "https://github.com/THCLab/keriox.git", branch = "signing"}
+sai = { git = "https://github.com/THCLab/cesrox" } 
+cesrox = { git = "https://github.com/THCLab/cesrox", features = ["cesr-proof"] }
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"

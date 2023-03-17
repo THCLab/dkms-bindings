@@ -4,9 +4,9 @@ use cesrox::primitives::{
     CesrPrimitive,
 };
 use keri::{
-    sai::derivation::SelfAddressing,
     signer::{CryptoBox, KeyManager},
 };
+use sai::derivation::SelfAddressing;
 use tempfile::Builder;
 
 use crate::api::{
@@ -93,18 +93,18 @@ pub fn test_optional_config() -> Result<()> {
     use tempfile::Builder;
 
     // Create temporary db file.
-    let root = Builder::new().prefix("test-db").tempdir().unwrap();
+    let root_path = Builder::new().prefix("test-db").tempdir().unwrap().into_path();
 
     let config = Config {
         initial_oobis: "random".into(),
     };
-    let oc = config.build();
+    let oc = config.build(root_path.clone());
     assert!(oc.is_err());
 
     let config = Config { initial_oobis: r#"[{"eid":"BKPE5eeJRzkRTMOoRGVd2m18o8fLqM2j9kaxLhV3x8AQ","scheme":"http","url":"http://127.0.0.1:0/"}]"#.into() };
 
     // Fail to resolve oobi
-    let result = init_kel(root.path().to_str().unwrap().into(), Some(config));
+    let result = init_kel(root_path.to_str().unwrap().into(), Some(config));
     assert!(result.is_err());
 
     Ok(())

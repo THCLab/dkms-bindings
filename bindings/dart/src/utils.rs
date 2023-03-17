@@ -2,9 +2,9 @@ use crate::api::{Digest, Error, PublicKey, Signature};
 use keri::prefix::CesrPrimitive;
 pub use keri::{
     oobi::LocationScheme,
-    prefix::{AttachedSignaturePrefix, BasicPrefix, SelfSigningPrefix},
-    sai::SelfAddressingPrefix,
+    prefix::{IndexedSignature, BasicPrefix, SelfSigningPrefix},
 };
+use sai::SelfAddressingPrefix;
 
 pub fn parse_location_schemes(location_str: &str) -> Result<LocationScheme, Error> {
     serde_json::from_str::<LocationScheme>(location_str)
@@ -22,25 +22,6 @@ pub fn parse_witness_prefix(wit_str: &str) -> Result<BasicPrefix, Error> {
             "Witness identifier must be nontransferable".into(),
         ))
     }
-}
-
-// helper functions for parsing attached signatures
-pub fn join_keys_and_signatures(
-    current_keys: Vec<BasicPrefix>,
-    signatures: &[AttachedSignaturePrefix],
-) -> Result<Vec<(BasicPrefix, SelfSigningPrefix)>, Error> {
-    signatures
-        .iter()
-        .map(|s| -> Result<_, _> {
-            Ok((
-                current_keys
-                    .get(s.index as usize)
-                    .ok_or_else(|| Error::UtilsError("Missing signature index".into()))?
-                    .to_owned(),
-                s.signature.clone(),
-            ))
-        })
-        .collect()
 }
 
 impl Into<SelfSigningPrefix> for Signature {

@@ -170,12 +170,6 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kGetKelConstMeta;
 
-  /// Returns pairs: public key encoded in base64 and signature encoded in hex
-  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-      {required String attachment, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kGetCurrentPublicKeyConstMeta;
-
   Future<Identifier> newFromStrStaticMethodIdentifier(
       {required String idStr, dynamic hint});
 
@@ -303,16 +297,6 @@ class PublicKey {
   PublicKey({
     required this.derivation,
     required this.publicKey,
-  });
-}
-
-class PublicKeySignaturePair {
-  final PublicKey key;
-  final Signature signature;
-
-  PublicKeySignaturePair({
-    required this.key,
-    required this.signature,
   });
 }
 
@@ -889,25 +873,6 @@ class KeriDartImpl implements KeriDart {
         argNames: ["identifier"],
       );
 
-  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-      {required String attachment, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(attachment);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_get_current_public_key(port_, arg0),
-      parseSuccessData: _wire2api_list_public_key_signature_pair,
-      constMeta: kGetCurrentPublicKeyConstMeta,
-      argValues: [attachment],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kGetCurrentPublicKeyConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "get_current_public_key",
-        argNames: ["attachment"],
-      );
-
   Future<Identifier> newFromStrStaticMethodIdentifier(
       {required String idStr, dynamic hint}) {
     var arg0 = _platform.api2wire_String(idStr);
@@ -1056,13 +1021,6 @@ class KeriDartImpl implements KeriDart {
     return (raw as List<dynamic>).map(_wire2api_action_required).toList();
   }
 
-  List<PublicKeySignaturePair> _wire2api_list_public_key_signature_pair(
-      dynamic raw) {
-    return (raw as List<dynamic>)
-        .map(_wire2api_public_key_signature_pair)
-        .toList();
-  }
-
   PublicKey _wire2api_public_key(dynamic raw) {
     final arr = raw as List<dynamic>;
     if (arr.length != 2)
@@ -1070,16 +1028,6 @@ class KeriDartImpl implements KeriDart {
     return PublicKey(
       derivation: _wire2api_key_type(arr[0]),
       publicKey: _wire2api_uint_8_list(arr[1]),
-    );
-  }
-
-  PublicKeySignaturePair _wire2api_public_key_signature_pair(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return PublicKeySignaturePair(
-      key: _wire2api_public_key(arr[0]),
-      signature: _wire2api_signature(arr[1]),
     );
   }
 
@@ -1977,23 +1925,6 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_get_kel = _wire_get_kelPtr
       .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
 
-  void wire_get_current_public_key(
-    int port_,
-    ffi.Pointer<wire_uint_8_list> attachment,
-  ) {
-    return _wire_get_current_public_key(
-      port_,
-      attachment,
-    );
-  }
-
-  late final _wire_get_current_public_keyPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_get_current_public_key');
-  late final _wire_get_current_public_key = _wire_get_current_public_keyPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
   void wire_new_from_str__static_method__Identifier(
     int port_,
     ffi.Pointer<wire_uint_8_list> id_str,
@@ -2328,4 +2259,4 @@ class wire_list_data_and_signature extends ffi.Struct {
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<ffi.Bool Function(DartPort, ffi.Pointer<ffi.Void>)>>;
 typedef DartPort = ffi.Int64;
-typedef uintptr_t = ffi.UnsignedLongLong;
+typedef uintptr_t = ffi.UnsignedLong;

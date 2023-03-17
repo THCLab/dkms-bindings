@@ -492,22 +492,6 @@ fn wire_get_kel_impl(port_: MessagePort, identifier: impl Wire2Api<Identifier> +
         },
     )
 }
-fn wire_get_current_public_key_impl(
-    port_: MessagePort,
-    attachment: impl Wire2Api<String> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "get_current_public_key",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_attachment = attachment.wire2api();
-            move |task_callback| get_current_public_key(api_attachment)
-        },
-    )
-}
 fn wire_new_from_str__static_method__Identifier_impl(
     port_: MessagePort,
     id_str: impl Wire2Api<String> + UnwindSafe,
@@ -724,13 +708,6 @@ impl support::IntoDart for PublicKey {
     }
 }
 impl support::IntoDartExceptPrimitive for PublicKey {}
-
-impl support::IntoDart for PublicKeySignaturePair {
-    fn into_dart(self) -> support::DartAbi {
-        vec![self.key.into_dart(), self.signature.into_dart()].into_dart()
-    }
-}
-impl support::IntoDartExceptPrimitive for PublicKeySignaturePair {}
 
 impl support::IntoDart for Signature {
     fn into_dart(self) -> support::DartAbi {

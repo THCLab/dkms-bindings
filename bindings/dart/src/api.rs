@@ -7,24 +7,23 @@ use std::{
 
 use cesrox::{
     derivation_code::DerivationCode,
-    group::{parsers::parse_group, Group},
     primitives::codes::{basic::Basic, self_signing::SelfSigning},
 };
 use controller::{error::ControllerError, identifier_controller::IdentifierController};
 use flutter_rust_bridge::{frb, support::lazy_static};
 use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive};
 
-use crate::utils::{join_keys_and_signatures, parse_location_schemes, parse_witness_prefix};
+use crate::utils::{parse_location_schemes, parse_witness_prefix};
 use anyhow::{anyhow, Result};
-pub use controller::utils::OptionalConfig;
+pub use controller::config::ControllerConfig;
 pub use keri::keys::PublicKey as KeriPublicKey;
 pub use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
 pub use keri::{
     actor::{event_generator, prelude::Message},
     event_message::cesr_adapter::EventType,
     oobi::{LocationScheme, Role},
-    sai::{derivation::SelfAddressing, SelfAddressingPrefix},
 };
+use sai::{derivation::SelfAddressing, SelfAddressingPrefix};
 use thiserror::Error;
 use tokio::runtime::Runtime;
 
@@ -139,13 +138,13 @@ pub fn with_initial_oobis(config: Config, oobis_json: String) -> Config {
 }
 
 impl Config {
-    pub(crate) fn build(&self) -> Result<OptionalConfig> {
+    pub(crate) fn build(&self, db_path: PathBuf) -> Result<ControllerConfig> {
         let oobis: Vec<LocationScheme> = serde_json::from_str(&self.initial_oobis)
             .map_err(|_e| anyhow!("Improper location scheme structure"))?;
-        Ok(OptionalConfig {
-            initial_oobis: Some(oobis),
-            db_path: None,
-            escrow_duration: Some(Duration::from_secs(100)),
+        Ok(ControllerConfig {
+            initial_oobis: oobis,
+            db_path: db_path,
+            ..Default::default()
         })
     }
 }
@@ -209,12 +208,11 @@ pub enum Error {
 /// Helper function for tests. Enable to switch to use other database. Used to
 /// simulate using multiple devices.
 pub fn change_controller(db_path: String) -> Result<bool> {
-    let config = OptionalConfig {
-        db_path: Some(PathBuf::from(db_path)),
-        initial_oobis: None,
-        escrow_duration: Some(Duration::from_secs(100)),
+    let config = ControllerConfig {
+        db_path: PathBuf::from(db_path),
+        ..Default::default()
     };
-    let controller = controller::Controller::new(Some(config))?;
+    let controller = controller::Controller::new(config)?;
 
     *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Arc::new(controller));
     Ok(true)
@@ -223,14 +221,12 @@ pub fn change_controller(db_path: String) -> Result<bool> {
 pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Result<bool> {
     let config = if let Some(config) = optional_configs {
         config
-            .build()
-            .map(|c| c.with_db_path(PathBuf::from(input_app_dir)))?
+            .build(PathBuf::from(input_app_dir))?
     } else {
         // Default configs
-        OptionalConfig {
-            db_path: Some(PathBuf::from(input_app_dir)),
-            initial_oobis: None,
-            escrow_duration: Some(Duration::from_secs(100)),
+        ControllerConfig {
+            db_path: PathBuf::from(input_app_dir),
+            ..Default::default()
         }
     };
     let is_initialized = {
@@ -241,7 +237,7 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
 
     if !is_initialized {
         let rt = Runtime::new().unwrap();
-        let controller = rt.block_on(async { controller::Controller::new(Some(config)) })?;
+        let controller = rt.block_on(async { controller::Controller::new(config) })?;
         *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Arc::new(controller));
     }
 
@@ -364,7 +360,7 @@ pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<Strin
 
         let add_watcher =
             event_generator::generate_end_role(&identifier.into(), &lc.eid, Role::Watcher, true)?;
-        Ok(String::from_utf8(add_watcher.serialize()?)?)
+        Ok(String::from_utf8(add_watcher.encode()?)?)
     } else {
         Err(ControllerError::WrongWitnessPrefixError.into())
     }
@@ -525,7 +521,7 @@ pub fn query_mailbox(
     identifier_controller
         .query_mailbox(&about_who.into(), &witnesses?)?
         .iter()
-        .map(|qry| -> Result<String> { Ok(String::from_utf8(qry.serialize()?)?) })
+        .map(|qry| -> Result<String> { Ok(String::from_utf8(qry.encode()?)?) })
         .collect::<Result<Vec<_>>>()
 }
 
@@ -540,7 +536,7 @@ pub fn query_watchers(who_ask: Identifier, about_who: Identifier) -> Result<Vec<
     identifier_controller
         .query_own_watchers(&about_who.into())?
         .iter()
-        .map(|qry| -> Result<String> { Ok(String::from_utf8(qry.serialize()?)?) })
+        .map(|qry| -> Result<String> { Ok(String::from_utf8(qry.encode()?)?) })
         .collect::<Result<Vec<_>>>()
 }
 
@@ -588,8 +584,8 @@ pub fn finalize_query(
                             exchanges,
                         ) => Ok(ActionRequired {
                             action: Action::MultisigRequest,
-                            data: String::from_utf8(data.serialize()?)?,
-                            additiona_data: String::from_utf8(exchanges.serialize()?)?,
+                            data: String::from_utf8(data.encode()?)?,
+                            additiona_data: String::from_utf8(exchanges.encode()?)?,
                         }),
                         _ => {
                             todo!()
@@ -638,43 +634,3 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
     Ok(String::from_utf8(signed_event)?)
 }
 
-pub struct PublicKeySignaturePair {
-    pub key: PublicKey,
-    pub signature: Signature,
-}
-
-/// Returns pairs: public key encoded in base64 and signature encoded in hex
-pub fn get_current_public_key(attachment: String) -> Result<Vec<PublicKeySignaturePair>> {
-    let att = parse_group(attachment.as_bytes())
-        .map_err(|_e| Error::AttachmentParseError)?
-        .1;
-
-    let keys = if let Group::TransIndexedSigGroups(group) = att {
-        let r = group
-            .into_iter()
-            .map(|(id, sn, digest, sigs)| -> Result<Vec<_>, Error> {
-                let signatures = sigs.into_iter().map(|s| s.into()).collect::<Vec<_>>();
-                let current_keys = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-                    .as_ref()
-                    .ok_or(Error::ControllerInitializationError)?
-                    .storage
-                    .get_keys_at_event(&(id.into()), sn, &(digest.into()))
-                    .map_err(|e| Error::UtilsError(e.to_string()))?
-                    .ok_or_else(|| Error::UtilsError("Can't find event of given seal".into()))?
-                    .public_keys;
-                join_keys_and_signatures(current_keys, &signatures)
-            })
-            .collect::<Result<Vec<_>, Error>>();
-        Ok(r.into_iter()
-            .flatten()
-            .flatten()
-            .map(|(bp, sp)| PublicKeySignaturePair {
-                key: bp.into(),
-                signature: sp.into(),
-            })
-            .collect::<Vec<_>>())
-    } else {
-        Err(Error::UtilsError("Wrong attachment".into()))
-    };
-    Ok(keys?)
-}

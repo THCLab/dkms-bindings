@@ -226,11 +226,6 @@ pub extern "C" fn wire_get_kel(port_: i64, identifier: *mut wire_Identifier) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_get_current_public_key(port_: i64, attachment: *mut wire_uint_8_list) {
-    wire_get_current_public_key_impl(port_, attachment)
-}
-
-#[no_mangle]
 pub extern "C" fn wire_new_from_str__static_method__Identifier(
     port_: i64,
     id_str: *mut wire_uint_8_list,

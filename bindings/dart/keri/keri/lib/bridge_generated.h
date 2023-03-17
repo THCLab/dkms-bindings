@@ -219,8 +219,6 @@ void wire_process_stream(int64_t port_, struct wire_uint_8_list *stream);
 
 void wire_get_kel(int64_t port_, struct wire_Identifier *identifier);
 
-void wire_get_current_public_key(int64_t port_, struct wire_uint_8_list *attachment);
-
 void wire_new_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
 
 void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
@@ -281,7 +279,6 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_resolve_oobi);
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
-    dummy_var ^= ((int64_t) (void*) wire_get_current_public_key);
     dummy_var ^= ((int64_t) (void*) wire_new_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);
