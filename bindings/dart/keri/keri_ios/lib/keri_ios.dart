@@ -330,20 +330,6 @@ class KeriIos extends KeriPlatformInterface {
     }
   }
 
-  /// Returns pairs: public key encoded in base64 and signature encoded in hex.
-  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-      {required String attachment, dynamic hint}) async {
-    try {
-      return await api.getCurrentPublicKey(attachment: attachment);
-    } on FfiException catch (e) {
-      if (e.message.contains('Can\'t parse attachment')) {
-        throw AttachmentException(
-            'Cannot parse provided attachment. Check the JSON string again.');
-      }
-      rethrow;
-    }
-  }
-
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
   Future<String> anchorDigest(
       {required Identifier controller,
@@ -576,5 +562,17 @@ class KeriIos extends KeriPlatformInterface {
       dynamic hint}) async {
     return await api.broadcastReceipts(
         identifier: identifier, witnessList: witnessList);
+  }
+
+  Future<String> signToCesr(
+      {required Identifier identifier,
+        required String data,
+        required Signature signature,
+        dynamic hint}) async{
+   return await api.signToCesr(identifier: identifier, data: data, signature: signature);
+  }
+
+  Future<bool> verifyFromCesr({required String stream, dynamic hint}) async{
+    return await api.verifyFromCesr(stream: stream);
   }
 }

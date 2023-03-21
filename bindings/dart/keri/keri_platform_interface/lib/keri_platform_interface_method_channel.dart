@@ -74,12 +74,6 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
     return 'default string - getKel';
   }
 
-  /// Returns pairs: public key encoded in base64 and signature encoded in hex.
-  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-      {required String attachment, dynamic hint}) async {
-    throw UnimplementedError('getCurrentPublicKey() has not been implemented.');
-  }
-
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
   Future<String> anchorDigest(
       {required Identifier controller,
@@ -177,5 +171,17 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
       required Signature signature,
       dynamic hint}) {
     throw UnimplementedError('finalizeQuery() has not been implemented.');
+  }
+
+  Future<String> signToCesr(
+      {required Identifier identifier,
+      required String data,
+      required Signature signature,
+      dynamic hint}) {
+    throw UnimplementedError('signToCesr() has not been implemented');
+  }
+
+  Future<bool> verifyFromCesr({required String stream, dynamic hint}) {
+    throw UnimplementedError('verifyFromCesr() has not been implemented');
   }
 }

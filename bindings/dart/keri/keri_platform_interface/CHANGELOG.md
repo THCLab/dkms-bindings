@@ -25,3 +25,7 @@ Added `notifyWitnesses` and `broadcastReceipts`
 ### 0.1.0
 
 Lengthen events escrowing time
+
+### 0.1.1
+
+Added `signToCesr` and `verifyFromCesr`
