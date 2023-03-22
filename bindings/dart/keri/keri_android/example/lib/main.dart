@@ -40,6 +40,10 @@ class _MyAppState extends State<MyApp> {
   String anchorEvent = '';
   String signature3 = '';
   bool finalizedAnchor = false;
+  var dataToSign = '{"hello":"world"}';
+  bool isCesrSigned = false;
+  bool isCesrVerified = false;
+  late var signed;
 
   @override
   void initState() {
@@ -316,6 +320,39 @@ class _MyAppState extends State<MyApp> {
                       )
                     : Container(),
                 finalizedAnchor ? const Divider() : Container(),
+                Divider(),
+                Text("data to sign: $dataToSign"),
+                controllerId.isNotEmpty ? RawMaterialButton(
+                    onPressed: () async {
+                      var hexSig = await signer.sign(dataToSign);
+                      signed = await KeriPlatformInterface.instance.signToCesr(identifier: controller, data: dataToSign, signature: await KeriPlatformInterface.instance.signatureFromHex(st: SignatureType.Ed25519Sha512, signature: hexSig)).then((value) {
+                        if(value.isNotEmpty) {
+                          setState(() {
+                            isCesrSigned = true;
+                          });
+                        }
+                      });
+                    },
+                    child: const Text('Sign'),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.0),
+                        side: BorderSide(width: 1))) : Container(),
+                isCesrSigned ? Text("Successfully signed!") : Container(),
+                isCesrSigned ? RawMaterialButton(
+                    onPressed: () async {
+                      var verified = await KeriPlatformInterface.instance.verifyFromCesr(stream: signed).then((value) {
+                        if(value) {
+                          setState(() {
+                            isCesrVerified = true;
+                          });
+                        }
+                      });
+                    },
+                    child: const Text('Sign'),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.0),
+                        side: BorderSide(width: 1))) : Container(),
+                isCesrVerified ? Text("Successfully verified!") : Container(),
               ],
             ),
           ),
