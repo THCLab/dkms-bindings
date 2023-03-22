@@ -5,7 +5,6 @@ import 'package:keri_platform_interface/bridge_generated.dart';
 import 'dart:ffi';
 import 'exceptions.dart';
 
-import 'package:keri_platform_interface/keri_platform_interface.dart';
 
 class KeriMacos extends KeriPlatformInterface {
   static final dylib = DynamicLibrary.executable();
@@ -587,14 +586,15 @@ class KeriMacos extends KeriPlatformInterface {
   @override
   Future<String> signToCesr(
       {required Identifier identifier,
-        required String data,
-        required Signature signature,
-        dynamic hint}) async{
-    return await api.signToCesr(identifier: identifier, data: data, signature: signature);
+      required String data,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.signToCesr(
+        identifier: identifier, data: data, signature: signature);
   }
 
   @override
-  Future<bool> verifyFromCesr({required String stream, dynamic hint}) async{
+  Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
     return await api.verifyFromCesr(stream: stream);
   }
 }
