@@ -65,3 +65,7 @@ Changed .so file, event longer valid
 ## 0.1.0
 
 Lengthen events escrowing time
+
+## 0.2.0
+
+Added `signToCesr` and `verifyFromCesr`, moved to the newest version of `flutter_rust_bridge`

@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:keri_windows_example/main.dart';
 
+import 'package:keri_windows/keri_windows.dart';
+
 void main() {
   testWidgets('Verify Platform version', (WidgetTester tester) async {
     // Build our app and trigger a frame.

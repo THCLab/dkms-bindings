@@ -95,6 +95,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
+  @override
   Future<Identifier> finalizeInception(
       {required String event,
       required Signature signature,
@@ -123,6 +124,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Creates rotation event that needs to be signed externally.
+  @override
   Future<String> rotate(
       {required Identifier controller,
       required List<PublicKey> currentKeys,
@@ -173,6 +175,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
+  @override
   Future<String> addWatcher(
       {required Identifier controller,
       required String watcherOobi,
@@ -206,6 +209,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Verifies provided signatures against event and saves it.
+  @override
   Future<bool> finalizeEvent(
       {required Identifier identifier,
       required String event,
@@ -244,6 +248,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Checks and saves provided identifier's endpoint information.
+  @override
   Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
     try {
       return await api.resolveOobi(oobiJson: oobiJson);
@@ -305,11 +310,13 @@ class KeriAndroid extends KeriPlatformInterface {
   // }
 
   //CZY JEST POTRZEBNA?
+  @override
   Future<void> processStream({required String stream, dynamic hint}) async {
     await api.processStream(stream: stream);
   }
 
   ///Returns Key Event Log in the CESR representation for current Identifier when given a controller.
+  @override
   Future<String> getKel({required Identifier cont, dynamic hint}) async {
     try {
       return await api.getKel(identifier: cont);
@@ -331,6 +338,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
+  @override
   Future<String> anchorDigest(
       {required Identifier controller,
       required List<String> sais,
@@ -363,6 +371,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   ///Creates new Interaction Event along with arbitrary data.
+  @override
   Future<String> anchor(
       {required Identifier controller,
       required String data,
@@ -391,6 +400,7 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<Identifier> newIdentifier(
       {required String idStr, dynamic hint}) async {
     try {
@@ -405,6 +415,7 @@ class KeriAndroid extends KeriPlatformInterface {
   }
 
   //ToDo
+  @override
   Future<List<String>> queryMailbox(
       {required Identifier whoAsk,
       required Identifier aboutWho,
@@ -426,6 +437,7 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<Signature> signatureFromHex(
       {required SignatureType st,
       required String signature,
@@ -441,6 +453,7 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<GroupInception> inceptGroup(
       {required Identifier identifier,
       required List<Identifier> participants,
@@ -476,6 +489,7 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
       required String groupEvent,
@@ -505,6 +519,7 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<PublicKey> newPublicKey(
       {required KeyType kt, required String keyB64, dynamic hint}) async {
     try {
@@ -518,6 +533,7 @@ class KeriAndroid extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<DataAndSignature> newDataAndSignature({
     required String data,
     dynamic hint,
@@ -527,6 +543,7 @@ class KeriAndroid extends KeriPlatformInterface {
         data: data, signature: signature);
   }
 
+  @override
   Future<bool> sendOobiToWatcher(
       {required Identifier identifier,
       required String oobisJson,
@@ -535,6 +552,7 @@ class KeriAndroid extends KeriPlatformInterface {
         identifier: identifier, oobisJson: oobisJson);
   }
 
+  @override
   Future<List<String>> queryWatchers(
       {required Identifier whoAsk,
       required Identifier aboutWho,
@@ -542,6 +560,7 @@ class KeriAndroid extends KeriPlatformInterface {
     return await api.queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
   }
 
+  @override
   Future<List<ActionRequired>> finalizeQuery(
       {required Identifier identifier,
       required String queryEvent,
@@ -566,15 +585,18 @@ class KeriAndroid extends KeriPlatformInterface {
         identifier: identifier, witnessList: witnessList);
   }
 
+  @override
   Future<String> signToCesr(
       {required Identifier identifier,
-        required String data,
-        required Signature signature,
-        dynamic hint}) async{
-    return await api.signToCesr(identifier: identifier, data: data, signature: signature);
+      required String data,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.signToCesr(
+        identifier: identifier, data: data, signature: signature);
   }
 
-  Future<bool> verifyFromCesr({required String stream, dynamic hint})  async {
+  @override
+  Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
     return await api.verifyFromCesr(stream: stream);
   }
 }
