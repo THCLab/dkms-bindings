@@ -94,6 +94,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   ///Finalizes inception (bootstrapping an Identifier and its Key Event Log).
+  @override
   Future<Identifier> finalizeInception(
       {required String event,
       required Signature signature,
@@ -122,6 +123,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   ///Creates rotation event that needs to be signed externally.
+  @override
   Future<String> rotate(
       {required Identifier controller,
       required List<PublicKey> currentKeys,
@@ -172,6 +174,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   ///Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
+  @override
   Future<String> addWatcher(
       {required Identifier controller,
       required String watcherOobi,
@@ -205,6 +208,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   ///Verifies provided signatures against event and saves it.
+  @override
   Future<bool> finalizeEvent(
       {required Identifier identifier,
       required String event,
@@ -243,6 +247,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   ///Checks and saves provided identifier's endpoint information.
+  @override
   Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
     try {
       return await api.resolveOobi(oobiJson: oobiJson);
@@ -304,11 +309,13 @@ class KeriMacos extends KeriPlatformInterface {
   // }
 
   //CZY JEST POTRZEBNA?
+  @override
   Future<void> processStream({required String stream, dynamic hint}) async {
     await api.processStream(stream: stream);
   }
 
   ///Returns Key Event Log in the CESR representation for current Identifier when given a controller.
+  @override
   Future<String> getKel({required Identifier cont, dynamic hint}) async {
     try {
       return await api.getKel(identifier: cont);
@@ -329,21 +336,8 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
-  /// Returns pairs: public key encoded in base64 and signature encoded in hex.
-  Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-      {required String attachment, dynamic hint}) async {
-    try {
-      return await api.getCurrentPublicKey(attachment: attachment);
-    } on FfiException catch (e) {
-      if (e.message.contains('Can\'t parse attachment')) {
-        throw AttachmentException(
-            'Cannot parse provided attachment. Check the JSON string again.');
-      }
-      rethrow;
-    }
-  }
-
   ///Creates new Interaction Event along with provided Self Addressing Identifiers.
+  @override
   Future<String> anchorDigest(
       {required Identifier controller,
       required List<String> sais,
@@ -376,6 +370,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   ///Creates new Interaction Event along with arbitrary data.
+  @override
   Future<String> anchor(
       {required Identifier controller,
       required String data,
@@ -404,6 +399,7 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<Identifier> newIdentifier(
       {required String idStr, dynamic hint}) async {
     try {
@@ -418,6 +414,7 @@ class KeriMacos extends KeriPlatformInterface {
   }
 
   //ToDo
+  @override
   Future<List<String>> queryMailbox(
       {required Identifier whoAsk,
       required Identifier aboutWho,
@@ -439,6 +436,7 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<Signature> signatureFromHex(
       {required SignatureType st,
       required String signature,
@@ -454,6 +452,7 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<GroupInception> inceptGroup(
       {required Identifier identifier,
       required List<Identifier> participants,
@@ -489,6 +488,7 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<Identifier> finalizeGroupIncept(
       {required Identifier identifier,
       required String groupEvent,
@@ -518,6 +518,7 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<PublicKey> newPublicKey(
       {required KeyType kt, required String keyB64, dynamic hint}) async {
     try {
@@ -531,6 +532,7 @@ class KeriMacos extends KeriPlatformInterface {
     }
   }
 
+  @override
   Future<DataAndSignature> newDataAndSignature({
     required String data,
     dynamic hint,
@@ -540,6 +542,7 @@ class KeriMacos extends KeriPlatformInterface {
         data: data, signature: signature);
   }
 
+  @override
   Future<bool> sendOobiToWatcher(
       {required Identifier identifier,
       required String oobisJson,
@@ -548,6 +551,7 @@ class KeriMacos extends KeriPlatformInterface {
         identifier: identifier, oobisJson: oobisJson);
   }
 
+  @override
   Future<List<String>> queryWatchers(
       {required Identifier whoAsk,
       required Identifier aboutWho,
@@ -555,6 +559,7 @@ class KeriMacos extends KeriPlatformInterface {
     return await api.queryWatchers(whoAsk: whoAsk, aboutWho: aboutWho);
   }
 
+  @override
   Future<List<ActionRequired>> finalizeQuery(
       {required Identifier identifier,
       required String queryEvent,
@@ -564,16 +569,32 @@ class KeriMacos extends KeriPlatformInterface {
         identifier: identifier, queryEvent: queryEvent, signature: signature);
   }
 
+  @override
   Future<bool> notifyWitnesses(
       {required Identifier identifier, dynamic hint}) async {
     return await api.notifyWitnesses(identifier: identifier);
   }
 
+  @override
   Future<bool> broadcastReceipts(
       {required Identifier identifier,
       required List<Identifier> witnessList,
       dynamic hint}) async {
     return await api.broadcastReceipts(
         identifier: identifier, witnessList: witnessList);
+  }
+
+  @override
+  Future<String> signToCesr(
+      {required Identifier identifier,
+        required String data,
+        required Signature signature,
+        dynamic hint}) async{
+    return await api.signToCesr(identifier: identifier, data: data, signature: signature);
+  }
+
+  @override
+  Future<bool> verifyFromCesr({required String stream, dynamic hint}) async{
+    return await api.verifyFromCesr(stream: stream);
   }
 }
