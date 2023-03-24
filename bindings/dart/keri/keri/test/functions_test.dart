@@ -1,8 +1,3 @@
-import 'dart:ffi';
-import 'dart:io';
-import 'dart:math';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keri_windows/exceptions.dart';
 import 'package:keri/keri.dart';
@@ -16,21 +11,19 @@ void main() {
   var publicKey2 = 'GoP8qjXbUcnpMWtDeRuN_AT0pA7F5gFjrv8UdxrEJW0=';
   const publicKey3 = 'vyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE=';
   const publicKey4 = 'u3q0mOY39YX67uFq3gi29UCfjXp-SB_iuTRg-kzbB2o=';
-  const privateKey1 =
-      '7BMT7rSxnmBpoAkrlseH894ox8ypeA5__cIBLtCN4qbqBZjhj6Ta30oVlpKRHmNQic5gSg6W4AO1aZjGw-SWfQ==';
-  const privateKey2 =
-      'pDRM5oADe-AYGUIap2O9r9mt7Ue7F3mwBD9UU2rt7Lsag_yqNdtRyekxa0N5G438BPSkDsXmAWOu_xR3GsQlbQ==';
-  const privateKey3 =
-      'lfcTwZDsgE0ZcLv4YGBJVAaLE-BMSSlMk8v1eEQhqJm_KvrSZDh2_Brm3CwLs3s3HRQAXieoIMt-JsNjR0mi8Q==';
-  const privateKey4 =
-      'lew7zHsQfEaxTjyNU_F3yJInfidMyaiCeJfjXiNTDZ67erSY5jf1hfru4WreCLb1QJ-Nen5IH-K5NGD6TNsHag==';
+  //const privateKey2 =
+  'pDRM5oADe-AYGUIap2O9r9mt7Ue7F3mwBD9UU2rt7Lsag_yqNdtRyekxa0N5G438BPSkDsXmAWOu_xR3GsQlbQ==';
+  //const privateKey3 =
+  'lfcTwZDsgE0ZcLv4YGBJVAaLE-BMSSlMk8v1eEQhqJm_KvrSZDh2_Brm3CwLs3s3HRQAXieoIMt-JsNjR0mi8Q==';
+  //const privateKey4 =
+  'lew7zHsQfEaxTjyNU_F3yJInfidMyaiCeJfjXiNTDZ67erSY5jf1hfru4WreCLb1QJ-Nen5IH-K5NGD6TNsHag==';
   group("initKel()", () {
     test('The kel fails to init as optionalConfigs contain incorrect data',
         () async {
       try {
         await initKel(
             inputAppDir: 'keritest',
-            optionalConfigs: Config(initialOobis: 'cat'));
+            optionalConfigs: const Config(initialOobis: 'cat'));
         fail("exception not thrown");
       } catch (e) {
         //expect(e, IncorrectOptionalConfigsException);
@@ -41,7 +34,7 @@ void main() {
     test(
         'The kel fails to init as nobody is listening on the port provided in optionalConfigs',
         () async {
-      var conf = Config(
+      var conf = const Config(
           initialOobis:
               "[{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}]");
       try {
@@ -79,7 +72,7 @@ void main() {
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = ['incorrect'];
       try {
-        var icp_event = await incept(
+        await incept(
             publicKeys: vec1,
             nextPubKeys: vec2,
             witnesses: vec3,
@@ -102,7 +95,7 @@ void main() {
         "{\"eid\":\"ESuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:3232/\"}"
       ];
       try {
-        var icp_event = await incept(
+        await incept(
             publicKeys: vec1,
             nextPubKeys: vec2,
             witnesses: vec3,
@@ -125,7 +118,7 @@ void main() {
         "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}"
       ];
       try {
-        var icp_event = await incept(
+        await incept(
             publicKeys: vec1,
             nextPubKeys: vec2,
             witnesses: vec3,
@@ -146,7 +139,7 @@ void main() {
         "{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}"
       ];
       try {
-        var icp_event = await incept(
+        await incept(
             publicKeys: vec1,
             nextPubKeys: vec2,
             witnesses: vec3,
@@ -166,7 +159,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -174,7 +167,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       expect(controller.id, 'EEdHeswXSuw6nl_T9tgjb5mDbJGVWy6mv1JeGQRmz4VQ');
@@ -188,7 +181,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -196,8 +189,8 @@ void main() {
       var signature =
           'A8390DFA037497D887E2BFF1ED29DA9480B5FF59BFE0FCAFE19B939529F25FAC8F1D3F2299F16402EED654DEE1A156840C7584CB6455B2D10767441F27DD750A';
       try {
-        var controller = await finalizeInception(
-            event: icp_event,
+        await finalizeInception(
+            event: icpEvent,
             signature: await signatureFromHex(
                 st: SignatureType.Ed25519Sha512, signature: signature));
         fail("exception not thrown");
@@ -212,14 +205,14 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [];
-      var icp_event =
+      //List<String> vec3 = [];
+      var icpEvent =
           '{"v":"KERI10JSON00012b_","t":"icp","d":"EEdHeswXSuw6nl_T9tgjb5mDbJGVWy6mv1JeGQRmz4VQ","i":"EEdHeswXSuw6nl_T9tgjb5mDbJGVWy6mv1JeGQRmz4VQ","s":"0","kt":"1","k":["D6gWY4Y-k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0"],"nt":"1","n":["ERnMydUxS3HsugRxKTx104D1YLQG6AouPwW0weJo9UYM"],"bt":"0","b":[],"c":[],"a":[]}';
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       try {
-        var controller = await finalizeInception(
-            event: icp_event,
+        await finalizeInception(
+            event: icpEvent,
             signature: await signatureFromHex(
                 st: SignatureType.Ed25519Sha512, signature: signature));
         fail("exception not thrown");
@@ -237,7 +230,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -245,7 +238,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       try {
-        var controller = await finalizeInception(
+        await finalizeInception(
             event: 'failEvent',
             signature: await signatureFromHex(
                 st: SignatureType.Ed25519Sha512, signature: signature));
@@ -264,7 +257,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -272,7 +265,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -302,7 +295,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -310,7 +303,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -343,7 +336,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -351,7 +344,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -384,7 +377,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -392,7 +385,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -429,7 +422,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -437,7 +430,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -473,15 +466,15 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 0);
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
-      var controller = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -519,15 +512,15 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 0);
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
-      var controller = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       try {
@@ -549,15 +542,15 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 0);
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
-      var controller = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       try {
@@ -615,7 +608,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -623,7 +616,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -635,7 +628,7 @@ void main() {
           .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       newNextKeys
           .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      var rotation_event = await rotate(
+      var rotationEvent = await rotate(
           controller: controller,
           currentKeys: currentKeys,
           newNextKeys: newNextKeys,
@@ -646,7 +639,7 @@ void main() {
           '85DA2F2263541482F38307091E891DB53779FF1436D80EC2741731B75A16B14711B29B18137042FEF6304DD0B3D90DC07AA5EC1116E33564A5A58544F7C55009';
       var res = await finalizeEvent(
           identifier: controller,
-          event: rotation_event,
+          event: rotationEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature2));
       expect(res, true);
@@ -659,7 +652,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -667,7 +660,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -679,19 +672,19 @@ void main() {
           .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       newNextKeys
           .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      var rotation_event = await rotate(
+      var rotationEvent = await rotate(
           controller: controller,
           currentKeys: currentKeys,
           newNextKeys: newNextKeys,
           witnessToAdd: [],
           witnessToRemove: [],
           witnessThreshold: 0);
-      var signature2 =
-          '85DA2F2263541482F38307091E891DB53779FF1436D80EC2741731B75A16B14711B29B18137042FEF6304DD0B3D90DC07AA5EC1116E33564A5A58544F7C55009';
+      //var signature2 =
+      '85DA2F2263541482F38307091E891DB53779FF1436D80EC2741731B75A16B14711B29B18137042FEF6304DD0B3D90DC07AA5EC1116E33564A5A58544F7C55009';
       try {
-        var res = await finalizeEvent(
+        await finalizeEvent(
             identifier: controller,
-            event: rotation_event,
+            event: rotationEvent,
             signature: await signatureFromHex(
                 st: SignatureType.Ed25519Sha512, signature: signature));
         fail("exception not thrown");
@@ -708,7 +701,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -716,7 +709,7 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       //MOCK ROTATION
@@ -728,7 +721,7 @@ void main() {
           .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       newNextKeys
           .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      var rotation_event = await rotate(
+      await rotate(
           controller: controller,
           currentKeys: currentKeys,
           newNextKeys: newNextKeys,
@@ -738,7 +731,7 @@ void main() {
       var signature2 =
           '85DA2F2263541482F38307091E891DB53779FF1436D80EC2741731B75A16B14711B29B18137042FEF6304DD0B3D90DC07AA5EC1116E33564A5A58544F7C55009';
       try {
-        var res = await finalizeEvent(
+        await finalizeEvent(
             identifier: controller,
             event: 'fail',
             signature: await signatureFromHex(
@@ -774,20 +767,6 @@ void main() {
     });
   });
 
-  group('getCurrentPublicKey()', () {
-    test('getting key fails, because attachment string is not a correct JSON',
-        () async {
-      await initKel(inputAppDir: 'keritest');
-      var attachment = 'fail';
-      try {
-        await getCurrentPublicKey(attachment: attachment);
-        fail("exception not thrown");
-      } catch (e) {
-        expect(e, isInstanceOf<AttachmentException>());
-      }
-    });
-  });
-
   group('anchorDigest', () {
     test('anchorDigest passes', () async {
       await initKel(inputAppDir: 'keritest');
@@ -796,7 +775,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -804,19 +783,19 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
-      var anchor_event = await anchorDigest(controller: controller, sais: sais);
-      print(anchor_event);
+      var anchorEvent = await anchorDigest(controller: controller, sais: sais);
+      //print(anchorEvent);
       var signature2 =
           'ECF5CDCDDFB86D88F16FE600B242DD91F55E962330DBCD59E0DF304BE64A730B86215489104C9FE9638282F6027FE754E13E65522965F2364D1EA2B90EF7580A';
       var res = await finalizeEvent(
           identifier: controller,
-          event: anchor_event,
+          event: anchorEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature2));
       expect(res, true);
@@ -829,7 +808,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -837,15 +816,14 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       List<String> sais = [];
       var sai = "fail";
       sais.add(sai);
       try {
-        var anchor_event =
-            await anchorDigest(controller: controller, sais: sais);
+        await anchorDigest(controller: controller, sais: sais);
         fail("exception not thrown");
       } catch (e) {
         expect(e, isInstanceOf<SelfAddressingIndentifierException>());
@@ -859,7 +837,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -868,13 +846,12 @@ void main() {
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var hexsig = await signatureFromHex(
           st: SignatureType.Ed25519Sha512, signature: signature);
-      var controller =
-          await finalizeInception(event: icp_event, signature: hexsig);
+      await finalizeInception(event: icpEvent, signature: hexsig);
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
       try {
-        var anchor_event = await anchorDigest(
+        await anchorDigest(
             controller: await newIdentifier(
                 idStr: 'E2e7tLvlVlER4kkV3bw36SN8Gz3fJ-3QR2xadxKyed10'),
             sais: sais);
@@ -891,22 +868,22 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 0);
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
-      var controller = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
       try {
-        var anchor_event = await anchorDigest(
+        await anchorDigest(
             controller: await newIdentifier(idStr: 'fail'), sais: sais);
         fail("exception not thrown");
       } catch (e) {
@@ -920,7 +897,7 @@ void main() {
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
       try {
-        var anchor_event = await anchorDigest(
+        await anchorDigest(
             controller: await newIdentifier(
                 idStr: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40'),
             sais: sais);
@@ -939,7 +916,7 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -947,20 +924,22 @@ void main() {
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
       var controller = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
-      var anchor_event = await anchor(
-          controller: controller, data: 'data', algo: DigestType.blake3256());
-      print(anchor_event);
+      var anchorEvent = await anchor(
+          controller: controller,
+          data: 'data',
+          algo: const DigestType.blake3256());
+      //print(anchorEvent);
       var signature2 =
           '3252B33AADA0792408AE5681979F67C98DD9F5109AECF74DB09CDA1F5BDC754F7650C47625A584BE55E8265CB6F8D63190EF9CFA149997E7B4BFE11F428EE309';
       var res = await finalizeEvent(
           identifier: controller,
-          event: anchor_event,
+          event: anchorEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature2));
       expect(res, true);
@@ -973,26 +952,26 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 0);
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
-      var controller = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
       try {
-        var anchor_event = await anchor(
+        await anchor(
             controller: await newIdentifier(
                 idStr: 'E2e7tLvlVlER4kkV3bw36SN8Gz3fJ-3QR2xadxKyed10'),
             data: 'data',
-            algo: DigestType.blake3256());
+            algo: const DigestType.blake3256());
         fail("exception not thrown");
       } catch (e) {
         expect(e, isInstanceOf<IdentifierException>());
@@ -1006,25 +985,25 @@ void main() {
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
       List<String> vec3 = [];
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 0);
       var signature =
           'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
-      var controller = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
       List<String> sais = [];
       var sai = "EsiSh2iv15yszfcbd5FegUmWgbeyIdb43nirSvl7bO_I";
       sais.add(sai);
       try {
-        var anchor_event = await anchor(
+        await anchor(
             controller: await newIdentifier(idStr: 'fail'),
             data: 'data',
-            algo: DigestType.blake3256());
+            algo: const DigestType.blake3256());
         fail("exception not thrown");
       } catch (e) {
         expect(e, isInstanceOf<IdentifierException>());
@@ -1038,8 +1017,10 @@ void main() {
       try {
         var identifier = await newIdentifier(
             idStr: 'EgSYLoqAIXEiQla3gRLudzeyWibl1hwmWcvxWlc6bx40');
-        var anchor_event = await anchor(
-            controller: identifier, data: 'data', algo: DigestType.blake3256());
+        await anchor(
+            controller: identifier,
+            data: 'data',
+            algo: const DigestType.blake3256());
         fail("exception not thrown");
       } catch (e) {
         expect(e, isInstanceOf<ControllerNotInitializedException>());
@@ -1054,7 +1035,7 @@ void main() {
     List<PublicKey> vec2 = [];
     vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
     List<String> vec3 = [];
-    var icp_event = await incept(
+    var icpEvent = await incept(
         publicKeys: vec1,
         nextPubKeys: vec2,
         witnesses: vec3,
@@ -1062,7 +1043,7 @@ void main() {
     var signature =
         'AF661D48F4A9BDBDD4974CC52A086FBFA95ECB405195F42048486DB26F6B7CCEEFC98C594DD39E9B9AA8C1F487F68E72CEF54E4804EFA08C361C7DC46A623605';
     var controller = await finalizeInception(
-        event: icp_event,
+        event: icpEvent,
         signature: await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: signature));
     //MOCK ROTATION
@@ -1074,7 +1055,7 @@ void main() {
         .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
     newNextKeys
         .add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-    var rotation_event = await rotate(
+    var rotationEvent = await rotate(
         controller: controller,
         currentKeys: currentKeys,
         newNextKeys: newNextKeys,
@@ -1083,19 +1064,21 @@ void main() {
         witnessThreshold: 0);
     var signature2 =
         '85DA2F2263541482F38307091E891DB53779FF1436D80EC2741731B75A16B14711B29B18137042FEF6304DD0B3D90DC07AA5EC1116E33564A5A58544F7C55009';
-    var res = await finalizeEvent(
+    await finalizeEvent(
         identifier: controller,
-        event: rotation_event,
+        event: rotationEvent,
         signature: await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: signature2));
-    var anchor_event = await anchor(
-        controller: controller, data: 'data', algo: DigestType.blake3256());
-    print(anchor_event);
+    var anchorEvent = await anchor(
+        controller: controller,
+        data: 'data',
+        algo: const DigestType.blake3256());
+    //print(anchorEvent);
     var signature3 =
         '34A7E8215C0E0B8259E891214F44C343DCC8406E330FCDA8866BD79804F455F8FD0BC428B82374F6AA907417FB38BF13AD983AF0C20E62298151DD36988E6907';
     var res2 = await finalizeEvent(
         identifier: controller,
-        event: anchor_event,
+        event: anchorEvent,
         signature: await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: signature3));
     expect(res2, true);
@@ -1133,7 +1116,7 @@ void main() {
     test('The identifier creation fails, because of invalid identifier string ',
         () async {
       try {
-        var controller = await newIdentifier(idStr: 'fail');
+        await newIdentifier(idStr: 'fail');
         fail("exception not thrown");
       } catch (e) {
         expect(e, isInstanceOf<IdentifierException>());
@@ -1145,7 +1128,7 @@ void main() {
     //Fails
     test('signature creation fails because of invalid hex string', () async {
       try {
-        var signature = await signatureFromHex(
+        await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: 'fail');
         fail("exception not thrown");
       } catch (e) {
@@ -1158,8 +1141,8 @@ void main() {
     test('queryMailbox fails, because provided witness is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1167,27 +1150,27 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
           witnessThreshold: 1);
-      print(icp_event);
+      //print(icpEvent);
       //Signed icp_event
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
       try {
-        var query = await queryMailbox(
+        await queryMailbox(
             whoAsk: identifier, aboutWho: identifier, witness: ['fail']);
         fail("exception not thrown");
       } catch (e) {
@@ -1200,8 +1183,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1209,10 +1192,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1221,14 +1204,14 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
       try {
-        var query = await queryMailbox(
+        await queryMailbox(
             whoAsk: await newIdentifier(
                 idStr: 'Efrtu2CqKiP7YbWQ0c7X0VJU2i5E4V4frrlB72ytPBjQ'),
             aboutWho: identifier,
@@ -1244,8 +1227,8 @@ void main() {
     test('finalizeQuery fails, because signature is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1253,10 +1236,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1265,12 +1248,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //MOCK QUERY MAILBOX because signature changes with every test run.
@@ -1294,8 +1277,8 @@ void main() {
     test('finalizeQuery fails, because query event is incorrect', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1303,10 +1286,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1315,17 +1298,17 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //MOCK QUERY MAILBOX because signature changes with every test run.
-      var query =
-          '{"v":"KERI10JSON00018e_","t":"qry","d":"EOsIfpnrmxFwD1OPC6k06BkUBmaf0jdzZUqy-SD4ZqI8","dt":"2022-10-21T11:32:22.157953+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","src":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
+      //var query =
+      '{"v":"KERI10JSON00018e_","t":"qry","d":"EOsIfpnrmxFwD1OPC6k06BkUBmaf0jdzZUqy-SD4ZqI8","dt":"2022-10-21T11:32:22.157953+00:00","r":"mbx","rr":"","q":{"pre":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","topics":{"/receipt":0,"/replay":0,"/reply":0,"/multisig":0,"/credential":0,"/delegate":0},"i":"Efrtu1CqKiP7YbWQys7X0VJU2i5E4V4frrlB72ytPBjQ","src":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"}}';
       //Signed query
       var signature2 =
           'AEF84C04A84C12EBC20735AAEC54AC1DE8964754E35B0C9B92F7AA0E1FF9C835050A14EFC26A2DCE3CCD7100795AD9CAC0DC3DE1CE6E823393837069336C540A';
@@ -1345,8 +1328,8 @@ void main() {
     test('finalizeQuery fails, because identifier is unknown', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1354,10 +1337,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1365,13 +1348,13 @@ void main() {
       //Signed icp_event
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
-      var identifier = await finalizeInception(
-          event: icp_event,
+      await finalizeInception(
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //MOCK QUERY MAILBOX because signature changes with every test run.
@@ -1398,8 +1381,8 @@ void main() {
     test('inceptGroup passes', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1407,10 +1390,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1419,12 +1402,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -1449,10 +1432,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -1461,7 +1444,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -1488,7 +1471,7 @@ void main() {
           identifier: identifier,
           participants: [participant],
           signatureThreshold: 2,
-          initialWitnesses: witness_id_list,
+          initialWitnesses: witnessIdList,
           witnessThreshold: 1);
       expect(icp.icpEvent,
           '{"v":"KERI10JSON0001b7_","t":"icp","d":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","i":"EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80","s":"0","kt":"2","k":["D6gWY4Y-k2t9KFZaSkR5jUInOYEoOluADtWmYxsPkln0","Dvyr60mQ4dvwa5twsC7N7Nx0UAF4nqCDLfibDY0dJovE"],"nt":"1","n":["ERnMydUxS3HsugRxKTx104D1YLQG6AouPwW0weJo9UYM","EhWifOnJf1PdwY-5VeWNTYecSNOtOfyT9JWxiCdR5nAY"],"bt":"1","b":["DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"],"c":[],"a":[]}');
@@ -1498,8 +1481,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1507,10 +1490,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1519,12 +1502,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -1549,10 +1532,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -1561,7 +1544,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -1585,11 +1568,11 @@ void main() {
 
       //Incept group identifier
       try {
-        var icp = await inceptGroup(
+        await inceptGroup(
             identifier: identifier,
             participants: [participant],
             signatureThreshold: -2,
-            initialWitnesses: witness_id_list,
+            initialWitnesses: witnessIdList,
             witnessThreshold: 1);
         fail("exception not thrown");
       } catch (e) {
@@ -1601,8 +1584,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1610,10 +1593,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1622,12 +1605,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -1652,10 +1635,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -1664,7 +1647,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -1688,11 +1671,11 @@ void main() {
 
       //Incept group identifier
       try {
-        var icp = await inceptGroup(
+        await inceptGroup(
             identifier: identifier,
             participants: [participant],
             signatureThreshold: 2,
-            initialWitnesses: witness_id_list,
+            initialWitnesses: witnessIdList,
             witnessThreshold: -1);
         fail("exception not thrown");
       } catch (e) {
@@ -1704,8 +1687,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1713,10 +1696,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1725,12 +1708,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -1755,10 +1738,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -1767,7 +1750,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -1791,7 +1774,7 @@ void main() {
 
       //Incept group identifier
       try {
-        var icp = await inceptGroup(
+        await inceptGroup(
             identifier: identifier,
             participants: [participant],
             signatureThreshold: 2,
@@ -1806,8 +1789,8 @@ void main() {
     test('inceptGroup fails, because the participant is unknown', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1815,10 +1798,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1827,12 +1810,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -1857,10 +1840,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -1869,7 +1852,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -1893,14 +1876,14 @@ void main() {
 
       //Incept group identifier
       try {
-        var icp = await inceptGroup(
+        await inceptGroup(
             identifier: identifier,
             participants: [
               await newIdentifier(
                   idStr: 'Efrtu2CqKiP7YbWQ0c7X0VJU2i5E4V4frrlB72ytPBjQ')
             ],
             signatureThreshold: 2,
-            initialWitnesses: witness_id_list,
+            initialWitnesses: witnessIdList,
             witnessThreshold: 1);
         fail("exception not thrown");
       } catch (e) {
@@ -1911,8 +1894,8 @@ void main() {
     test('inceptGroup fails, because the identifier is unknown', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -1920,10 +1903,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -1932,12 +1915,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -1962,10 +1945,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -1974,7 +1957,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -1998,12 +1981,12 @@ void main() {
 
       //Incept group identifier
       try {
-        var icp = await inceptGroup(
+        await inceptGroup(
             identifier: await newIdentifier(
                 idStr: 'Efrtu2CqKiP7YbWQ0c7X0VJU2i5E4V4frrlB72ytPBjQ'),
             participants: [participant],
             signatureThreshold: 2,
-            initialWitnesses: witness_id_list,
+            initialWitnesses: witnessIdList,
             witnessThreshold: 1);
         fail("exception not thrown");
       } catch (e) {
@@ -2016,8 +1999,8 @@ void main() {
     test('finalizeGroupIncept passes', () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -2025,10 +2008,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -2037,12 +2020,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -2067,10 +2050,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -2079,7 +2062,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -2106,7 +2089,7 @@ void main() {
           identifier: identifier,
           participants: [participant],
           signatureThreshold: 2,
-          initialWitnesses: witness_id_list,
+          initialWitnesses: witnessIdList,
           witnessThreshold: 1);
       //Signed incept event from icp
       var signature5 =
@@ -2114,7 +2097,7 @@ void main() {
       //Signed exchanges
       var signatureex =
           '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
-      var group_identifier = await finalizeGroupIncept(
+      var groupIdentifier = await finalizeGroupIncept(
           identifier: identifier,
           groupEvent: icp.icpEvent,
           signature: await signatureFromHex(
@@ -2126,7 +2109,7 @@ void main() {
                     st: SignatureType.Ed25519Sha512, signature: signatureex))
           ]);
       expect(
-          group_identifier.id, 'EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80');
+          groupIdentifier.id, 'EwjoX5xdJTPoAR5XeNzuxsFZHO3EMPVg7e5eSRCfps80');
     });
 
     //Fails, should be corrected
@@ -2135,8 +2118,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -2144,10 +2127,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -2156,12 +2139,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -2186,10 +2169,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -2198,7 +2181,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -2225,15 +2208,15 @@ void main() {
           identifier: identifier,
           participants: [participant],
           signatureThreshold: 2,
-          initialWitnesses: witness_id_list,
+          initialWitnesses: witnessIdList,
           witnessThreshold: 1);
       //Signed incept event from icp
       var signature5 =
           '4F9782BF238408908344FD36D66D7A3507F7D70A26A40F608247F5BD57F51B3F6E15886B268592A5F64D37BAAFE5D003564DC3AC7352F1D7F6B46789BE0C7504';
       //Signed exchanges
-      var signatureex =
-          '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
-      var group_identifier = await finalizeGroupIncept(
+      //var signatureex =
+      '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
+      await finalizeGroupIncept(
           identifier: identifier,
           groupEvent: icp.icpEvent,
           signature: await signatureFromHex(
@@ -2250,8 +2233,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -2259,10 +2242,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -2271,12 +2254,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -2301,10 +2284,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -2313,7 +2296,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -2340,7 +2323,7 @@ void main() {
           identifier: identifier,
           participants: [participant],
           signatureThreshold: 2,
-          initialWitnesses: witness_id_list,
+          initialWitnesses: witnessIdList,
           witnessThreshold: 1);
       //Signed incept event from icp
       var signature5 =
@@ -2349,7 +2332,7 @@ void main() {
       var signatureex =
           '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
       try {
-        var group_identifier = await finalizeGroupIncept(
+        await finalizeGroupIncept(
             identifier: identifier,
             groupEvent: 'fail',
             signature: await signatureFromHex(
@@ -2369,8 +2352,8 @@ void main() {
         () async {
       await initKel(inputAppDir: 'keritest');
 
-      String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-      String wit_location =
+      String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+      String witLocation =
           '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
       //Create identifier keys
@@ -2378,10 +2361,10 @@ void main() {
       vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
       List<PublicKey> vec2 = [];
       vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-      List<String> vec3 = [wit_location];
+      List<String> vec3 = [witLocation];
 
       //Incept identifier
-      var icp_event = await incept(
+      var icpEvent = await incept(
           publicKeys: vec1,
           nextPubKeys: vec2,
           witnesses: vec3,
@@ -2390,12 +2373,12 @@ void main() {
       var signature =
           'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
       var identifier = await finalizeInception(
-          event: icp_event,
+          event: icpEvent,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature));
 
-      List<String> witness_id_list = [];
-      witness_id_list.add(witness_id);
+      List<String> witnessIdList = [];
+      witnessIdList.add(witnessId);
 
       //Query mailbox
       //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -2420,10 +2403,10 @@ void main() {
       vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
       List<PublicKey> vec22 = [];
       vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-      List<String> vec33 = [wit_location];
+      List<String> vec33 = [witLocation];
 
       //Incept participant
-      var icp_event2 = await incept(
+      var icpEvent2 = await incept(
           publicKeys: vec11,
           nextPubKeys: vec22,
           witnesses: vec33,
@@ -2432,7 +2415,7 @@ void main() {
       var signature3 =
           'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
       var participant = await finalizeInception(
-          event: icp_event2,
+          event: icpEvent2,
           signature: await signatureFromHex(
               st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -2459,7 +2442,7 @@ void main() {
           identifier: identifier,
           participants: [participant],
           signatureThreshold: 2,
-          initialWitnesses: witness_id_list,
+          initialWitnesses: witnessIdList,
           witnessThreshold: 1);
       //Signed incept event from icp
       var signature5 =
@@ -2468,7 +2451,7 @@ void main() {
       var signatureex =
           '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
       try {
-        var group_identifier = await finalizeGroupIncept(
+        await finalizeGroupIncept(
             identifier: await newIdentifier(
                 idStr: 'Efrtu2CqKiP7YbWQ0c7X0VJU2i5E4V4frrlB72ytPBjQ'),
             groupEvent: icp.icpEvent,
@@ -2489,8 +2472,8 @@ void main() {
   test('Multisig use case', () async {
     await initKel(inputAppDir: 'keritest');
 
-    String witness_id = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
-    String wit_location =
+    String witnessId = "DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA";
+    String witLocation =
         '{"eid":"DCuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA","scheme":"http","url":"http://127.0.0.1:3232/"}';
 
     //Create identifier keys
@@ -2498,10 +2481,10 @@ void main() {
     vec1.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey1));
     List<PublicKey> vec2 = [];
     vec2.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey2));
-    List<String> vec3 = [wit_location];
+    List<String> vec3 = [witLocation];
 
     //Incept identifier
-    var icp_event = await incept(
+    var icpEvent = await incept(
         publicKeys: vec1,
         nextPubKeys: vec2,
         witnesses: vec3,
@@ -2510,12 +2493,12 @@ void main() {
     var signature =
         'FF0DF0EE9D25453DF225C897AAC2CE64F58DD070C07F5FDB080C475A0E297AEDB630919AC9442F6FE8C834A9A1C176C21F19ED6AA1B5683ADADC294947E8CC09';
     var identifier = await finalizeInception(
-        event: icp_event,
+        event: icpEvent,
         signature: await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: signature));
 
-    List<String> witness_id_list = [];
-    witness_id_list.add(witness_id);
+    List<String> witnessIdList = [];
+    witnessIdList.add(witnessId);
 
     //Query mailbox
     //var query = await queryMailbox(whoAsk: controller, aboutWho: controller, witness: witness_id_list);
@@ -2540,10 +2523,10 @@ void main() {
     vec11.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey3));
     List<PublicKey> vec22 = [];
     vec22.add(await newPublicKey(kt: KeyType.Ed25519, keyB64: publicKey4));
-    List<String> vec33 = [wit_location];
+    List<String> vec33 = [witLocation];
 
     //Incept participant
-    var icp_event2 = await incept(
+    var icpEvent2 = await incept(
         publicKeys: vec11,
         nextPubKeys: vec22,
         witnesses: vec33,
@@ -2552,7 +2535,7 @@ void main() {
     var signature3 =
         'DBD3BA4A8254FBFB496C8BEFEF0F8F51F3BE165731FAA9ECF641CC96ADA2704803A967B55275960B49FDECD68CD58289AADBCADA950C8B54548842DF4EAE0D0C';
     var participant = await finalizeInception(
-        event: icp_event2,
+        event: icpEvent2,
         signature: await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: signature3));
 
@@ -2579,7 +2562,7 @@ void main() {
         identifier: identifier,
         participants: [participant],
         signatureThreshold: 2,
-        initialWitnesses: witness_id_list,
+        initialWitnesses: witnessIdList,
         witnessThreshold: 1);
     //Signed incept event from icp
     var signature5 =
@@ -2587,7 +2570,7 @@ void main() {
     //Signed exchanges
     var signatureex =
         '353B6251889958472BE0A033208960CA510722FEDB9C2B67CE4DD190F75665C0EA663E01E1091D9C60E24D4D080BAC76859EE52B057B6C422466581AFF648608';
-    var group_identifier = await finalizeGroupIncept(
+    var groupIdentifier = await finalizeGroupIncept(
         identifier: identifier,
         groupEvent: icp.icpEvent,
         signature: await signatureFromHex(
@@ -2678,7 +2661,7 @@ void main() {
         signature: await signatureFromHex(
             st: SignatureType.Ed25519Sha512, signature: signature9));
 
-    var kel = await getKel(cont: group_identifier);
-    print(kel);
+    await getKel(cont: groupIdentifier);
+    //print(kel);
   });
 }

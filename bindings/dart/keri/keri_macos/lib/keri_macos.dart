@@ -5,7 +5,6 @@ import 'package:keri_platform_interface/bridge_generated.dart';
 import 'dart:ffi';
 import 'exceptions.dart';
 
-
 class KeriMacos extends KeriPlatformInterface {
   static final dylib = DynamicLibrary.executable();
   static final api = KeriDartImpl(dylib);

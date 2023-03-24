@@ -123,13 +123,6 @@ Future<String> getKel({required Identifier cont, dynamic hint}) async {
   return await KeriPlatformInterface.instance.getKel(cont: cont);
 }
 
-/// Returns pairs: public key encoded in base64 and signature encoded in hex.
-Future<List<PublicKeySignaturePair>> getCurrentPublicKey(
-    {required String attachment, dynamic hint}) async {
-  return await KeriPlatformInterface.instance
-      .getCurrentPublicKey(attachment: attachment);
-}
-
 ///Creates new Interaction Event along with provided Self Addressing Identifiers.
 Future<String> anchorDigest(
     {required Identifier controller,
@@ -264,4 +257,17 @@ Future<bool> broadcastReceipts(
     dynamic hint}) async {
   return await KeriPlatformInterface.instance
       .broadcastReceipts(identifier: identifier, witnessList: witnessList);
+}
+
+Future<String> signToCesr(
+    {required Identifier identifier,
+    required String data,
+    required Signature signature,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .signToCesr(identifier: identifier, data: data, signature: signature);
+}
+
+Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
+  return await KeriPlatformInterface.instance.verifyFromCesr(stream: stream);
 }

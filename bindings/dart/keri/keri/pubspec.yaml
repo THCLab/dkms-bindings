@@ -1,6 +1,6 @@
 name: keri
 description: Dart client for managing KERI based Identifiers on various platforms.
-version: 1.4.0
+version: 1.5.0
 homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri
 
 environment:
@@ -12,15 +12,16 @@ dependencies:
     sdk: flutter
   flutter_rust_bridge: ^1.71.1
   keri_android: ^0.2.0
-  keri_ios: ^0.1.0
-  keri_macos: ^0.1.0
+  keri_ios: ^0.2.0
+  keri_macos: ^0.2.0
   keri_platform_interface: ^0.1.1
-  keri_windows: ^0.1.0
+  keri_windows: ^0.2.0
   plugin_platform_interface: ^2.1.3
   ffi: ^2.0.1
   freezed: ^2.3.2
   freezed_annotation: ^2.2.0
   meta: ^1.8.0
+  file: ^6.1.4
 
 dev_dependencies:
   flutter_test:
