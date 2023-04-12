@@ -236,6 +236,11 @@ pub extern "C" fn wire_sign_to_cesr(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_split_oobis_and_data(port_: i64, stream: *mut wire_uint_8_list) {
+    wire_split_oobis_and_data_impl(port_, stream)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_verify_from_cesr(port_: i64, stream: *mut wire_uint_8_list) {
     wire_verify_from_cesr_impl(port_, stream)
 }

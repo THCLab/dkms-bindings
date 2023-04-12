@@ -4,14 +4,15 @@ use cesrox::primitives::{
     CesrPrimitive,
 };
 use keri::signer::{CryptoBox, KeyManager};
-use sai::derivation::SelfAddressing;
+use said::derivation::{HashFunction, HashFunctionCode};
 use tempfile::Builder;
 
 use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
     finalize_inception, finalize_query, get_kel, incept, incept_group, init_kel, new_public_key,
-    notify_witnesses, process_stream, query_mailbox, resolve_oobi, rotate, sign_to_cesr,
-    signature_from_hex, verify_from_cesr, Action, Config, DataAndSignature, Identifier, Error, send_oobi_to_watcher, query_watchers,
+    notify_witnesses, process_stream, query_mailbox, query_watchers, resolve_oobi, rotate,
+    sign_to_cesr, signature_from_hex, verify_from_cesr, Action, Config,
+    DataAndSignature, Error, Identifier, split_oobis_and_data, send_oobi_to_watcher,
 };
 
 #[test]
@@ -485,7 +486,7 @@ pub fn test_demo() -> Result<()> {
 
     finalize_event(controller.clone(), rotation_event, signature)?;
 
-    let sai = SelfAddressing::Blake3_256
+    let sai = HashFunction::from(HashFunctionCode::Blake3_256)
         .derive("some data".as_bytes())
         .to_str();
     let ixn_event = anchor_digest(controller.clone(), vec![sai])?;
@@ -499,7 +500,7 @@ pub fn test_demo() -> Result<()> {
     let ixn_event = anchor(
         controller.clone(),
         "some data".into(),
-        SelfAddressing::Blake3_256,
+        HashFunctionCode::Blake3_256,
     )?;
     println!("\nixn: {}", ixn_event);
 
@@ -631,7 +632,11 @@ pub fn test_signing_verifing() -> Result<()> {
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     let signing_identifier = finalize_inception(icp_event, signature)?;
-    let oobi = format!(r#"{{"cid":"{}","role":"witness","eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC"}}"#, signing_identifier.id);
+    let oobi = format!(
+        r#"{{"cid":"{}","role":"witness","eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC"}}"#,
+        signing_identifier.id
+    );
+    println!("\n\noobi: {}\n\n", oobi);
 
     // Publish own event to witnesses
     notify_witnesses(signing_identifier.clone())?;
@@ -657,7 +662,11 @@ pub fn test_signing_verifing() -> Result<()> {
     let hex_signature = hex::encode(key_manager.sign(data_to_sing.as_bytes())?);
 
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-    let signed = sign_to_cesr(signing_identifier.clone(), data_to_sing.to_string(), signature)?;
+    let signed = sign_to_cesr(
+        signing_identifier.clone(),
+        data_to_sing.to_string(),
+        signature,
+    )?;
     println!("signed: {}", &signed);
 
     // Simulate using other device, with no signing identifier kel events inside.
@@ -665,23 +674,12 @@ pub fn test_signing_verifing() -> Result<()> {
 
     // Setup verifing identifier
     let key_manager = CryptoBox::new().unwrap();
-    let current_b64key = base64::encode_config(
-        key_manager.public_key().key(),
-        base64::URL_SAFE,
-    );
-    let next_b64key = base64::encode_config(
-        key_manager.next_public_key().key(),
-        base64::URL_SAFE,
-    );
+    let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
+    let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
 
     let pk = new_public_key(Basic::Ed25519, current_b64key)?;
     let npk = new_public_key(Basic::Ed25519, next_b64key)?;
-    let icp_event = incept(
-        vec![pk],
-        vec![npk],
-        vec![],
-        0,
-    )?;
+    let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
 
@@ -699,23 +697,28 @@ pub fn test_signing_verifing() -> Result<()> {
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_sig);
 
     finalize_event(verifing_identifier.clone(), add_watcher_message, signature).unwrap();
-
-    // let verifing_identifier_kel = get_kel(participant.clone())?;
-
+    let kel = get_kel(verifing_identifier.clone());
+    assert!(kel.is_ok());
+    println!("\n\nverifing id kel: {}\n\n", kel.unwrap());
 
     let kel = get_kel(signing_identifier.clone());
     // Unknown identifier error
     assert!(kel.is_err());
 
+    let stream = format!("{}{}{}", wit_location, oobi, signed);
+    let splitted = split_oobis_and_data(stream)?;
+    
     // Provide signing identifier oobi to watcher.
-    send_oobi_to_watcher(verifing_identifier.clone(), wit_location)?;
-    send_oobi_to_watcher(verifing_identifier.clone(), oobi)?;
+    for oobi in splitted.oobis {
+        send_oobi_to_watcher(verifing_identifier.clone(), oobi)?;
+    };
+
+    let kel = get_kel(signing_identifier.clone());
+    // Unknown identifier error
+    assert!(kel.is_err());
 
     // Query watcher for results of resolving signing identifier oobis. It will provide signing identifier kel events.
-    let query = query_watchers(
-        verifing_identifier.clone(),
-        signing_identifier.clone(),
-    )?;
+    let query = query_watchers(verifing_identifier.clone(), signing_identifier.clone())?;
 
     for qry in query {
         let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
@@ -727,7 +730,9 @@ pub fn test_signing_verifing() -> Result<()> {
     assert!(kel.is_ok());
 
     // Verify provied signed message.
-    assert!(verify_from_cesr(signed).unwrap());
+    for acdc in splitted.credentials {
+        assert!(verify_from_cesr(acdc).unwrap());
+    }
 
     Ok(())
 }

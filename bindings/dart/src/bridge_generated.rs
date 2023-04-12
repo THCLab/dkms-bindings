@@ -512,6 +512,19 @@ fn wire_sign_to_cesr_impl(
         },
     )
 }
+fn wire_split_oobis_and_data_impl(port_: MessagePort, stream: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "split_oobis_and_data",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_stream = stream.wire2api();
+            move |task_callback| split_oobis_and_data(api_stream)
+        },
+    )
+}
 fn wire_verify_from_cesr_impl(port_: MessagePort, stream: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -766,6 +779,12 @@ impl support::IntoDart for mirror_SignatureType {
     }
 }
 impl support::IntoDartExceptPrimitive for mirror_SignatureType {}
+impl support::IntoDart for SplittingResult {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.oobis.into_dart(), self.credentials.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for SplittingResult {}
 
 // Section: executor
 

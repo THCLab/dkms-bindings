@@ -5,7 +5,7 @@ pub use cesrox::primitives::codes::{
 use controller::{error::ControllerError, identifier_controller::IdentifierController};
 use flutter_rust_bridge::{frb, support::lazy_static};
 use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive};
-pub use sai::derivation::SelfAddressing as DigestType;
+pub use said::derivation::HashFunctionCode as DigestType;
 use std::{
     path::PathBuf,
     slice,
@@ -21,7 +21,7 @@ use keri::{
     event_message::cesr_adapter::EventType,
     oobi::{LocationScheme, Role},
 };
-use sai::SelfAddressingPrefix;
+use said::{derivation::HashFunction, SelfAddressingIdentifier};
 use thiserror::Error;
 use tokio::runtime::Runtime;
 
@@ -319,7 +319,7 @@ pub fn rotate(
 }
 
 pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
-    let digest = algo.derive(data.as_bytes());
+    let digest = HashFunction::from(algo).derive(data.as_bytes());
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -330,7 +330,7 @@ pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String
     let sais = sais
         .iter()
         .map(|sai| {
-            sai.parse::<SelfAddressingPrefix>()
+            sai.parse::<SelfAddressingIdentifier>()
                 .map_err(|_e| Error::SaiParseError(sai.into()))
         })
         .collect::<Result<Vec<_>, Error>>()?;
@@ -638,6 +638,28 @@ pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature) 
     Ok(identifier_controller.sign_to_cesr(&data, signature.into(), 0)?)
 }
 
+
+pub struct SplittingResult {
+    pub oobis: Vec<String>,
+    pub credentials: Vec<String>,
+}
+/// Splits parsed elements from stream into oobis to resolve and other signed
+/// data.
+pub fn split_oobis_and_data(stream: String) -> Result<SplittingResult> {
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .clone();
+    let (oobis, stream) = controller.parse_cesr_stream(&stream)?;
+   
+    let without_oobis = stream
+        .iter()
+        .map(|acdc| String::from_utf8(acdc.to_cesr().unwrap()).unwrap())
+        .collect();
+    Ok(SplittingResult { oobis, credentials: without_oobis})
+}
+
+
 pub fn verify_from_cesr(stream: String) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
@@ -646,3 +668,4 @@ pub fn verify_from_cesr(stream: String) -> Result<bool> {
     controller.verify_from_cesr(&stream)?;
     Ok(true)
 }
+

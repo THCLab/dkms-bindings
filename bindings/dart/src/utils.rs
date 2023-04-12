@@ -4,7 +4,7 @@ pub use keri::{
     oobi::LocationScheme,
     prefix::{BasicPrefix, IndexedSignature, SelfSigningPrefix},
 };
-use sai::SelfAddressingPrefix;
+use said::SelfAddressingIdentifier;
 
 pub fn parse_location_schemes(location_str: &str) -> Result<LocationScheme, Error> {
     serde_json::from_str::<LocationScheme>(location_str)
@@ -30,9 +30,9 @@ impl Into<SelfSigningPrefix> for Signature {
     }
 }
 
-impl Into<SelfAddressingPrefix> for Digest {
-    fn into(self) -> SelfAddressingPrefix {
-        SelfAddressingPrefix::new(self.derivation, self.digest)
+impl Into<SelfAddressingIdentifier> for Digest {
+    fn into(self) -> SelfAddressingIdentifier {
+        SelfAddressingIdentifier::new(self.derivation.into(), self.digest)
     }
 }
 impl Into<BasicPrefix> for PublicKey {
