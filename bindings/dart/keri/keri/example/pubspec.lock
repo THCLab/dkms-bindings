@@ -377,15 +377,15 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.5.0"
+    version: "1.5.1"
   keri_android:
     dependency: transitive
     description:
       name: keri_android
-      sha256: "8c1f2ed6724c2b5f275fa812a5ac5772be573a5d5f8fe496527f916f781943f0"
+      sha256: "7c5c0d2ae9af7ad31e9004a49e0243b32e12dccfa4f1aa42684363b545ae39ca"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.2.1"
   keri_ios:
     dependency: transitive
     description:
@@ -406,10 +406,10 @@ packages:
     dependency: transitive
     description:
       name: keri_platform_interface
-      sha256: "942655621a39232d72c0f0ed2cd8899f9fb7ec71bdf73714cc2f1946adb1c2cf"
+      sha256: baa1ad95f7e18c9c47ed1c0d4a3c7d0b9c19a6faf8c174f4e8ceede22ccba441
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.1"
+    version: "0.1.2"
   keri_windows:
     dependency: transitive
     description:

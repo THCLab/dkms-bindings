@@ -117,3 +117,7 @@ Lengthen events escrowing time
 ## 1.5.0
 
 Added `signToCesr` and `verifyFromCesr`, moved to the newest version of `flutter_rust_bridge`
+
+## 1.5.1
+
+Added `splitOobisAndData`

@@ -271,3 +271,10 @@ Future<String> signToCesr(
 Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
   return await KeriPlatformInterface.instance.verifyFromCesr(stream: stream);
 }
+
+/// Splits parsed elements from stream into oobis to resolve and other signed
+/// data.
+Future<SplittingResult> splitOobisAndData(
+    {required String stream, dynamic hint}) async {
+  return await KeriPlatformInterface.instance.splitOobisAndData(stream: stream);
+}
