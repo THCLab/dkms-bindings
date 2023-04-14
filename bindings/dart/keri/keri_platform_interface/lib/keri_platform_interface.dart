@@ -206,4 +206,11 @@ abstract class KeriPlatformInterface extends PlatformInterface {
   Future<bool> verifyFromCesr({required String stream, dynamic hint}) {
     throw UnimplementedError('verifyFromCesr() has not been implemented');
   }
+
+  /// Splits parsed elements from stream into oobis to resolve and other signed
+  /// data.
+  Future<SplittingResult> splitOobisAndData(
+      {required String stream, dynamic hint}) {
+    throw UnimplementedError('splitOobisAndData() has not been implemented');
+  }
 }

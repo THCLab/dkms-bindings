@@ -599,4 +599,12 @@ class KeriAndroid extends KeriPlatformInterface {
   Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
     return await api.verifyFromCesr(stream: stream);
   }
+
+  /// Splits parsed elements from stream into oobis to resolve and other signed
+  /// data.
+  @override
+  Future<SplittingResult> splitOobisAndData(
+      {required String stream, dynamic hint}) async {
+    return await api.splitOobisAndData(stream: stream);
+  }
 }

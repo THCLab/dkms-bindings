@@ -29,3 +29,7 @@ Lengthen events escrowing time
 ### 0.1.1
 
 Added `signToCesr` and `verifyFromCesr`
+
+### 0.1.2
+
+Added `splitOobisAndData`

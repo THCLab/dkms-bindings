@@ -177,6 +177,13 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kSignToCesrConstMeta;
 
+  /// Splits parsed elements from stream into oobis to resolve and other signed
+  /// data.
+  Future<SplittingResult> splitOobisAndData(
+      {required String stream, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kSplitOobisAndDataConstMeta;
+
   Future<bool> verifyFromCesr({required String stream, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kVerifyFromCesrConstMeta;
@@ -325,6 +332,16 @@ enum SignatureType {
   Ed25519Sha512,
   ECDSAsecp256k1Sha256,
   Ed448,
+}
+
+class SplittingResult {
+  final List<String> oobis;
+  final List<String> credentials;
+
+  const SplittingResult({
+    required this.oobis,
+    required this.credentials,
+  });
 }
 
 class KeriDartImpl implements KeriDart {
@@ -908,6 +925,25 @@ class KeriDartImpl implements KeriDart {
         argNames: ["identifier", "data", "signature"],
       );
 
+  Future<SplittingResult> splitOobisAndData(
+      {required String stream, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(stream);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_split_oobis_and_data(port_, arg0),
+      parseSuccessData: _wire2api_splitting_result,
+      constMeta: kSplitOobisAndDataConstMeta,
+      argValues: [stream],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kSplitOobisAndDataConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "split_oobis_and_data",
+        argNames: ["stream"],
+      );
+
   Future<bool> verifyFromCesr({required String stream, dynamic hint}) {
     var arg0 = _platform.api2wire_String(stream);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -1095,6 +1131,16 @@ class KeriDartImpl implements KeriDart {
 
   SignatureType _wire2api_signature_type(dynamic raw) {
     return SignatureType.values[raw];
+  }
+
+  SplittingResult _wire2api_splitting_result(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return SplittingResult(
+      oobis: _wire2api_StringList(arr[0]),
+      credentials: _wire2api_StringList(arr[1]),
+    );
   }
 
   int _wire2api_u8(dynamic raw) {
@@ -2002,6 +2048,23 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       void Function(int, ffi.Pointer<wire_Identifier>,
           ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
 
+  void wire_split_oobis_and_data(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> stream,
+  ) {
+    return _wire_split_oobis_and_data(
+      port_,
+      stream,
+    );
+  }
+
+  late final _wire_split_oobis_and_dataPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_split_oobis_and_data');
+  late final _wire_split_oobis_and_data = _wire_split_oobis_and_dataPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
   void wire_verify_from_cesr(
     int port_,
     ffi.Pointer<wire_uint_8_list> stream,
@@ -2353,4 +2416,4 @@ class wire_list_data_and_signature extends ffi.Struct {
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<ffi.Bool Function(DartPort, ffi.Pointer<ffi.Void>)>>;
 typedef DartPort = ffi.Int64;
-typedef uintptr_t = ffi.UnsignedLong;
+typedef uintptr_t = ffi.UnsignedLongLong;

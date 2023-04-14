@@ -1,6 +1,6 @@
 name: keri_android
 description: Keri plugin implementation for Android devices only. See keri for all types.
-version: 0.2.0
+version: 0.2.1
 repository: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri_android
 
 environment:
@@ -15,7 +15,7 @@ dependencies:
   flutter_rust_bridge: ^1.70.1
   freezed: ^2.1.0+1
   freezed_annotation: ^2.2.0
-  keri_platform_interface: ^0.1.1
+  keri_platform_interface: ^0.1.2
   meta: ^1.7.0
   plugin_platform_interface: ^2.0.2
 
