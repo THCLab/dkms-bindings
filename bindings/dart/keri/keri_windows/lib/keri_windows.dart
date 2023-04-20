@@ -604,6 +604,30 @@ class KeriWindows extends KeriPlatformInterface {
 
   @override
   Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
-    return await api.verifyFromCesr(stream: stream);
+    try {
+      return await api.verifyFromCesr(stream: stream);
+    } on FfiException catch (e) {
+      if (e.message.contains('Cesr error')) {
+        throw CesrFormatException(
+            "The format of provided string is not compliant with the CESR format. Check the string once again.");
+      }
+      if (e.message.contains('Wrong signature')) {
+        throw WrongCesrSignatureException(
+            "The signature for the provided cesr stream is incorrect.");
+      }
+      if (e.message.contains('Verification failed for following elements')) {
+        throw CesrVerificationException(
+            "Verification failed for provided stream and signature.");
+      }
+      rethrow;
+    }
+  }
+
+  /// Splits parsed elements from stream into oobis to resolve and other signed
+  /// data.
+  @override
+  Future<SplittingResult> splitOobisAndData(
+      {required String stream, dynamic hint}) async {
+    return await api.splitOobisAndData(stream: stream);
   }
 }

@@ -236,3 +236,39 @@ class ImproperWitnessThresholdException implements Exception {
   @override
   String toString() => "ImproperWitnessThresholdException: $cause";
 }
+
+///An exception thrown when the format of the CESR string is incorrect
+class CesrFormatException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  CesrFormatException(this.cause);
+
+  @override
+  String toString() => "CesrFormatException: $cause";
+}
+
+///An exception thrown when the CESR signature (a product of calling `signToCesr`) is incorrect
+class WrongCesrSignatureException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  WrongCesrSignatureException(this.cause);
+
+  @override
+  String toString() => "WrongCesrSignatureException: $cause";
+}
+
+///An exception thrown when the verification of CESR signature fails
+class CesrVerificationException implements Exception {
+  ///The description for the exception.
+  String cause;
+
+  ///Exception constructor containing the description for the exception.
+  CesrVerificationException(this.cause);
+
+  @override
+  String toString() => "CesrVerificationException: $cause";
+}
