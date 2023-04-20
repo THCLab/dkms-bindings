@@ -18,8 +18,8 @@ lto = true
 flutter_rust_bridge = "=1.71"
 keri = { git = "https://github.com/THCLab/keriox.git", branch = "signing"}
 controller = { git = "https://github.com/THCLab/keriox.git", branch = "signing"}
-said = { git = "https://github.com/THCLab/cesrox" } 
-cesrox = { git = "https://github.com/THCLab/cesrox", features = ["cesr-proof"] }
+said = { git = "https://github.com/THCLab/cesrox", tag = "v0.1.4" } 
+cesrox = { git = "https://github.com/THCLab/cesrox", features = ["cesr-proof"], tag = "v0.1.4" }
 anyhow = { version = "1.0" }
 thiserror = "1.0"
 base64 = "0.13.0"
