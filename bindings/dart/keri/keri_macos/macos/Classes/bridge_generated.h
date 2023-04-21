@@ -222,6 +222,8 @@ void wire_sign_to_cesr(int64_t port_,
                        struct wire_uint_8_list *data,
                        struct wire_Signature *signature);
 
+void wire_split_oobis_and_data(int64_t port_, struct wire_uint_8_list *stream);
+
 void wire_verify_from_cesr(int64_t port_, struct wire_uint_8_list *stream);
 
 void wire_new_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
@@ -285,6 +287,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
     dummy_var ^= ((int64_t) (void*) wire_sign_to_cesr);
+    dummy_var ^= ((int64_t) (void*) wire_split_oobis_and_data);
     dummy_var ^= ((int64_t) (void*) wire_verify_from_cesr);
     dummy_var ^= ((int64_t) (void*) wire_new_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);

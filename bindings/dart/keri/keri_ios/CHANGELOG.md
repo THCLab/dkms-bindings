@@ -47,3 +47,6 @@ Added `signToCesr` and `verifyFromCesr`, moved to the newest version of `flutter
 
 ## 0.2.1
 Added `splitOobisAndData`
+
+## 0.2.2
+Added exceptions for `verifyFromCesr`
