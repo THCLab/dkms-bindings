@@ -638,7 +638,6 @@ pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature) 
     Ok(identifier_controller.sign_to_cesr(&data, signature.into(), 0)?)
 }
 
-
 pub struct SplittingResult {
     pub oobis: Vec<String>,
     pub credentials: Vec<String>,
@@ -651,14 +650,16 @@ pub fn split_oobis_and_data(stream: String) -> Result<SplittingResult> {
         .ok_or(Error::ControllerInitializationError)?
         .clone();
     let (oobis, stream) = controller.parse_cesr_stream(&stream)?;
-   
+
     let without_oobis = stream
         .iter()
         .map(|acdc| String::from_utf8(acdc.to_cesr().unwrap()).unwrap())
         .collect();
-    Ok(SplittingResult { oobis, credentials: without_oobis})
+    Ok(SplittingResult {
+        oobis,
+        credentials: without_oobis,
+    })
 }
-
 
 pub fn verify_from_cesr(stream: String) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
@@ -668,4 +669,3 @@ pub fn verify_from_cesr(stream: String) -> Result<bool> {
     controller.verify_from_cesr(&stream)?;
     Ok(true)
 }
-

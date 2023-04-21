@@ -11,8 +11,8 @@ use crate::api::{
     add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
     finalize_inception, finalize_query, get_kel, incept, incept_group, init_kel, new_public_key,
     notify_witnesses, process_stream, query_mailbox, query_watchers, resolve_oobi, rotate,
-    sign_to_cesr, signature_from_hex, verify_from_cesr, Action, Config,
-    DataAndSignature, Error, Identifier, split_oobis_and_data, send_oobi_to_watcher,
+    send_oobi_to_watcher, sign_to_cesr, signature_from_hex, split_oobis_and_data, verify_from_cesr,
+    Action, Config, DataAndSignature, Identifier,
 };
 
 #[test]
@@ -563,7 +563,7 @@ pub fn test_sign_verify() -> Result<()> {
         .unwrap()
         .into();
 
-    let mut key_manager = CryptoBox::new().unwrap();
+    let key_manager = CryptoBox::new().unwrap();
     let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
     let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
 
@@ -707,11 +707,11 @@ pub fn test_signing_verifing() -> Result<()> {
 
     let stream = format!("{}{}{}", wit_location, oobi, signed);
     let splitted = split_oobis_and_data(stream)?;
-    
+
     // Provide signing identifier oobi to watcher.
     for oobi in splitted.oobis {
         send_oobi_to_watcher(verifing_identifier.clone(), oobi)?;
-    };
+    }
 
     let kel = get_kel(signing_identifier.clone());
     // Unknown identifier error
