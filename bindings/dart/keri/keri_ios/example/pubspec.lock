@@ -382,10 +382,10 @@ packages:
     dependency: transitive
     description:
       name: keri_platform_interface
-      sha256: "942655621a39232d72c0f0ed2cd8899f9fb7ec71bdf73714cc2f1946adb1c2cf"
+      sha256: baa1ad95f7e18c9c47ed1c0d4a3c7d0b9c19a6faf8c174f4e8ceede22ccba441
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.1"
+    version: "0.1.2"
   lints:
     dependency: transitive
     description:
@@ -462,10 +462,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "12307e7f0605ce3da64cf0db90e5fcab0869f3ca03f76be6bb2991ce0a55e82b"
+      sha256: "3c74dbf8763d36539f114c799d8a2d87343b5067e9d796ca22b5eb8437090ee3"
       url: "https://pub.dev"
     source: hosted
-    version: "1.9.0"
+    version: "1.9.1"
   mime:
     dependency: transitive
     description:
