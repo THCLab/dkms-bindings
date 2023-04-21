@@ -1,6 +1,6 @@
 name: keri_macos
 description: Keri plugin implementation for MacOS devices only. See keri for all types.
-version: 0.2.1
+version: 0.2.2
 homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri_macos
 
 environment:
