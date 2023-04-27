@@ -377,15 +377,15 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.5.2"
+    version: "1.5.3"
   keri_android:
     dependency: transitive
     description:
       name: keri_android
-      sha256: fd2ac858ca209d1b0467f0d01f4fe89d6e7aad331f8540bf365ccaf74372a1c4
+      sha256: "41cd260604b5504c8cd36f20889371c8607ac3891d092123d6b0491fd4d8b270"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.2"
+    version: "0.2.3"
   keri_ios:
     dependency: transitive
     description:
