@@ -553,6 +553,7 @@ pub fn test_demo() -> Result<()> {
 
 #[test]
 pub fn test_sign_verify() -> Result<()> {
+    use crate::api::to_cesr_signature;
     // Create temporary db file.
     let root_path = Builder::new()
         .prefix("test-db")
@@ -584,8 +585,11 @@ pub fn test_sign_verify() -> Result<()> {
 
     // sign icp event
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-    let signed = sign_to_cesr(identifier, data_to_sing.to_string(), signature)?;
+    let signed = sign_to_cesr(identifier.clone(), data_to_sing.to_string(), signature.clone())?;
     println!("signed: {}", &signed);
+
+    let signed = to_cesr_signature(identifier, signature)?;
+    println!("\n\nsignature: {}", &signed);
 
     assert!(verify_from_cesr(signed)?);
 
