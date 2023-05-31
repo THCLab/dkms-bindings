@@ -12,7 +12,7 @@ use crate::api::{
     finalize_inception, finalize_query, get_kel, incept, incept_group, init_kel, new_public_key,
     notify_witnesses, process_stream, query_mailbox, query_watchers, resolve_oobi, rotate,
     send_oobi_to_watcher, sign_to_cesr, signature_from_hex, split_oobis_and_data, verify_from_cesr,
-    Action, Config, DataAndSignature, Identifier,
+    Action, Config, DataAndSignature, Identifier, anchor_payload, get_mailbox_location,
 };
 
 #[test]
@@ -511,6 +511,24 @@ pub fn test_demo() -> Result<()> {
 
     let kel = get_kel(controller.clone())?;
     println!("\nCurrent controller kel: \n{}", kel);
+
+    let ixn_event = anchor_payload(controller.clone(), "url1".to_string())?;
+
+    let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
+    // sign rot event
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    finalize_event(controller.clone(), ixn_event, signature)?;
+
+    let ixn_event = anchor_payload(controller.clone(), "url2".to_string())?;
+
+    let hex_signature = hex::encode(key_manager.sign(ixn_event.as_bytes())?);
+    // sign rot event
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    finalize_event(controller.clone(), ixn_event, signature)?;
+
+    let location = get_mailbox_location(controller)?;
+    assert_eq!("url2", location);
+
 
     // let watcher_oobi = r#"{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://sandbox.argo.colossi.network:3236/"}"#.into();
 
