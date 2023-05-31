@@ -110,6 +110,15 @@ pub extern "C" fn wire_anchor_digest(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_anchor_payload(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    payload: *mut wire_uint_8_list,
+) {
+    wire_anchor_payload_impl(port_, identifier, payload)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_add_watcher(
     port_: i64,
     identifier: *mut wire_Identifier,
@@ -223,6 +232,20 @@ pub extern "C" fn wire_process_stream(port_: i64, stream: *mut wire_uint_8_list)
 #[no_mangle]
 pub extern "C" fn wire_get_kel(port_: i64, identifier: *mut wire_Identifier) {
     wire_get_kel_impl(port_, identifier)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_mailbox_location(port_: i64, identifier: *mut wire_Identifier) {
+    wire_get_mailbox_location_impl(port_, identifier)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_to_cesr_signature(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    signature: *mut wire_Signature,
+) {
+    wire_to_cesr_signature_impl(port_, identifier, signature)
 }
 
 #[no_mangle]

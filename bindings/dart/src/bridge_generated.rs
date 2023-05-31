@@ -244,6 +244,24 @@ fn wire_anchor_digest_impl(
         },
     )
 }
+fn wire_anchor_payload_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    payload: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "anchor_payload",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_payload = payload.wire2api();
+            move |task_callback| anchor_payload(api_identifier, api_payload)
+        },
+    )
+}
 fn wire_add_watcher_impl(
     port_: MessagePort,
     identifier: impl Wire2Api<Identifier> + UnwindSafe,
@@ -489,6 +507,40 @@ fn wire_get_kel_impl(port_: MessagePort, identifier: impl Wire2Api<Identifier> +
         move || {
             let api_identifier = identifier.wire2api();
             move |task_callback| get_kel(api_identifier)
+        },
+    )
+}
+fn wire_get_mailbox_location_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_mailbox_location",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            move |task_callback| get_mailbox_location(api_identifier)
+        },
+    )
+}
+fn wire_to_cesr_signature_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    signature: impl Wire2Api<Signature> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "to_cesr_signature",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_signature = signature.wire2api();
+            move |task_callback| to_cesr_signature(api_identifier, api_signature)
         },
     )
 }
