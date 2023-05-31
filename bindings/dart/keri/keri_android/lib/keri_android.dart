@@ -623,4 +623,18 @@ class KeriAndroid extends KeriPlatformInterface {
       {required String stream, dynamic hint}) async {
     return await api.splitOobisAndData(stream: stream);
   }
+
+  @override
+  Future<String> getMailboxLocation(
+      {required Identifier identifier, dynamic hint}) async {
+    return await api.getMailboxLocation(identifier: identifier);
+  }
+
+  @override
+  Future<String> anchorPayload(
+      {required Identifier identifier,
+      required String payload,
+      dynamic hint}) async {
+    return await api.anchorPayload(identifier: identifier, payload: payload);
+  }
 }

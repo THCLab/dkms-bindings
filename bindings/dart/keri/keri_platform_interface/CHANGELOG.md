@@ -33,3 +33,7 @@ Added `signToCesr` and `verifyFromCesr`
 ### 0.1.2
 
 Added `splitOobisAndData`
+
+### 0.1.3
+
+Added `getMailboxLocation` and `anchorPayload`

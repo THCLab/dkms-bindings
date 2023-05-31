@@ -278,3 +278,17 @@ Future<SplittingResult> splitOobisAndData(
     {required String stream, dynamic hint}) async {
   return await KeriPlatformInterface.instance.splitOobisAndData(stream: stream);
 }
+
+Future<String> getMailboxLocation(
+    {required Identifier identifier, dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .getMailboxLocation(identifier: identifier);
+}
+
+Future<String> anchorPayload(
+    {required Identifier identifier,
+    required String payload,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .anchorPayload(identifier: identifier, payload: payload);
+}

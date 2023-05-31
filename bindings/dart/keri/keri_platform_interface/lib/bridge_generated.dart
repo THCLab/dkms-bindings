@@ -84,6 +84,11 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kAnchorDigestConstMeta;
 
+  Future<String> anchorPayload(
+      {required Identifier identifier, required String payload, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kAnchorPayloadConstMeta;
+
   Future<String> addWatcher(
       {required Identifier identifier,
       required String watcherOobi,
@@ -168,6 +173,18 @@ abstract class KeriDart {
   Future<String> getKel({required Identifier identifier, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetKelConstMeta;
+
+  Future<String> getMailboxLocation(
+      {required Identifier identifier, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMailboxLocationConstMeta;
+
+  Future<String> toCesrSignature(
+      {required Identifier identifier,
+      required Signature signature,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kToCesrSignatureConstMeta;
 
   Future<String> signToCesr(
       {required Identifier identifier,
@@ -608,6 +625,26 @@ class KeriDartImpl implements KeriDart {
         argNames: ["identifier", "sais"],
       );
 
+  Future<String> anchorPayload(
+      {required Identifier identifier, required String payload, dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(payload);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_anchor_payload(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kAnchorPayloadConstMeta,
+      argValues: [identifier, payload],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kAnchorPayloadConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "anchor_payload",
+        argNames: ["identifier", "payload"],
+      );
+
   Future<String> addWatcher(
       {required Identifier identifier,
       required String watcherOobi,
@@ -899,6 +936,47 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "get_kel",
         argNames: ["identifier"],
+      );
+
+  Future<String> getMailboxLocation(
+      {required Identifier identifier, dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_get_mailbox_location(port_, arg0),
+      parseSuccessData: _wire2api_String,
+      constMeta: kGetMailboxLocationConstMeta,
+      argValues: [identifier],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMailboxLocationConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_mailbox_location",
+        argNames: ["identifier"],
+      );
+
+  Future<String> toCesrSignature(
+      {required Identifier identifier,
+      required Signature signature,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_box_autoadd_signature(signature);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_to_cesr_signature(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kToCesrSignatureConstMeta,
+      argValues: [identifier, signature],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kToCesrSignatureConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "to_cesr_signature",
+        argNames: ["identifier", "signature"],
       );
 
   Future<String> signToCesr(
@@ -1729,6 +1807,26 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
       void Function(
           int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_StringList>)>();
 
+  void wire_anchor_payload(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> payload,
+  ) {
+    return _wire_anchor_payload(
+      port_,
+      identifier,
+      payload,
+    );
+  }
+
+  late final _wire_anchor_payloadPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_anchor_payload');
+  late final _wire_anchor_payload = _wire_anchor_payloadPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
+
   void wire_add_watcher(
     int port_,
     ffi.Pointer<wire_Identifier> identifier,
@@ -2022,6 +2120,43 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
               ffi.Int64, ffi.Pointer<wire_Identifier>)>>('wire_get_kel');
   late final _wire_get_kel = _wire_get_kelPtr
       .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_get_mailbox_location(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+  ) {
+    return _wire_get_mailbox_location(
+      port_,
+      identifier,
+    );
+  }
+
+  late final _wire_get_mailbox_locationPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_Identifier>)>>('wire_get_mailbox_location');
+  late final _wire_get_mailbox_location = _wire_get_mailbox_locationPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_to_cesr_signature(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_Signature> signature,
+  ) {
+    return _wire_to_cesr_signature(
+      port_,
+      identifier,
+      signature,
+    );
+  }
+
+  late final _wire_to_cesr_signaturePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_Signature>)>>('wire_to_cesr_signature');
+  late final _wire_to_cesr_signature = _wire_to_cesr_signaturePtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_Signature>)>();
 
   void wire_sign_to_cesr(
     int port_,
@@ -2416,4 +2551,4 @@ class wire_list_data_and_signature extends ffi.Struct {
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<ffi.Bool Function(DartPort, ffi.Pointer<ffi.Void>)>>;
 typedef DartPort = ffi.Int64;
-typedef uintptr_t = ffi.UnsignedLongLong;
+typedef uintptr_t = ffi.UnsignedLong;

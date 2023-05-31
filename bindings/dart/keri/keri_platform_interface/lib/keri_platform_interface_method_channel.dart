@@ -217,4 +217,16 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
       {required String stream, dynamic hint}) {
     throw UnimplementedError('splitOobisAndData() has not been implemented');
   }
+
+  @override
+  Future<String> getMailboxLocation(
+      {required Identifier identifier, dynamic hint}) {
+    throw UnimplementedError('getMailboxLocation() has not been implemented');
+  }
+
+  @override
+  Future<String> anchorPayload(
+      {required Identifier identifier, required String payload, dynamic hint}) {
+    throw UnimplementedError('anchorPayload() has not been implemented');
+  }
 }

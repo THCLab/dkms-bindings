@@ -127,3 +127,6 @@ Added exceptions for `verifyFromCesr` for all platforms
 
 ## 1.5.3 
 Updated dependency for `keri_android`
+
+## 1.5.4
+Added `getMailboxLocation` and `anchorPayload` for Android

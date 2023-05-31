@@ -78,3 +78,6 @@ Added exceptions for `verifyFromCesr`
 
 ## 0.2.3
 Updated jniLibs
+
+## 0.2.4
+Added `getMailboxLocation` and `anchorPayload`

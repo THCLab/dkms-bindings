@@ -213,4 +213,14 @@ abstract class KeriPlatformInterface extends PlatformInterface {
       {required String stream, dynamic hint}) {
     throw UnimplementedError('splitOobisAndData() has not been implemented');
   }
+
+  Future<String> getMailboxLocation(
+      {required Identifier identifier, dynamic hint}) {
+    throw UnimplementedError('getMailboxLocation() has not been implemented');
+  }
+
+  Future<String> anchorPayload(
+      {required Identifier identifier, required String payload, dynamic hint}) {
+    throw UnimplementedError('anchorPayload() has not been implemented');
+  }
 }
