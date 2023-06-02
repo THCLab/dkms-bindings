@@ -130,3 +130,9 @@ Updated dependency for `keri_android`
 
 ## 1.5.4
 Added `getMailboxLocation` and `anchorPayload` for Android
+
+## 1.5.5
+New .so files
+
+## 1.5.6
+New .so files

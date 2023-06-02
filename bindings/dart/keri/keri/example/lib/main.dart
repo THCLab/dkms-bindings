@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> inittKel() async {
     signer = await AsymmetricCryptoPrimitives.establishForEd25519();
     var dir = await getLocalPath();
-    var inited = await initKel(inputAppDir: 'inputAppDir');
+    var inited = await initKel(inputAppDir: dir);
   }
 
   @override

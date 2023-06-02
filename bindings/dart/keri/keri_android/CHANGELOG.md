@@ -81,3 +81,9 @@ Updated jniLibs
 
 ## 0.2.4
 Added `getMailboxLocation` and `anchorPayload`
+
+## 0.2.5
+New .so files
+
+## 0.2.6
+New .so files
