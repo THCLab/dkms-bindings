@@ -87,3 +87,9 @@ New .so files
 
 ## 0.2.6
 New .so files
+
+## 0.2.7
+New .so files
+
+## 0.2.8
+New .so files

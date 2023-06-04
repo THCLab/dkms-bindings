@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:asymmetric_crypto_primitives/asymmetric_crypto_primitives.dart';
@@ -335,6 +336,8 @@ class _MyAppState extends State<MyApp> {
                 isCesrSigned
                     ? RawMaterialButton(
                         onPressed: () async {
+                          print(await resolveOobi(oobiJson: '{"cid": "EJEv3VqZ7zaRaqGCrFt5kEM_ZLK1df2XKc-v6xDWT3CG", "role": "witness", "eid": "BDg3H7Sr-eES0XWXiO8nvMxW6mD_1LxLeE1nuiZxhGp4"}'));
+                          print(await resolveOobi(oobiJson: '{\"eid\":\"BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA\",\"scheme\":\"http\",\"url\":\"http://sandbox.argo.colossi.network:8888/\"}'));
                           var verified = await verifyFromCesr(stream: signed)
                               .then((value) {
                             if (value) {

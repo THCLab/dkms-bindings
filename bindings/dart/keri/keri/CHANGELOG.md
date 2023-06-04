@@ -136,3 +136,9 @@ New .so files
 
 ## 1.5.6
 New .so files
+
+## 1.5.7
+New .so files
+
+## 1.5.8
+New .so files
