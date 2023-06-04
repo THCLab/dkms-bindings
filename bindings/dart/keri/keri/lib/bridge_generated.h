@@ -165,6 +165,10 @@ void wire_anchor_digest(int64_t port_,
                         struct wire_Identifier *identifier,
                         struct wire_StringList *sais);
 
+void wire_anchor_payload(int64_t port_,
+                         struct wire_Identifier *identifier,
+                         struct wire_uint_8_list *payload);
+
 void wire_add_watcher(int64_t port_,
                       struct wire_Identifier *identifier,
                       struct wire_uint_8_list *watcher_oobi);
@@ -216,6 +220,12 @@ void wire_resolve_oobi(int64_t port_, struct wire_uint_8_list *oobi_json);
 void wire_process_stream(int64_t port_, struct wire_uint_8_list *stream);
 
 void wire_get_kel(int64_t port_, struct wire_Identifier *identifier);
+
+void wire_get_mailbox_location(int64_t port_, struct wire_Identifier *identifier);
+
+void wire_to_cesr_signature(int64_t port_,
+                            struct wire_Identifier *identifier,
+                            struct wire_Signature *signature);
 
 void wire_sign_to_cesr(int64_t port_,
                        struct wire_Identifier *identifier,
@@ -273,6 +283,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_rotate);
     dummy_var ^= ((int64_t) (void*) wire_anchor);
     dummy_var ^= ((int64_t) (void*) wire_anchor_digest);
+    dummy_var ^= ((int64_t) (void*) wire_anchor_payload);
     dummy_var ^= ((int64_t) (void*) wire_add_watcher);
     dummy_var ^= ((int64_t) (void*) wire_send_oobi_to_watcher);
     dummy_var ^= ((int64_t) (void*) wire_finalize_event);
@@ -286,6 +297,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_resolve_oobi);
     dummy_var ^= ((int64_t) (void*) wire_process_stream);
     dummy_var ^= ((int64_t) (void*) wire_get_kel);
+    dummy_var ^= ((int64_t) (void*) wire_get_mailbox_location);
+    dummy_var ^= ((int64_t) (void*) wire_to_cesr_signature);
     dummy_var ^= ((int64_t) (void*) wire_sign_to_cesr);
     dummy_var ^= ((int64_t) (void*) wire_split_oobis_and_data);
     dummy_var ^= ((int64_t) (void*) wire_verify_from_cesr);

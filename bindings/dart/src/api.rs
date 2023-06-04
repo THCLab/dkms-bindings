@@ -648,7 +648,7 @@ pub fn get_mailbox_location(identifier: Identifier) -> Result<String> {
         .ok_or(Error::ControllerInitializationError)?
         .storage
         .get_mailbox_location(&identifier.into())?
-        .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?;
+        .ok_or(Error::KelError(ControllerError::OtherError("No ixn message in kel".to_string())))?;
     Ok(mailbox_url)
 }
 
