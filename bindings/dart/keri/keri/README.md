@@ -16,7 +16,6 @@ Currently supported functions are:
 * `finalizeEvent` - Verifies provided signatures against event and saves it.
 * `resolveOobi` - Checks and saves provided identifier's endpoint information.
 * `getKel` - Returns Key Event Log in the CESR representation for current Identifier when given a controller.
-* `getCurrentPublicKey` - Returns pairs: public key encoded in URL-safe Base64 and signature encoded in hex.
 * `anchor` - Creates new Interaction Event along with arbitrary data.
 * `anchorDigest` - Creates new Interaction Event along with provided Self Addressing Identifiers.
 * `newIdentifier` - Creates an `Identifier` object from the id string.
@@ -31,6 +30,11 @@ Currently supported functions are:
 * `sendOobiToWatcher` - Sends given oobi to a connected watcher 
 * `notifyWitnesses` - Publishes events to the witnesses
 * `broadcastReceipts` - Sends witnesses receipts between them
+* `signToCesr` - Joins provided payload and signature into cesr stream.
+* `verifyFromCesr` - Verifies signatures from provided cesr stream.
+* `splitOobisAndData` - Splits provided stream into oobis and rest of cesr stream.
+* `getMailboxLocation` - Returns the address where mailbox can be found.
+* `anchorPayload` - Generates interaction event that anchors provided payload in the Key Event Log.
 
 ## Glossary
 

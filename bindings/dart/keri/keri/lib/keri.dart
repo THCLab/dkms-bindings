@@ -73,46 +73,6 @@ Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
   return await KeriPlatformInterface.instance.resolveOobi(oobiJson: oobiJson);
 }
 
-///Query designated watcher about other identifier's public keys data.
-// static Future<bool> query(
-//     {required Identifier controller,
-//     required String oobisJson,
-//     dynamic hint}) async {
-//   try {
-//     return await api.query(identifier: controller, oobisJson: oobisJson);
-//   } on FfiException catch (e) {
-//     if (e.message.contains('Deserialize error')) {
-//       throw IdentifierException(
-//           'The identifier provided to the controller is incorrect. Check the identifier once again.');
-//     }
-//     if (e.message.contains('Unknown id')) {
-//       throw IdentifierException(
-//           'Unknown controller identifier. Check the confroller for identifier once again.');
-//     }
-//     if (e.message.contains('Can\'t parse controller')) {
-//       throw IdentifierException(
-//           'Can\'t parse controller prefix. Check the confroller for identifier once again.');
-//     }
-//     if (e.message.contains('error sending request for url')) {
-//       throw OobiResolvingErrorException(
-//           "No service is listening under the provided port number. Consider changing it.");
-//     }
-//     if (e.message.contains('Controller wasn\'t initialized')) {
-//       throw ControllerNotInitializedException(
-//           "Controller has not been initialized. Execute initKel() before incepting.");
-//     }
-//     if (e.message.contains('Signature verification failed')) {
-//       throw SignatureVerificationException(
-//           'Signature verification failed - event signature does not match event keys.');
-//     }
-//     if (e.message.contains('Can\'t parse oobi json')) {
-//       throw IncorrectOobiException(
-//           'Provided oobi is incorrect. Please check the JSON once again');
-//     }
-//     rethrow;
-//   }
-// }
-
 //CZY JEST POTRZEBNA?
 Future<void> processStream({required String stream, dynamic hint}) async {
   await KeriPlatformInterface.instance.processStream(stream: stream);
@@ -259,6 +219,7 @@ Future<bool> broadcastReceipts(
       .broadcastReceipts(identifier: identifier, witnessList: witnessList);
 }
 
+///Joins provided payload and signature into cesr stream.
 Future<String> signToCesr(
     {required Identifier identifier,
     required String data,
@@ -268,23 +229,25 @@ Future<String> signToCesr(
       .signToCesr(identifier: identifier, data: data, signature: signature);
 }
 
+///Verifies signatures from provided cesr stream.
 Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
   return await KeriPlatformInterface.instance.verifyFromCesr(stream: stream);
 }
 
-/// Splits parsed elements from stream into oobis to resolve and other signed
-/// data.
+/// Splits provided stream into oobis and rest of cesr stream.
 Future<SplittingResult> splitOobisAndData(
     {required String stream, dynamic hint}) async {
   return await KeriPlatformInterface.instance.splitOobisAndData(stream: stream);
 }
 
+///Returns the address where mailbox can be found.
 Future<String> getMailboxLocation(
     {required Identifier identifier, dynamic hint}) async {
   return await KeriPlatformInterface.instance
       .getMailboxLocation(identifier: identifier);
 }
 
+///Generates interaction event that anchors provided paylod in the Key Event Log
 Future<String> anchorPayload(
     {required Identifier identifier,
     required String payload,
