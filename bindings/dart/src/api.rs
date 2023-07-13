@@ -2,17 +2,17 @@ use cesrox::derivation_code::DerivationCode;
 pub use cesrox::primitives::codes::{
     basic::Basic as KeyType, self_signing::SelfSigning as SignatureType,
 };
-use controller::{error::ControllerError, identifier_controller::IdentifierController};
+use controller::{error::ControllerError, identifier_controller::IdentifierController, parse_tel_query_stream};
 use flutter_rust_bridge::{frb, support::lazy_static};
 use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive, event::sections::seal::{Seal, PayloadSeal}};
 pub use said::derivation::HashFunctionCode as DigestType;
 use std::{
     path::PathBuf,
     slice,
-    sync::{Arc, Mutex},
+    sync::{Mutex},
 };
 
-use crate::utils::{parse_location_schemes, parse_witness_prefix};
+use crate::{utils::{parse_location_schemes, parse_witness_prefix}, state::Current};
 use anyhow::{anyhow, Result};
 use controller::config::ControllerConfig;
 use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
@@ -102,7 +102,7 @@ pub fn signature_from_b64(st: SignatureType, signature: String) -> Signature {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 pub struct Identifier {
     pub id: String,
 }
@@ -138,14 +138,14 @@ impl Config {
             .map_err(|_e| anyhow!("Improper location scheme structure"))?;
         Ok(ControllerConfig {
             initial_oobis: oobis,
-            db_path: db_path,
+            db_path,
             ..Default::default()
         })
     }
 }
 
 lazy_static! {
-    static ref KEL: Mutex<Option<Arc<controller::Controller>>> = Mutex::new(None);
+    static ref KEL: Mutex<Option<Current>> = Mutex::new(None);
 }
 
 #[derive(Error, Debug)]
@@ -207,9 +207,7 @@ pub fn change_controller(db_path: String) -> Result<bool> {
         db_path: PathBuf::from(db_path),
         ..Default::default()
     };
-    let controller = controller::Controller::new(config)?;
-
-    *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Arc::new(controller));
+    *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Current::new(config)?);
     Ok(true)
 }
 
@@ -230,9 +228,8 @@ pub fn init_kel(input_app_dir: String, optional_configs: Option<Config>) -> Resu
     };
 
     if !is_initialized {
-        let rt = Runtime::new().unwrap();
-        let controller = rt.block_on(async { controller::Controller::new(config) })?;
-        *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(Arc::new(controller));
+        let current = Current::new(config)?;
+        *KEL.lock().map_err(|_e| Error::DatabaseLockingError)? = Some(current);
     }
 
     Ok(true)
@@ -256,7 +253,7 @@ pub fn incept(
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let rt = Runtime::new().unwrap();
     let icp = controller.incept(public_keys, next_pub_keys, witnesses, witness_threshold);
     let icp = rt.block_on(async { icp.await })?;
@@ -267,7 +264,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let ssp = signature.into();
     let controller_id = controller.finalize_inception(event.as_bytes(), &ssp);
     let rt = Runtime::new().unwrap();
@@ -305,7 +302,7 @@ pub fn rotate(
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let rotate_future = controller.rotate(
         identifier.into(),
         current_keys,
@@ -323,6 +320,7 @@ pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
+        .controller()
         .anchor(identifier.into(), slice::from_ref(&digest))?)
 }
 
@@ -338,6 +336,7 @@ pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String
     Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
+        .controller()
         .anchor(identifier.into(), &sais)?)
 }
 
@@ -360,7 +359,7 @@ pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<Strin
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let resolve_future = controller.resolve_loc_schema(&lc);
     if let IdentifierPrefix::Basic(_bp) = &lc.eid {
         let rt = Runtime::new().unwrap();
@@ -378,7 +377,7 @@ pub fn send_oobi_to_watcher(identifier: Identifier, oobis_json: String) -> Resul
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let identifier_controller: IdentifierPrefix = identifier.into();
     let send_oobi_future = controller.send_oobi_to_watcher(&identifier_controller, &oobis_json);
     let rt = Runtime::new().unwrap();
@@ -390,8 +389,8 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
-    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+        .controller();
+    let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     let finalize_event_future =
         identifier_controller.finalize_event(event.as_bytes(), signature.into());
     let rt = Runtime::new().unwrap();
@@ -403,8 +402,8 @@ pub fn notify_witnesses(identifier: Identifier) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
-    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+        .controller();
+    let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     let notify_future = identifier_controller.notify_witnesses();
     let rt = Runtime::new().unwrap();
     rt.block_on(async { notify_future.await })?;
@@ -415,8 +414,8 @@ pub fn broadcast_receipts(identifier: Identifier, witness_list: Vec<Identifier>)
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
-    let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
+        .controller();
+    let mut identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     let wits: Vec<IdentifierPrefix> = witness_list.iter().map(|wit_id| wit_id.into()).collect();
     let broadcast_future = identifier_controller.broadcast_receipts(&wits);
     let rt = Runtime::new().unwrap();
@@ -442,12 +441,12 @@ pub fn incept_group(
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let initial_witnesses = initial_witnesses
         .iter()
         .map(|id| id.parse())
         .collect::<Result<_, _>>()?;
-    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     let (icp_to_sign, exns_to_sign) = identifier_controller.incept_group(
         participants.into_iter().map(|id| id.into()).collect(),
         signature_threshold,
@@ -484,9 +483,9 @@ pub fn finalize_group_incept(
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
 
-    let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let mut identifier_controller = IdentifierController::new(identifier.into(), controller, None);
 
     let group_identifier_future = identifier_controller.finalize_group_incept(
         group_event.as_bytes(),
@@ -519,9 +518,9 @@ pub fn query_mailbox(
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
 
-    let identifier_controller = IdentifierController::new(who_ask.into(), controller);
+    let identifier_controller = IdentifierController::new(who_ask.into(), controller, None);
     let witnesses: Result<Vec<_>> = witness
         .iter()
         .map(|wit| -> Result<BasicPrefix> { Ok(parse_witness_prefix(wit)?) })
@@ -537,9 +536,9 @@ pub fn query_watchers(who_ask: Identifier, about_who: Identifier) -> Result<Vec<
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
 
-    let identifier_controller = IdentifierController::new(who_ask.into(), controller);
+    let identifier_controller = IdentifierController::new(who_ask.into(), controller, None);
 
     identifier_controller
         .query_own_watchers(&about_who.into())?
@@ -569,12 +568,12 @@ pub fn finalize_query(
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
 
     let query =
         parse_event_type(query_event.as_bytes()).map_err(|_e| ControllerError::EventFormatError)?;
 
-    let mut identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let mut identifier_controller = IdentifierController::new(identifier.into(), controller, None);
 
     match query {
         EventType::Qry(ref qry) => {
@@ -613,7 +612,7 @@ pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let resolve_future = controller.resolve_loc_schema(&lc);
     let rt = Runtime::new().unwrap();
     rt.block_on(async { resolve_future.await })
@@ -625,6 +624,7 @@ pub fn process_stream(stream: String) -> Result<bool> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
+        .controller()
         .process_stream(stream.as_bytes())?;
     Ok(true)
 }
@@ -633,6 +633,7 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
     let signed_event = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
+        .controller()
         .storage
         .get_kel_messages_with_receipts(&identifier.into())?
         .ok_or(Error::KelError(ControllerError::UnknownIdentifierError))?
@@ -656,9 +657,9 @@ pub fn to_cesr_signature(identifier: Identifier, signature: Signature) -> Result
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
 
-    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     Ok(identifier_controller.to_cesr_signature(signature.into(), 0)?)
 }
 
@@ -666,9 +667,9 @@ pub fn sign_to_cesr(identifier: Identifier, data: String, signature: Signature) 
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
 
-    let identifier_controller = IdentifierController::new(identifier.into(), controller);
+    let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     Ok(identifier_controller.sign_to_cesr(&data, signature.into(), 0)?)
 }
 
@@ -682,7 +683,7 @@ pub fn split_oobis_and_data(stream: String) -> Result<SplittingResult> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     let (oobis, stream) = controller.parse_cesr_stream(&stream)?;
 
     let without_oobis = stream
@@ -699,7 +700,131 @@ pub fn verify_from_cesr(stream: String) -> Result<bool> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .clone();
+        .controller();
     controller.verify_from_cesr(&stream)?;
     Ok(true)
+}
+
+
+// Tel events
+// Incept registry, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
+pub fn incept_registry(
+    identifier: Identifier,
+) -> Result<String> {
+
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .controller();
+    let registry_id = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+
+    let mut identifier_controller = IdentifierController::new(identifier.clone().into(), controller, registry_id);
+    let (registry_id, ixn) =
+        identifier_controller.incept_registry()?;
+    (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_mut()// ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .insert(identifier, registry_id.to_str())?;
+    let ixn = String::from_utf8(ixn).unwrap();
+
+    Ok(ixn)
+}
+
+pub struct IssuanceData {pub vc_id: String, pub ixn: String}
+
+// Issue credential, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
+pub fn issue_credential(
+    identifier: Identifier,
+    credential: String
+) -> Result<IssuanceData> {
+
+    let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
+    let registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), registry_id);
+  
+    let (id, ixn)  =
+        identifier_controller.issue(&credential)?;
+    let ixn = String::from_utf8(ixn).unwrap();
+
+    Ok(IssuanceData {vc_id: id.to_str(), ixn})
+}
+
+// Revoke credential, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
+pub fn revoke_credential(
+    identifier: Identifier,
+    credential_said: String
+) -> Result<String> {
+
+    let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
+    let registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), registry_id);
+   
+    let said: SelfAddressingIdentifier = credential_said.parse()?;
+    let ixn =
+        identifier_controller.revoke(&said)?;
+    let ixn = String::from_utf8(ixn).unwrap();
+
+    Ok(ixn)
+}
+
+pub fn query_tel(
+    identifier: Identifier,
+    registry_id: String,
+    credential_said: String
+) -> Result<String> {
+    let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
+    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
+   
+    let vc_identifier: IdentifierPrefix  = credential_said.parse()?;
+    let registry_id: IdentifierPrefix = registry_id.parse()?;
+    let query =
+        identifier_controller.query_tel(registry_id, vc_identifier)?;
+    Ok(String::from_utf8(query.encode()?).unwrap())
+}
+
+pub fn finalize_tel_query(
+    identifier: Identifier,
+    query_event: String,
+    signature: Signature
+) -> Result<()> {
+    let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
+    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
+   
+    let query_event = parse_tel_query_stream(query_event.as_bytes()).map_err(|e| Error::EventParsingError(e.to_string()))?;
+    let finalize_query_future =
+        identifier_controller.finalize_tel_query(query_event[0].clone().query, signature.into());
+    let rt = Runtime::new().unwrap();
+    rt
+        .block_on(async { finalize_query_future.await })?;
+    Ok(())
+}
+
+pub fn get_credential_state(
+    identifier: Identifier,
+    credential_said: String
+) -> Result<Option<String>> {
+    let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
+    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
+   
+    let state = identifier_controller.source.tel.get_vc_state(&credential_said.parse().unwrap()).unwrap();
+    
+    Ok(state.map(|st| format!("{:?}", st)))
+}
+
+pub fn notify_backers(identifier: Identifier) -> Result<()> {
+    let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
+    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
+    let rt = Runtime::new().unwrap();
+    rt
+        .block_on(async { identifier_controller.notify_backers().await })?;
+
+    Ok(())
 }

@@ -510,22 +510,6 @@ fn wire_get_kel_impl(port_: MessagePort, identifier: impl Wire2Api<Identifier> +
         },
     )
 }
-fn wire_get_mailbox_location_impl(
-    port_: MessagePort,
-    identifier: impl Wire2Api<Identifier> + UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "get_mailbox_location",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_identifier = identifier.wire2api();
-            move |task_callback| get_mailbox_location(api_identifier)
-        },
-    )
-}
 fn wire_to_cesr_signature_impl(
     port_: MessagePort,
     identifier: impl Wire2Api<Identifier> + UnwindSafe,
@@ -587,6 +571,132 @@ fn wire_verify_from_cesr_impl(port_: MessagePort, stream: impl Wire2Api<String> 
         move || {
             let api_stream = stream.wire2api();
             move |task_callback| verify_from_cesr(api_stream)
+        },
+    )
+}
+fn wire_incept_registry_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "incept_registry",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            move |task_callback| incept_registry(api_identifier)
+        },
+    )
+}
+fn wire_issue_credential_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    credential: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "issue_credential",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_credential = credential.wire2api();
+            move |task_callback| issue_credential(api_identifier, api_credential)
+        },
+    )
+}
+fn wire_revoke_credential_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    credential_said: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "revoke_credential",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_credential_said = credential_said.wire2api();
+            move |task_callback| revoke_credential(api_identifier, api_credential_said)
+        },
+    )
+}
+fn wire_query_tel_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    registry_id: impl Wire2Api<String> + UnwindSafe,
+    credential_said: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "query_tel",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_registry_id = registry_id.wire2api();
+            let api_credential_said = credential_said.wire2api();
+            move |task_callback| query_tel(api_identifier, api_registry_id, api_credential_said)
+        },
+    )
+}
+fn wire_finalize_tel_query_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    query_event: impl Wire2Api<String> + UnwindSafe,
+    signature: impl Wire2Api<Signature> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "finalize_tel_query",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_query_event = query_event.wire2api();
+            let api_signature = signature.wire2api();
+            move |task_callback| finalize_tel_query(api_identifier, api_query_event, api_signature)
+        },
+    )
+}
+fn wire_get_credential_state_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    credential_said: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_credential_state",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_credential_said = credential_said.wire2api();
+            move |task_callback| get_credential_state(api_identifier, api_credential_said)
+        },
+    )
+}
+fn wire_notify_backers_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "notify_backers",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            move |task_callback| notify_backers(api_identifier)
         },
     )
 }
@@ -780,6 +890,13 @@ impl support::IntoDart for Identifier {
     }
 }
 impl support::IntoDartExceptPrimitive for Identifier {}
+
+impl support::IntoDart for IssuanceData {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.vc_id.into_dart(), self.ixn.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for IssuanceData {}
 
 impl support::IntoDart for mirror_KeyType {
     fn into_dart(self) -> support::DartAbi {
