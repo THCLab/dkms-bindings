@@ -380,16 +380,6 @@ class PublicKey {
   });
 }
 
-class RegistryData {
-  final String registryId;
-  final String ixn;
-
-  const RegistryData({
-    required this.registryId,
-    required this.ixn,
-  });
-}
-
 class Signature {
   final SignatureType derivation;
   final Uint8List signature;
@@ -1373,16 +1363,6 @@ class KeriDartImpl implements KeriDart {
     return PublicKey(
       derivation: _wire2api_key_type(arr[0]),
       publicKey: _wire2api_uint_8_list(arr[1]),
-    );
-  }
-
-  RegistryData _wire2api_registry_data(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return RegistryData(
-      registryId: _wire2api_String(arr[0]),
-      ixn: _wire2api_String(arr[1]),
     );
   }
 
