@@ -838,7 +838,7 @@ fn test_tel() -> Result<()> {
     collect_receipts(&signing_identifier, vec![witness_id.clone()], &key_manager)?;
 
     // Issue
-    let message = "to issue".to_string();
+    let message = format!("{} said hello", &signing_identifier.id);
     let IssuanceData { vc_id, ixn } = issue_credential(signing_identifier.clone(), message)?;
 
     // Ixn not eut accepted so vc is not issued yet.
@@ -862,6 +862,8 @@ fn test_tel() -> Result<()> {
 
     let state = get_credential_state(signing_identifier.clone(), vc_id.clone())?;
     assert_eq!(state, Some("Revoked".to_string()));
+
+    let signing_id_kel = get_kel(signing_identifier.clone())?;
 
     // publish tel events so other identifier can find them
     notify_backers(signing_identifier.clone())?;
@@ -887,9 +889,10 @@ fn test_tel() -> Result<()> {
     let hex_signature = hex::encode(key_manager.sign(query_tel.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     finalize_tel_query(verifing_identifier.clone(), query_tel, signature)?;
+    process_stream(signing_id_kel)?;
 
     let state = get_credential_state(signing_identifier, vc_id).unwrap();
-    println!("state: {:?}", state);
+    assert_eq!(state, Some("Revoked".to_string()));
 
     Ok(())
 }
