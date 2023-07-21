@@ -321,6 +321,20 @@ pub extern "C" fn wire_notify_backers(port_: i64, identifier: *mut wire_Identifi
 }
 
 #[no_mangle]
+pub extern "C" fn wire_add_messagebox(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    messagebox_oobi: *mut wire_uint_8_list,
+) {
+    wire_add_messagebox_impl(port_, identifier, messagebox_oobi)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_messagebox(port_: i64, whose: *mut wire_uint_8_list) {
+    wire_get_messagebox_impl(port_, whose)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_new_from_str__static_method__Identifier(
     port_: i64,
     id_str: *mut wire_uint_8_list,

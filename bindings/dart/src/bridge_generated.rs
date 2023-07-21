@@ -700,6 +700,37 @@ fn wire_notify_backers_impl(
         },
     )
 }
+fn wire_add_messagebox_impl(
+    port_: MessagePort,
+    identifier: impl Wire2Api<Identifier> + UnwindSafe,
+    messagebox_oobi: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "add_messagebox",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_identifier = identifier.wire2api();
+            let api_messagebox_oobi = messagebox_oobi.wire2api();
+            move |task_callback| add_messagebox(api_identifier, api_messagebox_oobi)
+        },
+    )
+}
+fn wire_get_messagebox_impl(port_: MessagePort, whose: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_messagebox",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_whose = whose.wire2api();
+            move |task_callback| get_messagebox(api_whose)
+        },
+    )
+}
 fn wire_new_from_str__static_method__Identifier_impl(
     port_: MessagePort,
     id_str: impl Wire2Api<String> + UnwindSafe,
@@ -925,6 +956,13 @@ impl support::IntoDart for PublicKey {
     }
 }
 impl support::IntoDartExceptPrimitive for PublicKey {}
+
+impl support::IntoDart for RegistryData {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.registry_id.into_dart(), self.ixn.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for RegistryData {}
 
 impl support::IntoDart for Signature {
     fn into_dart(self) -> support::DartAbi {

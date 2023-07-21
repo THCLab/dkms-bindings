@@ -2,17 +2,23 @@ use cesrox::derivation_code::DerivationCode;
 pub use cesrox::primitives::codes::{
     basic::Basic as KeyType, self_signing::SelfSigning as SignatureType,
 };
-use controller::{error::ControllerError, identifier_controller::IdentifierController, parse_tel_query_stream};
-use flutter_rust_bridge::{frb, support::lazy_static};
-use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive, event::sections::seal::{Seal, PayloadSeal}};
-pub use said::derivation::HashFunctionCode as DigestType;
-use std::{
-    path::PathBuf,
-    slice,
-    sync::{Mutex},
+use controller::{
+    error::ControllerError,
+    identifier_controller::{IdentifierController, TelQueryEvent},
+    parse_tel_query_stream,
 };
+use flutter_rust_bridge::{frb, support::lazy_static};
+use keri::{
+    event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive,
+    query::query_event::QueryEvent,
+};
+pub use said::derivation::HashFunctionCode as DigestType;
+use std::{path::PathBuf, slice, sync::Mutex};
 
-use crate::{utils::{parse_location_schemes, parse_witness_prefix}, state::Current};
+use crate::{
+    state::Current,
+    utils::{parse_location_schemes, parse_oobi, parse_witness_prefix},
+};
 use anyhow::{anyhow, Result};
 use controller::config::ControllerConfig;
 use keri::prefix::{BasicPrefix, IdentifierPrefix, SelfSigningPrefix};
@@ -608,12 +614,12 @@ pub fn finalize_query(
 }
 
 pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
-    let lc = parse_location_schemes(&oobi_json)?;
+    let lc = parse_oobi(&oobi_json)?;
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
         .controller();
-    let resolve_future = controller.resolve_loc_schema(&lc);
+    let resolve_future = controller.resolve_oobi(lc);
     let rt = Runtime::new().unwrap();
     rt.block_on(async { resolve_future.await })
         .map_err(|e| Error::OobiResolvingError(e.to_string()))?;
@@ -705,13 +711,14 @@ pub fn verify_from_cesr(stream: String) -> Result<bool> {
     Ok(true)
 }
 
+pub struct RegistryData {
+    pub registry_id: String,
+    pub ixn: String,
+}
 
 // Tel events
 // Incept registry, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
-pub fn incept_registry(
-    identifier: Identifier,
-) -> Result<String> {
-
+pub fn incept_registry(identifier: Identifier) -> Result<RegistryData> {
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
@@ -722,50 +729,71 @@ pub fn incept_registry(
         .registry_id(&identifier)
         .map(|id| id.parse().unwrap());
 
-    let mut identifier_controller = IdentifierController::new(identifier.clone().into(), controller, registry_id);
-    let (registry_id, ixn) =
-        identifier_controller.incept_registry()?;
+    let mut identifier_controller =
+        IdentifierController::new(identifier.clone().into(), controller, registry_id);
+    let (registry_id, ixn) = identifier_controller.incept_registry()?;
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-        .as_mut()// ref()
+        .as_mut() // ref()
         .ok_or(Error::ControllerInitializationError)?
         .insert(identifier, registry_id.to_str())?;
     let ixn = String::from_utf8(ixn).unwrap();
 
-    Ok(ixn)
+    Ok(RegistryData {
+        registry_id: registry_id.to_str(),
+        ixn,
+    })
 }
 
-pub struct IssuanceData {pub vc_id: String, pub ixn: String}
+pub struct IssuanceData {
+    pub vc_id: String,
+    pub ixn: String,
+}
 
 // Issue credential, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
-pub fn issue_credential(
-    identifier: Identifier,
-    credential: String
-) -> Result<IssuanceData> {
-
+pub fn issue_credential(identifier: Identifier, credential: String) -> Result<IssuanceData> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
-    let registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
-    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), registry_id);
-  
-    let (id, ixn)  =
-        identifier_controller.issue(&credential)?;
+    let registry_id = state
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(
+        identifier.into(),
+        state
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .controller(),
+        registry_id,
+    );
+
+    let (id, ixn) = identifier_controller.issue(&credential)?;
     let ixn = String::from_utf8(ixn).unwrap();
 
-    Ok(IssuanceData {vc_id: id.to_str(), ixn})
+    Ok(IssuanceData {
+        vc_id: id.to_str(),
+        ixn,
+    })
 }
 
 // Revoke credential, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
-pub fn revoke_credential(
-    identifier: Identifier,
-    credential_said: String
-) -> Result<String> {
-
+pub fn revoke_credential(identifier: Identifier, credential_said: String) -> Result<String> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
-    let registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
-    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), registry_id);
-   
+    let registry_id = state
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(
+        identifier.into(),
+        state
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .controller(),
+        registry_id,
+    );
+
     let said: SelfAddressingIdentifier = credential_said.parse()?;
-    let ixn =
-        identifier_controller.revoke(&said)?;
+    let ixn = identifier_controller.revoke(&said)?;
     let ixn = String::from_utf8(ixn).unwrap();
 
     Ok(ixn)
@@ -774,57 +802,142 @@ pub fn revoke_credential(
 pub fn query_tel(
     identifier: Identifier,
     registry_id: String,
-    credential_said: String
+    credential_said: String,
 ) -> Result<String> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
-    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
-    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
-   
-    let vc_identifier: IdentifierPrefix  = credential_said.parse()?;
+    let saved_registry_id = state
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(
+        identifier.into(),
+        state
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .controller(),
+        saved_registry_id,
+    );
+
+    let vc_identifier: IdentifierPrefix = credential_said.parse()?;
     let registry_id: IdentifierPrefix = registry_id.parse()?;
-    let query =
-        identifier_controller.query_tel(registry_id, vc_identifier)?;
+    let query = identifier_controller.query_tel(registry_id, vc_identifier)?;
     Ok(String::from_utf8(query.encode()?).unwrap())
 }
 
 pub fn finalize_tel_query(
     identifier: Identifier,
     query_event: String,
-    signature: Signature
+    signature: Signature,
 ) -> Result<()> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
-    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
-    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
-   
-    let query_event = parse_tel_query_stream(query_event.as_bytes()).map_err(|e| Error::EventParsingError(e.to_string()))?;
+    let saved_registry_id = state
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(
+        identifier.into(),
+        state
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .controller(),
+        saved_registry_id,
+    );
+
+    let query_event: TelQueryEvent =
+        serde_json::from_str(&query_event).map_err(|e| Error::EventParsingError(e.to_string()))?;
     let finalize_query_future =
-        identifier_controller.finalize_tel_query(query_event[0].clone().query, signature.into());
+        identifier_controller.finalize_tel_query(query_event, signature.into());
     let rt = Runtime::new().unwrap();
-    rt
-        .block_on(async { finalize_query_future.await })?;
+    rt.block_on(async { finalize_query_future.await })?;
     Ok(())
 }
 
 pub fn get_credential_state(
     identifier: Identifier,
-    credential_said: String
+    credential_said: String,
 ) -> Result<Option<String>> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
-    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
-    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
-   
-    let state = identifier_controller.source.tel.get_vc_state(&credential_said.parse().unwrap()).unwrap();
-    
+    let saved_registry_id = state
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(
+        identifier.into(),
+        state
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .controller(),
+        saved_registry_id,
+    );
+
+    let state = identifier_controller
+        .source
+        .tel
+        .get_vc_state(&credential_said.parse().unwrap())
+        .unwrap();
+
     Ok(state.map(|st| format!("{:?}", st)))
 }
 
 pub fn notify_backers(identifier: Identifier) -> Result<()> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
-    let saved_registry_id = state.as_ref().ok_or(Error::ControllerInitializationError)?.registry_id(&identifier).map(|id| id.parse().unwrap());
-    let identifier_controller = IdentifierController::new(identifier.into(), state.as_ref().ok_or(Error::ControllerInitializationError)?.controller(), saved_registry_id);
+    let saved_registry_id = state
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .registry_id(&identifier)
+        .map(|id| id.parse().unwrap());
+    let identifier_controller = IdentifierController::new(
+        identifier.into(),
+        state
+            .as_ref()
+            .ok_or(Error::ControllerInitializationError)?
+            .controller(),
+        saved_registry_id,
+    );
     let rt = Runtime::new().unwrap();
-    rt
-        .block_on(async { identifier_controller.notify_backers().await })?;
+    rt.block_on(async { identifier_controller.notify_backers().await })?;
 
     Ok(())
+}
+
+pub fn add_messagebox(identifier: Identifier, messagebox_oobi: String) -> Result<String> {
+    let lc = parse_location_schemes(&messagebox_oobi)?;
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .controller();
+    let resolve_future = controller.resolve_loc_schema(&lc);
+    if let IdentifierPrefix::Basic(_bp) = &lc.eid {
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async { resolve_future.await })?;
+
+        let add_messagebox = event_generator::generate_end_role(
+            &identifier.into(),
+            &lc.eid,
+            Role::Messagebox,
+            true,
+        )?;
+        Ok(String::from_utf8(add_messagebox.encode()?)?)
+    } else {
+        Err(ControllerError::WrongWitnessPrefixError.into())
+    }
+}
+
+pub fn get_messagebox(whose: String) -> Result<Vec<String>> {
+    let messagebox_of: IdentifierPrefix = whose.parse()?;
+    let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
+        .as_ref()
+        .ok_or(Error::ControllerInitializationError)?
+        .controller();
+    let locations: Result<Vec<_>, _> = controller
+        .get_messagebox_location(&messagebox_of)?
+        .iter()
+        .map(|loc| -> Result<String, Error> {
+            serde_json::to_string(loc).map_err(|e| Error::OobiParseError(e.to_string()))
+        })
+        .collect();
+    Ok(locations?)
 }

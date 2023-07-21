@@ -8,11 +8,13 @@ use said::derivation::{HashFunction, HashFunctionCode};
 use tempfile::Builder;
 
 use crate::api::{
-    add_watcher, anchor, anchor_digest, change_controller, finalize_event, finalize_group_incept,
-    finalize_inception, finalize_query, get_kel, incept, incept_group, init_kel, new_public_key,
-    notify_witnesses, process_stream, query_mailbox, query_watchers, resolve_oobi, rotate,
+    add_messagebox, add_watcher, anchor, anchor_digest, change_controller, finalize_event,
+    finalize_group_incept, finalize_inception, finalize_query, finalize_tel_query,
+    get_credential_state, get_kel, get_messagebox, incept, incept_group, incept_registry, init_kel,
+    issue_credential, new_public_key, notify_backers, notify_witnesses, process_stream,
+    query_mailbox, query_tel, query_watchers, resolve_oobi, revoke_credential, rotate,
     send_oobi_to_watcher, sign_to_cesr, signature_from_hex, split_oobis_and_data, verify_from_cesr,
-    Action, Config, DataAndSignature, Identifier, incept_registry, issue_credential, revoke_credential, get_credential_state, notify_backers, query_tel, IssuanceData,
+    Action, Config, DataAndSignature, Identifier, IssuanceData, RegistryData,
 };
 
 #[test]
@@ -603,7 +605,11 @@ pub fn test_sign_verify() -> Result<()> {
 
     // sign icp event
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
-    let signed = sign_to_cesr(identifier.clone(), data_to_sing.to_string(), signature.clone())?;
+    let signed = sign_to_cesr(
+        identifier.clone(),
+        data_to_sing.to_string(),
+        signature.clone(),
+    )?;
     println!("signed: {}", &signed);
 
     let signed = to_cesr_signature(identifier, signature)?;
@@ -759,25 +765,24 @@ pub fn test_signing_verifing() -> Result<()> {
     Ok(())
 }
 
-fn collect_receipts(identifier: &Identifier, witness_ids: Vec<String>, key_manager: &CryptoBox) -> Result<()> {
+fn collect_receipts(
+    identifier: &Identifier,
+    witness_ids: Vec<String>,
+    key_manager: &CryptoBox,
+) -> Result<()> {
     // Publish own event to witnesses
     notify_witnesses(identifier.clone())?;
 
     // Quering own mailbox to get receipts
     // TODO always qry mailbox
-    let query = query_mailbox(
-        identifier.clone(),
-        identifier.clone(),
-        witness_ids
-    )?;
+    let query = query_mailbox(identifier.clone(), identifier.clone(), witness_ids)?;
 
     for qry in query {
         let hex_signature = hex::encode(key_manager.sign(qry.as_bytes())?);
         let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
         finalize_query(identifier.clone(), qry, signature)?;
-    };
+    }
     Ok(())
-
 }
 
 #[test]
@@ -816,7 +821,8 @@ fn test_tel() -> Result<()> {
     // It can be run from keriox/components/witness using command:
     // cargo run -- -c ./src/witness.json
     let witness_id = "BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC".to_string();
-    let wit_location = r#"{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://127.0.0.1:3232/"}"#.to_string(); 
+    // let wit_location = r#"{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://127.0.0.1:3232/"}"#.to_string();
+    let wit_location = r#"{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}"#.to_string();
     // Incept identifier
     let icp_event = incept(vec![pk], vec![npk], vec![wit_location.clone()], 1)?;
     let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
@@ -824,9 +830,8 @@ fn test_tel() -> Result<()> {
     let signing_identifier = finalize_inception(icp_event, signature)?;
     collect_receipts(&signing_identifier, vec![witness_id.clone()], &key_manager)?;
 
-
     // Incept Registry
-    let ixn = incept_registry(signing_identifier.clone())?;
+    let RegistryData { registry_id, ixn } = incept_registry(signing_identifier.clone())?;
     let hex_signature = hex::encode(key_manager.sign(ixn.as_bytes())?);
     let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
     finalize_event(signing_identifier.clone(), ixn, signature)?;
@@ -834,7 +839,7 @@ fn test_tel() -> Result<()> {
 
     // Issue
     let message = "to issue".to_string();
-    let IssuanceData {vc_id, ixn} = issue_credential(signing_identifier.clone(), message)?;
+    let IssuanceData { vc_id, ixn } = issue_credential(signing_identifier.clone(), message)?;
 
     // Ixn not eut accepted so vc is not issued yet.
     let state = get_credential_state(signing_identifier.clone(), vc_id.clone())?;
@@ -877,9 +882,92 @@ fn test_tel() -> Result<()> {
 
     let verifing_identifier = finalize_inception(icp_event, signature)?;
     collect_receipts(&verifing_identifier, vec![witness_id.clone()], &key_manager)?;
-    //TODO query tel
-    // let query_tel = query_tel(verifing_identifier, registry_id, vc_id)?;
+    // TODO query tel
+    let query_tel = query_tel(verifing_identifier.clone(), registry_id, vc_id.clone())?;
+    let hex_signature = hex::encode(key_manager.sign(query_tel.as_bytes())?);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    finalize_tel_query(verifing_identifier.clone(), query_tel, signature)?;
+
+    let state = get_credential_state(signing_identifier, vc_id).unwrap();
+    println!("state: {:?}", state);
 
     Ok(())
+}
 
+#[test]
+fn test_messagebox_setup() -> Result<()> {
+    // Create temporary db file.
+    let signing_id_path: String = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .path()
+        .to_str()
+        .unwrap()
+        .into();
+
+    // Create temporary db file.
+    let verifing_id_path: String = Builder::new()
+        .prefix("test-db")
+        .tempdir()
+        .unwrap()
+        .path()
+        .to_str()
+        .unwrap()
+        .into();
+
+    init_kel(signing_id_path.clone(), None)?;
+
+    // Setup signing identifier
+    let key_manager = CryptoBox::new().unwrap();
+    let current_b64key = base64::encode_config(key_manager.public_key().key(), base64::URL_SAFE);
+    let next_b64key = base64::encode_config(key_manager.next_public_key().key(), base64::URL_SAFE);
+
+    let pk = new_public_key(Basic::Ed25519, current_b64key)?;
+    let npk = new_public_key(Basic::Ed25519, next_b64key)?;
+
+    // Incept identifier
+    let icp_event = incept(vec![pk], vec![npk], vec![], 0)?;
+    let hex_signature = hex::encode(key_manager.sign(icp_event.as_bytes())?);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, hex_signature);
+    let signing_identifier = finalize_inception(icp_event, signature)?;
+
+    // Identifier1 adds messagebox
+    let messagebox_oobi = r#"{"eid":"BEFEf5cQSs60k0bXcCmn8smXJuLquaSaTlvO1ux0-NLR","scheme":"http","url":"http://localhost:8080/"}"#.to_string();
+    let messagebox_id = "BEFEf5cQSs60k0bXcCmn8smXJuLquaSaTlvO1ux0-NLR";
+
+    // Generate reply that contains end role message inside.
+    let add_messagebox = add_messagebox(signing_identifier.clone(), messagebox_oobi.clone())?;
+
+    let add_message_box_sig = hex::encode(key_manager.sign(add_messagebox.as_bytes())?);
+    let signature = signature_from_hex(SelfSigning::Ed25519Sha512, add_message_box_sig);
+
+    // Sign and send message to messagebox.
+    finalize_event(signing_identifier.clone(), add_messagebox, signature)?;
+
+    let saved_messagebox_location = get_messagebox(signing_identifier.to_str())?;
+
+    assert_eq!(saved_messagebox_location[0], messagebox_oobi);
+
+    // Simulate using other device, with no signing identifier data inside.
+    change_controller(verifing_id_path.clone())?;
+
+    // Don't need identifier to resolve oobis and save them, because we skip verification for now.
+    let saved_messagebox_location = get_messagebox(signing_identifier.id.clone())?;
+    assert!(saved_messagebox_location.is_empty());
+
+    let end_role_oobi = format!(
+        r#"{{"cid":"{}","role":"messagebox","eid":"{}"}}"#,
+        &signing_identifier.id, &messagebox_id
+    );
+    // Resolve oobis that specify messagebox of identifier1
+    resolve_oobi(messagebox_oobi.clone())?;
+    resolve_oobi(end_role_oobi.clone())?;
+
+    // Check saved identifier1 messagebox information.
+    let saved_messagebox_location = get_messagebox(signing_identifier.id)?;
+
+    assert_eq!(saved_messagebox_location[0], messagebox_oobi);
+
+    Ok(())
 }

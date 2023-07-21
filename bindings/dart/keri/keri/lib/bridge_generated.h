@@ -256,6 +256,12 @@ void wire_get_credential_state(int64_t port_,
 
 void wire_notify_backers(int64_t port_, struct wire_Identifier *identifier);
 
+void wire_add_messagebox(int64_t port_,
+                         struct wire_Identifier *identifier,
+                         struct wire_uint_8_list *messagebox_oobi);
+
+void wire_get_messagebox(int64_t port_, struct wire_uint_8_list *whose);
+
 void wire_new_from_str__static_method__Identifier(int64_t port_, struct wire_uint_8_list *id_str);
 
 void wire_to_str__method__Identifier(int64_t port_, struct wire_Identifier *that);
@@ -327,6 +333,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_finalize_tel_query);
     dummy_var ^= ((int64_t) (void*) wire_get_credential_state);
     dummy_var ^= ((int64_t) (void*) wire_notify_backers);
+    dummy_var ^= ((int64_t) (void*) wire_add_messagebox);
+    dummy_var ^= ((int64_t) (void*) wire_get_messagebox);
     dummy_var ^= ((int64_t) (void*) wire_new_from_str__static_method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_to_str__method__Identifier);
     dummy_var ^= ((int64_t) (void*) wire_new__static_method__DataAndSignature);

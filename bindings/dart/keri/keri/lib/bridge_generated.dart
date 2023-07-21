@@ -195,7 +195,8 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kVerifyFromCesrConstMeta;
 
-  Future<String> inceptRegistry({required Identifier identifier, dynamic hint});
+  Future<RegistryData> inceptRegistry(
+      {required Identifier identifier, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInceptRegistryConstMeta;
 
@@ -239,6 +240,17 @@ abstract class KeriDart {
   Future<void> notifyBackers({required Identifier identifier, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNotifyBackersConstMeta;
+
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kAddMessageboxConstMeta;
+
+  Future<List<String>> getMessagebox({required String whose, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMessageboxConstMeta;
 
   Future<Identifier> newFromStrStaticMethodIdentifier(
       {required String idStr, dynamic hint});
@@ -1055,12 +1067,12 @@ class KeriDartImpl implements KeriDart {
         argNames: ["stream"],
       );
 
-  Future<String> inceptRegistry(
+  Future<RegistryData> inceptRegistry(
       {required Identifier identifier, dynamic hint}) {
     var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_incept_registry(port_, arg0),
-      parseSuccessData: _wire2api_String,
+      parseSuccessData: _wire2api_registry_data,
       constMeta: kInceptRegistryConstMeta,
       argValues: [identifier],
       hint: hint,
@@ -1202,6 +1214,45 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "notify_backers",
         argNames: ["identifier"],
+      );
+
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(messageboxOobi);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_add_messagebox(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kAddMessageboxConstMeta,
+      argValues: [identifier, messageboxOobi],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kAddMessageboxConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "add_messagebox",
+        argNames: ["identifier", "messageboxOobi"],
+      );
+
+  Future<List<String>> getMessagebox({required String whose, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(whose);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_messagebox(port_, arg0),
+      parseSuccessData: _wire2api_StringList,
+      constMeta: kGetMessageboxConstMeta,
+      argValues: [whose],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMessageboxConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_messagebox",
+        argNames: ["whose"],
       );
 
   Future<Identifier> newFromStrStaticMethodIdentifier(
@@ -2517,6 +2568,43 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
               ffi.Int64, ffi.Pointer<wire_Identifier>)>>('wire_notify_backers');
   late final _wire_notify_backers = _wire_notify_backersPtr
       .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_add_messagebox(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> messagebox_oobi,
+  ) {
+    return _wire_add_messagebox(
+      port_,
+      identifier,
+      messagebox_oobi,
+    );
+  }
+
+  late final _wire_add_messageboxPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_add_messagebox');
+  late final _wire_add_messagebox = _wire_add_messageboxPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_get_messagebox(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> whose,
+  ) {
+    return _wire_get_messagebox(
+      port_,
+      whose,
+    );
+  }
+
+  late final _wire_get_messageboxPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_messagebox');
+  late final _wire_get_messagebox = _wire_get_messageboxPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_new_from_str__static_method__Identifier(
     int port_,
