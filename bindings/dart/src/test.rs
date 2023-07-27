@@ -936,8 +936,8 @@ fn test_messagebox_setup() -> Result<()> {
     let signing_identifier = finalize_inception(icp_event, signature)?;
 
     // Identifier1 adds messagebox
-    let messagebox_oobi = r#"{"eid":"BEFEf5cQSs60k0bXcCmn8smXJuLquaSaTlvO1ux0-NLR","scheme":"http","url":"http://localhost:8080/"}"#.to_string();
-    let messagebox_id = "BEFEf5cQSs60k0bXcCmn8smXJuLquaSaTlvO1ux0-NLR";
+    let messagebox_oobi = r#"{"eid":"BFY1nGjV9oApBzo5Oq5JqjwQsZEQqsCCftzo3WJjMMX-","scheme":"http","url":"http://messagebox.sandbox.argo.colossi.network/"}"#.to_string();
+    let messagebox_id = "BFY1nGjV9oApBzo5Oq5JqjwQsZEQqsCCftzo3WJjMMX-";
 
     // Generate reply that contains end role message inside.
     let add_messagebox = add_messagebox(signing_identifier.clone(), messagebox_oobi.clone())?;

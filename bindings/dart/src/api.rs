@@ -829,7 +829,7 @@ pub fn finalize_tel_query(
     identifier: Identifier,
     query_event: String,
     signature: Signature,
-) -> Result<()> {
+) -> Result<bool> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
     let saved_registry_id = state
         .as_ref()
@@ -851,7 +851,7 @@ pub fn finalize_tel_query(
         identifier_controller.finalize_tel_query(query_event, signature.into());
     let rt = Runtime::new().unwrap();
     rt.block_on(async { finalize_query_future.await })?;
-    Ok(())
+    Ok(true)
 }
 
 pub fn get_credential_state(
@@ -882,7 +882,7 @@ pub fn get_credential_state(
     Ok(state.map(|st| format!("{:?}", st)))
 }
 
-pub fn notify_backers(identifier: Identifier) -> Result<()> {
+pub fn notify_backers(identifier: Identifier) -> Result<bool> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
     let saved_registry_id = state
         .as_ref()
@@ -900,7 +900,7 @@ pub fn notify_backers(identifier: Identifier) -> Result<()> {
     let rt = Runtime::new().unwrap();
     rt.block_on(async { identifier_controller.notify_backers().await })?;
 
-    Ok(())
+    Ok(true)
 }
 
 pub fn add_messagebox(identifier: Identifier, messagebox_oobi: String) -> Result<String> {

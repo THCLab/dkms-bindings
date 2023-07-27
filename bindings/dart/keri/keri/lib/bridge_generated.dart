@@ -222,7 +222,7 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kQueryTelConstMeta;
 
-  Future<void> finalizeTelQuery(
+  Future<bool> finalizeTelQuery(
       {required Identifier identifier,
       required String queryEvent,
       required Signature signature,
@@ -237,7 +237,7 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kGetCredentialStateConstMeta;
 
-  Future<void> notifyBackers({required Identifier identifier, dynamic hint});
+  Future<bool> notifyBackers({required Identifier identifier, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kNotifyBackersConstMeta;
 
@@ -1153,7 +1153,7 @@ class KeriDartImpl implements KeriDart {
         argNames: ["identifier", "registryId", "credentialSaid"],
       );
 
-  Future<void> finalizeTelQuery(
+  Future<bool> finalizeTelQuery(
       {required Identifier identifier,
       required String queryEvent,
       required Signature signature,
@@ -1164,7 +1164,7 @@ class KeriDartImpl implements KeriDart {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) =>
           _platform.inner.wire_finalize_tel_query(port_, arg0, arg1, arg2),
-      parseSuccessData: _wire2api_unit,
+      parseSuccessData: _wire2api_bool,
       constMeta: kFinalizeTelQueryConstMeta,
       argValues: [identifier, queryEvent, signature],
       hint: hint,
@@ -1199,11 +1199,11 @@ class KeriDartImpl implements KeriDart {
         argNames: ["identifier", "credentialSaid"],
       );
 
-  Future<void> notifyBackers({required Identifier identifier, dynamic hint}) {
+  Future<bool> notifyBackers({required Identifier identifier, dynamic hint}) {
     var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_notify_backers(port_, arg0),
-      parseSuccessData: _wire2api_unit,
+      parseSuccessData: _wire2api_bool,
       constMeta: kNotifyBackersConstMeta,
       argValues: [identifier],
       hint: hint,
@@ -1467,10 +1467,6 @@ class KeriDartImpl implements KeriDart {
 
   Uint8List _wire2api_uint_8_list(dynamic raw) {
     return raw as Uint8List;
-  }
-
-  void _wire2api_unit(dynamic raw) {
-    return;
   }
 }
 
