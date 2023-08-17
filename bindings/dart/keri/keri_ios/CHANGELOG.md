@@ -50,3 +50,6 @@ Added `splitOobisAndData`
 
 ## 0.2.2
 Added exceptions for `verifyFromCesr`
+
+## 0.2.3
+Version bump

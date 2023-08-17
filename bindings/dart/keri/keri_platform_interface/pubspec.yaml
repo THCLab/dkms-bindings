@@ -1,6 +1,6 @@
 name: keri_platform_interface
 description: A common platform interface for the Keri cross-platform plugin.
-version: 0.1.3
+version: 1.0.3
 repository: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri
 
 environment:

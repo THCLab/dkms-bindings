@@ -142,3 +142,6 @@ New .so files
 
 ## 1.5.8
 New .so files
+
+## 2.0.0
+Update messagebox setup, use transaction event log events

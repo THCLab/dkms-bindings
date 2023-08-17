@@ -240,18 +240,71 @@ Future<SplittingResult> splitOobisAndData(
   return await KeriPlatformInterface.instance.splitOobisAndData(stream: stream);
 }
 
-///Returns the address where mailbox can be found.
-Future<String> getMailboxLocation(
+Future<RegistryData> inceptRegistry(
     {required Identifier identifier, dynamic hint}) async {
   return await KeriPlatformInterface.instance
-      .getMailboxLocation(identifier: identifier);
+      .inceptRegistry(identifier: identifier);
 }
 
-///Generates interaction event that anchors provided paylod in the Key Event Log
-Future<String> anchorPayload(
+Future<IssuanceData> issueCredential(
     {required Identifier identifier,
-    required String payload,
+    required String credential,
     dynamic hint}) async {
   return await KeriPlatformInterface.instance
-      .anchorPayload(identifier: identifier, payload: payload);
+      .issueCredential(identifier: identifier, credential: credential);
+}
+
+Future<String> revokeCredential(
+    {required Identifier identifier,
+    required String credentialSaid,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .revokeCredential(identifier: identifier, credentialSaid: credentialSaid);
+}
+
+Future<String> queryTel(
+    {required Identifier identifier,
+    required String registryId,
+    required String credentialSaid,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.queryTel(
+      identifier: identifier,
+      registryId: registryId,
+      credentialSaid: credentialSaid);
+}
+
+Future<bool> finalizeTelQuery(
+    {required Identifier identifier,
+    required String queryEvent,
+    required Signature signature,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.finalizeTelQuery(
+      identifier: identifier, queryEvent: queryEvent, signature: signature);
+}
+
+Future<String?> getCredentialState(
+    {required Identifier identifier,
+    required String credentialSaid,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.getCredentialState(
+      identifier: identifier, credentialSaid: credentialSaid);
+}
+
+Future<bool> notifyBackers(
+    {required Identifier identifier, dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .notifyBackers(identifier: identifier);
+}
+
+Future<String> addMessagebox(
+    {required Identifier identifier,
+    required String messageboxOobi,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .addMessagebox(identifier: identifier, messageboxOobi: messageboxOobi);
+}
+
+Future<List<String>> getMessagebox(
+    {required String whose, dynamic hint}) async {
+  return await KeriPlatformInterface.instance.getMessagebox(whose: whose);
 }

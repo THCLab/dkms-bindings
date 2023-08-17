@@ -218,15 +218,68 @@ class MethodChannelKeriPlatformInterface extends KeriPlatformInterface {
     throw UnimplementedError('splitOobisAndData() has not been implemented');
   }
 
-  @override
-  Future<String> getMailboxLocation(
+  Future<RegistryData> inceptRegistry(
       {required Identifier identifier, dynamic hint}) {
-    throw UnimplementedError('getMailboxLocation() has not been implemented');
+    throw UnimplementedError('inceptRegistry() has not been implemented');
   }
 
   @override
-  Future<String> anchorPayload(
-      {required Identifier identifier, required String payload, dynamic hint}) {
-    throw UnimplementedError('anchorPayload() has not been implemented');
+  Future<IssuanceData> issueCredential(
+      {required Identifier identifier,
+      required String credential,
+      dynamic hint}) {
+    throw UnimplementedError('issueCredential() has not been implemented');
+  }
+
+  @override
+  Future<String> revokeCredential(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) {
+    throw UnimplementedError('revokeCredential() has not been implemented');
+  }
+
+  @override
+  Future<String> queryTel(
+      {required Identifier identifier,
+      required String registryId,
+      required String credentialSaid,
+      dynamic hint}) {
+    throw UnimplementedError('queryTel() has not been implemented');
+  }
+
+  @override
+  Future<bool> finalizeTelQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) {
+    throw UnimplementedError('finalizeTelQuery() has not been implemented');
+  }
+
+  @override
+  Future<String?> getCredentialState(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) {
+    throw UnimplementedError('getCredentialState() has not been implemented');
+  }
+
+  @override
+  Future<bool> notifyBackers({required Identifier identifier, dynamic hint}) {
+    throw UnimplementedError('notifyBackers() has not been implemented');
+  }
+
+  @override
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint}) {
+    throw UnimplementedError('addMessagebox() has not been implemented');
+  }
+
+  @override
+  Future<List<String>> getMessagebox({required String whose, dynamic hint}) {
+    throw UnimplementedError('getMessagebox() has not been implemented');
   }
 }
