@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use controller::{config::ControllerConfig, Controller};
 
@@ -22,7 +22,7 @@ impl Current {
         Ok(Self {
             controller,
             registry_map: registry_db,
-            tree
+            tree,
         })
     }
 
@@ -39,7 +39,7 @@ impl Current {
     pub fn registry_id(&self, id: &Identifier) -> Result<Option<String>> {
         Ok(match self.tree.get(id.to_str())? {
             Some(value) => Some(std::str::from_utf8(value.as_ref())?.to_string()),
-            None => None
+            None => None,
         })
     }
 }

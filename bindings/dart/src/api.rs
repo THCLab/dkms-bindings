@@ -8,9 +8,7 @@ use controller::{
     Oobi,
 };
 use flutter_rust_bridge::{frb, support::lazy_static};
-use keri::{
-    event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive,
-};
+use keri::{event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive};
 pub use said::derivation::HashFunctionCode as DigestType;
 use std::{path::PathBuf, slice, sync::Mutex};
 
@@ -691,7 +689,10 @@ pub fn split_oobis_and_data(stream: String) -> Result<SplittingResult> {
         .ok_or(Error::ControllerInitializationError)?
         .controller();
     let (oobis, stream) = controller.parse_cesr_stream(&stream)?;
-    let oobis_str = oobis.into_iter().map(|oobi| serde_json::to_string(&oobi).unwrap()).collect();
+    let oobis_str = oobis
+        .into_iter()
+        .map(|oobi| serde_json::to_string(&oobi).unwrap())
+        .collect();
 
     let without_oobis = stream
         .iter()
