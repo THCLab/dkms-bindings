@@ -5,12 +5,11 @@ pub use cesrox::primitives::codes::{
 use controller::{
     error::ControllerError,
     identifier_controller::{IdentifierController, TelQueryEvent},
-    parse_tel_query_stream,
+    Oobi,
 };
 use flutter_rust_bridge::{frb, support::lazy_static};
 use keri::{
     event_message::cesr_adapter::parse_event_type, prefix::CesrPrimitive,
-    query::query_event::QueryEvent,
 };
 pub use said::derivation::HashFunctionCode as DigestType;
 use std::{path::PathBuf, slice, sync::Mutex};
@@ -385,7 +384,8 @@ pub fn send_oobi_to_watcher(identifier: Identifier, oobis_json: String) -> Resul
         .ok_or(Error::ControllerInitializationError)?
         .controller();
     let identifier_controller: IdentifierPrefix = identifier.into();
-    let send_oobi_future = controller.send_oobi_to_watcher(&identifier_controller, &oobis_json);
+    let oobi: Oobi = serde_json::from_str(&oobis_json).unwrap();
+    let send_oobi_future = controller.send_oobi_to_watcher(&identifier_controller, &oobi);
     let rt = Runtime::new().unwrap();
     rt.block_on(async { send_oobi_future.await })?;
     Ok(true)
@@ -691,13 +691,14 @@ pub fn split_oobis_and_data(stream: String) -> Result<SplittingResult> {
         .ok_or(Error::ControllerInitializationError)?
         .controller();
     let (oobis, stream) = controller.parse_cesr_stream(&stream)?;
+    let oobis_str = oobis.into_iter().map(|oobi| serde_json::to_string(&oobi).unwrap()).collect();
 
     let without_oobis = stream
         .iter()
         .map(|acdc| String::from_utf8(acdc.to_cesr().unwrap()).unwrap())
         .collect();
     Ok(SplittingResult {
-        oobis,
+        oobis: oobis_str,
         credentials: without_oobis,
     })
 }
@@ -726,7 +727,7 @@ pub fn incept_registry(identifier: Identifier) -> Result<RegistryData> {
     let registry_id = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
 
     let mut identifier_controller =
@@ -735,7 +736,7 @@ pub fn incept_registry(identifier: Identifier) -> Result<RegistryData> {
     (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
         .as_mut() // ref()
         .ok_or(Error::ControllerInitializationError)?
-        .insert(identifier, registry_id.to_str())?;
+        .insert(identifier, &registry_id.to_str())?;
     let ixn = String::from_utf8(ixn).unwrap();
 
     Ok(RegistryData {
@@ -755,7 +756,7 @@ pub fn issue_credential(identifier: Identifier, credential: String) -> Result<Is
     let registry_id = state
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
     let identifier_controller = IdentifierController::new(
         identifier.into(),
@@ -781,7 +782,7 @@ pub fn revoke_credential(identifier: Identifier, credential_said: String) -> Res
     let registry_id = state
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
     let identifier_controller = IdentifierController::new(
         identifier.into(),
@@ -808,7 +809,7 @@ pub fn query_tel(
     let saved_registry_id = state
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
     let identifier_controller = IdentifierController::new(
         identifier.into(),
@@ -834,8 +835,9 @@ pub fn finalize_tel_query(
     let saved_registry_id = state
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
+    let id: IdentifierPrefix = identifier.clone().into();
     let identifier_controller = IdentifierController::new(
         identifier.into(),
         state
@@ -848,7 +850,7 @@ pub fn finalize_tel_query(
     let query_event: TelQueryEvent =
         serde_json::from_str(&query_event).map_err(|e| Error::EventParsingError(e.to_string()))?;
     let finalize_query_future =
-        identifier_controller.finalize_tel_query(query_event, signature.into());
+        identifier_controller.finalize_tel_query(&id, query_event, signature.into());
     let rt = Runtime::new().unwrap();
     rt.block_on(async { finalize_query_future.await })?;
     Ok(true)
@@ -862,7 +864,7 @@ pub fn get_credential_state(
     let saved_registry_id = state
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
     let identifier_controller = IdentifierController::new(
         identifier.into(),
@@ -887,7 +889,7 @@ pub fn notify_backers(identifier: Identifier) -> Result<bool> {
     let saved_registry_id = state
         .as_ref()
         .ok_or(Error::ControllerInitializationError)?
-        .registry_id(&identifier)
+        .registry_id(&identifier)?
         .map(|id| id.parse().unwrap());
     let identifier_controller = IdentifierController::new(
         identifier.into(),
