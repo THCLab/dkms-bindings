@@ -15,7 +15,7 @@ lto = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-flutter_rust_bridge = "=1.71"
+flutter_rust_bridge = "=1.82.1"
 keri = { git = "https://github.com/THCLab/keriox.git", features = ["oobi", "mailbox"]}
 controller = { git = "https://github.com/THCLab/keriox.git"}
 said = { git = "https://github.com/THCLab/cesrox", tag = "v0.1.4" } 
