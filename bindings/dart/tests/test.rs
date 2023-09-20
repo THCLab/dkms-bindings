@@ -7,7 +7,7 @@ use keri::signer::{CryptoBox, KeyManager};
 use said::derivation::{HashFunction, HashFunctionCode};
 use tempfile::Builder;
 
-use crate::api::{
+use dartkeriox::api::{
     add_messagebox, add_watcher, anchor, anchor_digest, change_controller, finalize_event,
     finalize_group_incept, finalize_inception, finalize_query, finalize_tel_query,
     get_credential_state, get_kel, get_messagebox, incept, incept_group, incept_registry, init_kel,
@@ -42,7 +42,7 @@ pub fn test_signature_from_hex() -> Result<()> {
 
 #[test]
 pub fn test_api() -> Result<()> {
-    use crate::api::{finalize_inception, get_kel, incept, init_kel};
+    use dartkeriox::api::{finalize_inception, get_kel, incept, init_kel};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -70,7 +70,7 @@ pub fn test_api() -> Result<()> {
 
 #[test]
 pub fn test_process() -> Result<()> {
-    use crate::api::{init_kel, process_stream};
+    use dartkeriox::api::{init_kel, process_stream};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -90,7 +90,7 @@ pub fn test_process() -> Result<()> {
 
 #[test]
 pub fn test_optional_config() -> Result<()> {
-    use crate::api::init_kel;
+    use dartkeriox::api::init_kel;
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -192,7 +192,7 @@ pub fn test_resolve_oobi() -> Result<()> {
 
 #[test]
 pub fn test_multisig() -> Result<()> {
-    use crate::api::{finalize_inception, get_kel, incept, init_kel};
+    use dartkeriox::api::{finalize_inception, get_kel, incept, init_kel};
 
     // Create temporary db file.
     let root_path: String = Builder::new()
@@ -440,7 +440,7 @@ pub fn test_multisig() -> Result<()> {
 
 #[test]
 pub fn test_demo() -> Result<()> {
-    use crate::api::{finalize_inception, get_kel, incept, init_kel};
+    use dartkeriox::api::{finalize_inception, get_kel, incept, init_kel};
     use tempfile::Builder;
 
     // Create temporary db file.
@@ -555,7 +555,7 @@ pub fn test_demo() -> Result<()> {
 
 #[test]
 pub fn test_sign_verify() -> Result<()> {
-    use crate::api::to_cesr_signature;
+    use dartkeriox::api::to_cesr_signature;
     // Create temporary db file.
     let root_path = Builder::new()
         .prefix("test-db")

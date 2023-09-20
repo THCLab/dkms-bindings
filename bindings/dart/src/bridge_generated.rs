@@ -20,21 +20,6 @@ use std::sync::Arc;
 
 // Section: imports
 
-use crate::test::api::Action;
-use crate::test::api::ActionRequired;
-use crate::test::api::Config;
-use crate::test::api::DataAndSignature;
-use crate::test::api::DigestType;
-use crate::test::api::GroupInception;
-use crate::test::api::Identifier;
-use crate::test::api::IssuanceData;
-use crate::test::api::KeyType;
-use crate::test::api::PublicKey;
-use crate::test::api::RegistryData;
-use crate::test::api::Signature;
-use crate::test::api::SignatureType;
-use crate::test::api::SplittingResult;
-
 // Section: wire functions
 
 fn wire_new_public_key_impl(
