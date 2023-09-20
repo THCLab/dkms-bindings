@@ -136,7 +136,7 @@ pub fn with_initial_oobis(config: Config, oobis_json: String) -> Config {
 }
 
 impl Config {
-    pub fn build(&self, db_path: PathBuf) -> Result<ControllerConfig> {
+    pub(crate) fn build(&self, db_path: PathBuf) -> Result<ControllerConfig> {
         let oobis: Vec<LocationScheme> = serde_json::from_str(&self.initial_oobis)
             .map_err(|_e| anyhow!("Improper location scheme structure"))?;
         Ok(ControllerConfig {
