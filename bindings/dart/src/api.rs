@@ -344,19 +344,6 @@ pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String
 }
 
 
-pub fn anchor_payload(
-    identifier: Identifier,
-    payload: String,
-) -> Result<String> {
-    let seal = Seal::Payload(PayloadSeal { payload_type: "MBX".into(), payload });
-    Ok((*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-        .as_ref()
-        .ok_or(Error::ControllerInitializationError)?
-        .anchor_with_seal(&identifier.into(), &[seal])
-        .map(|event| String::from_utf8(event.encode().unwrap()).unwrap())?)
-}
-
-
 pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<String> {
     let lc = parse_location_schemes(&watcher_oobi)?;
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
@@ -645,16 +632,6 @@ pub fn get_kel(identifier: Identifier) -> Result<String> {
         .flat_map(|event| Message::Notice(event).to_cesr().unwrap())
         .collect();
     Ok(String::from_utf8(signed_event)?)
-}
-
-pub fn get_mailbox_location(identifier: Identifier) -> Result<String> {
-    let mailbox_url = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
-        .as_ref()
-        .ok_or(Error::ControllerInitializationError)?
-        .storage
-        .get_mailbox_location(&identifier.into())?
-        .ok_or(Error::KelError(ControllerError::OtherError("No ixn message in kel".to_string())))?;
-    Ok(mailbox_url)
 }
 
 pub fn to_cesr_signature(identifier: Identifier, signature: Signature) -> Result<String> {
