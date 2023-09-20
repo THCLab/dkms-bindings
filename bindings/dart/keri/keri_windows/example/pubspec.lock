@@ -37,10 +37,10 @@ packages:
     dependency: "direct main"
     description:
       name: asymmetric_crypto_primitives
-      sha256: "559548fa37af3262af91fa84ca5b8ac5b50fe89da8eb1bccfa044607b0936266"
+      sha256: "1ba942df65547077bd100fb20deea607203cd5a185f66f4c859382cb15d84257"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.7"
+    version: "0.4.8"
   async:
     dependency: transitive
     description:
