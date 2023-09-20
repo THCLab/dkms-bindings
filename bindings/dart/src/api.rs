@@ -343,7 +343,6 @@ pub fn anchor_digest(identifier: Identifier, sais: Vec<String>) -> Result<String
         .anchor(identifier.into(), &sais)?)
 }
 
-
 pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<String> {
     let lc = parse_location_schemes(&watcher_oobi)?;
     let controller = (*KEL.lock().map_err(|_e| Error::DatabaseLockingError)?)
