@@ -57,3 +57,11 @@ Fixed `String` -> `RegistryData` for `inceptRegistry()`
 ### 1.0.3
 
 Fixed void -> bool for `finalizeTelQuery` and `notifyBackers()`
+
+### 1.1.0
+
+Fixed `flutter_rust_bridge` dependency
+
+### 1.1.1
+
+Fixed `ffigen` dependency

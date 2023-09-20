@@ -105,3 +105,7 @@ New .so files
 
 ## 1.0.3
 New .so files
+
+### 1.1.0
+
+Fixed `flutter_rust_bridge` dependency

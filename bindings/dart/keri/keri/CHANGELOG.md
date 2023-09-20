@@ -154,3 +154,12 @@ New .so files
 
 ## 2.0.3
 New .so files
+
+### 2.1.0
+Fixed `flutter_rust_bridge` dependency
+
+### 2.1.1
+Fixed `ffigen` dependency
+
+### 2.1.2
+Fixed `ffigen` dependency in `keri_platform_interface`
