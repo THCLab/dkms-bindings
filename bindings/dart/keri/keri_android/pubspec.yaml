@@ -1,6 +1,6 @@
 name: keri_android
 description: Keri plugin implementation for Android devices only. See keri for all types.
-version: 1.1.0
+version: 1.1.1
 repository: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri_android
 
 environment:

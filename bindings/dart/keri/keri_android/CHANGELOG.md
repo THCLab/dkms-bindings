@@ -106,6 +106,8 @@ New .so files
 ## 1.0.3
 New .so files
 
-### 1.1.0
-
+## 1.1.0
 Fixed `flutter_rust_bridge` dependency
+
+## 1.1.1
+Fixed `issueCredential` function

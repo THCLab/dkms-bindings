@@ -163,3 +163,9 @@ Fixed `ffigen` dependency
 
 ### 2.1.2
 Fixed `ffigen` dependency in `keri_platform_interface`
+
+### 2.1.3
+Temporarily dropped support for `keri_windows`
+
+### 2.1.4
+Fixed `issueCredential` function
