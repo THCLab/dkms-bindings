@@ -31,6 +31,8 @@ dev_dependencies:
   ffigen: ^9.0.1
   build_runner: ^2.2.1
   cryptography: ^2.7.0
+  path: ^1.8.3 
+  convert: ^3.1.1
 
 
 flutter:
