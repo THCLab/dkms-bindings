@@ -127,3 +127,45 @@ Added exceptions for `verifyFromCesr` for all platforms
 
 ## 1.5.3 
 Updated dependency for `keri_android`
+
+## 1.5.4
+Added `getMailboxLocation` and `anchorPayload` for Android
+
+## 1.5.5
+New .so files
+
+## 1.5.6
+New .so files
+
+## 1.5.7
+New .so files
+
+## 1.5.8
+New .so files
+
+## 2.0.0
+Update messagebox setup, use transaction event log events
+
+## 2.0.1
+New .so files
+
+## 2.0.2
+New .so files
+
+## 2.0.3
+New .so files
+
+### 2.1.0
+Fixed `flutter_rust_bridge` dependency
+
+### 2.1.1
+Fixed `ffigen` dependency
+
+### 2.1.2
+Fixed `ffigen` dependency in `keri_platform_interface`
+
+### 2.1.3
+Temporarily dropped support for `keri_windows`
+
+### 2.1.4
+Fixed `issueCredential` function

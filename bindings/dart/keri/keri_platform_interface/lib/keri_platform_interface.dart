@@ -213,4 +213,61 @@ abstract class KeriPlatformInterface extends PlatformInterface {
       {required String stream, dynamic hint}) {
     throw UnimplementedError('splitOobisAndData() has not been implemented');
   }
+
+  Future<RegistryData> inceptRegistry(
+      {required Identifier identifier, dynamic hint}) {
+    throw UnimplementedError('inceptRegistry() has not been implemented');
+  }
+
+  Future<IssuanceData> issueCredential(
+      {required Identifier identifier,
+      required String credential,
+      dynamic hint}) {
+    throw UnimplementedError('issueCredential() has not been implemented');
+  }
+
+  Future<String> revokeCredential(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) {
+    throw UnimplementedError('revokeCredential() has not been implemented');
+  }
+
+  Future<String> queryTel(
+      {required Identifier identifier,
+      required String registryId,
+      required String credentialSaid,
+      dynamic hint}) {
+    throw UnimplementedError('queryTel() has not been implemented');
+  }
+
+  Future<bool> finalizeTelQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) {
+    throw UnimplementedError('finalizeTelQuery() has not been implemented');
+  }
+
+  Future<String?> getCredentialState(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) {
+    throw UnimplementedError('getCredentialState() has not been implemented');
+  }
+
+  Future<bool> notifyBackers({required Identifier identifier, dynamic hint}) {
+    throw UnimplementedError('notifyBackers() has not been implemented');
+  }
+
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint}) {
+    throw UnimplementedError('addMessagebox() has not been implemented');
+  }
+
+  Future<List<String>> getMessagebox({required String whose, dynamic hint}) {
+    throw UnimplementedError('getMessagebox() has not been implemented');
+  }
 }

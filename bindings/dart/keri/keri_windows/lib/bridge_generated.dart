@@ -169,6 +169,13 @@ abstract class KeriDart {
 
   FlutterRustBridgeTaskConstMeta get kGetKelConstMeta;
 
+  Future<String> toCesrSignature(
+      {required Identifier identifier,
+      required Signature signature,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kToCesrSignatureConstMeta;
+
   Future<String> signToCesr(
       {required Identifier identifier,
       required String data,
@@ -187,6 +194,63 @@ abstract class KeriDart {
   Future<bool> verifyFromCesr({required String stream, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kVerifyFromCesrConstMeta;
+
+  Future<RegistryData> inceptRegistry(
+      {required Identifier identifier, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kInceptRegistryConstMeta;
+
+  Future<IssuanceData> issueCredential(
+      {required Identifier identifier,
+      required String credential,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kIssueCredentialConstMeta;
+
+  Future<String> revokeCredential(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kRevokeCredentialConstMeta;
+
+  Future<String> queryTel(
+      {required Identifier identifier,
+      required String registryId,
+      required String credentialSaid,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kQueryTelConstMeta;
+
+  Future<bool> finalizeTelQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kFinalizeTelQueryConstMeta;
+
+  Future<String?> getCredentialState(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetCredentialStateConstMeta;
+
+  Future<bool> notifyBackers({required Identifier identifier, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kNotifyBackersConstMeta;
+
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kAddMessageboxConstMeta;
+
+  Future<List<String>> getMessagebox({required String whose, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMessageboxConstMeta;
 
   Future<Identifier> newFromStrStaticMethodIdentifier(
       {required String idStr, dynamic hint});
@@ -297,6 +361,16 @@ class Identifier {
       );
 }
 
+class IssuanceData {
+  final String vcId;
+  final String ixn;
+
+  const IssuanceData({
+    required this.vcId,
+    required this.ixn,
+  });
+}
+
 enum KeyType {
   ECDSAsecp256k1Nontrans,
   ECDSAsecp256k1,
@@ -315,6 +389,16 @@ class PublicKey {
   const PublicKey({
     required this.derivation,
     required this.publicKey,
+  });
+}
+
+class RegistryData {
+  final String registryId;
+  final String ixn;
+
+  const RegistryData({
+    required this.registryId,
+    required this.ixn,
   });
 }
 
@@ -901,6 +985,28 @@ class KeriDartImpl implements KeriDart {
         argNames: ["identifier"],
       );
 
+  Future<String> toCesrSignature(
+      {required Identifier identifier,
+      required Signature signature,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_box_autoadd_signature(signature);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_to_cesr_signature(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kToCesrSignatureConstMeta,
+      argValues: [identifier, signature],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kToCesrSignatureConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "to_cesr_signature",
+        argNames: ["identifier", "signature"],
+      );
+
   Future<String> signToCesr(
       {required Identifier identifier,
       required String data,
@@ -959,6 +1065,194 @@ class KeriDartImpl implements KeriDart {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "verify_from_cesr",
         argNames: ["stream"],
+      );
+
+  Future<RegistryData> inceptRegistry(
+      {required Identifier identifier, dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_incept_registry(port_, arg0),
+      parseSuccessData: _wire2api_registry_data,
+      constMeta: kInceptRegistryConstMeta,
+      argValues: [identifier],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kInceptRegistryConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "incept_registry",
+        argNames: ["identifier"],
+      );
+
+  Future<IssuanceData> issueCredential(
+      {required Identifier identifier,
+      required String credential,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(credential);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_issue_credential(port_, arg0, arg1),
+      parseSuccessData: _wire2api_issuance_data,
+      constMeta: kIssueCredentialConstMeta,
+      argValues: [identifier, credential],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kIssueCredentialConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "issue_credential",
+        argNames: ["identifier", "credential"],
+      );
+
+  Future<String> revokeCredential(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(credentialSaid);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_revoke_credential(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kRevokeCredentialConstMeta,
+      argValues: [identifier, credentialSaid],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kRevokeCredentialConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "revoke_credential",
+        argNames: ["identifier", "credentialSaid"],
+      );
+
+  Future<String> queryTel(
+      {required Identifier identifier,
+      required String registryId,
+      required String credentialSaid,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(registryId);
+    var arg2 = _platform.api2wire_String(credentialSaid);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_query_tel(port_, arg0, arg1, arg2),
+      parseSuccessData: _wire2api_String,
+      constMeta: kQueryTelConstMeta,
+      argValues: [identifier, registryId, credentialSaid],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kQueryTelConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "query_tel",
+        argNames: ["identifier", "registryId", "credentialSaid"],
+      );
+
+  Future<bool> finalizeTelQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(queryEvent);
+    var arg2 = _platform.api2wire_box_autoadd_signature(signature);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_finalize_tel_query(port_, arg0, arg1, arg2),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kFinalizeTelQueryConstMeta,
+      argValues: [identifier, queryEvent, signature],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kFinalizeTelQueryConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "finalize_tel_query",
+        argNames: ["identifier", "queryEvent", "signature"],
+      );
+
+  Future<String?> getCredentialState(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(credentialSaid);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_get_credential_state(port_, arg0, arg1),
+      parseSuccessData: _wire2api_opt_String,
+      constMeta: kGetCredentialStateConstMeta,
+      argValues: [identifier, credentialSaid],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetCredentialStateConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_credential_state",
+        argNames: ["identifier", "credentialSaid"],
+      );
+
+  Future<bool> notifyBackers({required Identifier identifier, dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_notify_backers(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kNotifyBackersConstMeta,
+      argValues: [identifier],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kNotifyBackersConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "notify_backers",
+        argNames: ["identifier"],
+      );
+
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint}) {
+    var arg0 = _platform.api2wire_box_autoadd_identifier(identifier);
+    var arg1 = _platform.api2wire_String(messageboxOobi);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_add_messagebox(port_, arg0, arg1),
+      parseSuccessData: _wire2api_String,
+      constMeta: kAddMessageboxConstMeta,
+      argValues: [identifier, messageboxOobi],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kAddMessageboxConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "add_messagebox",
+        argNames: ["identifier", "messageboxOobi"],
+      );
+
+  Future<List<String>> getMessagebox({required String whose, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(whose);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_messagebox(port_, arg0),
+      parseSuccessData: _wire2api_StringList,
+      constMeta: kGetMessageboxConstMeta,
+      argValues: [whose],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMessageboxConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_messagebox",
+        argNames: ["whose"],
       );
 
   Future<Identifier> newFromStrStaticMethodIdentifier(
@@ -1101,12 +1395,26 @@ class KeriDartImpl implements KeriDart {
     );
   }
 
+  IssuanceData _wire2api_issuance_data(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return IssuanceData(
+      vcId: _wire2api_String(arr[0]),
+      ixn: _wire2api_String(arr[1]),
+    );
+  }
+
   KeyType _wire2api_key_type(dynamic raw) {
     return KeyType.values[raw];
   }
 
   List<ActionRequired> _wire2api_list_action_required(dynamic raw) {
     return (raw as List<dynamic>).map(_wire2api_action_required).toList();
+  }
+
+  String? _wire2api_opt_String(dynamic raw) {
+    return raw == null ? null : _wire2api_String(raw);
   }
 
   PublicKey _wire2api_public_key(dynamic raw) {
@@ -1116,6 +1424,16 @@ class KeriDartImpl implements KeriDart {
     return PublicKey(
       derivation: _wire2api_key_type(arr[0]),
       publicKey: _wire2api_uint_8_list(arr[1]),
+    );
+  }
+
+  RegistryData _wire2api_registry_data(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return RegistryData(
+      registryId: _wire2api_String(arr[0]),
+      ixn: _wire2api_String(arr[1]),
     );
   }
 
@@ -2023,6 +2341,26 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
   late final _wire_get_kel = _wire_get_kelPtr
       .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
 
+  void wire_to_cesr_signature(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_Signature> signature,
+  ) {
+    return _wire_to_cesr_signature(
+      port_,
+      identifier,
+      signature,
+    );
+  }
+
+  late final _wire_to_cesr_signaturePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_Signature>)>>('wire_to_cesr_signature');
+  late final _wire_to_cesr_signature = _wire_to_cesr_signaturePtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_Signature>)>();
+
   void wire_sign_to_cesr(
     int port_,
     ffi.Pointer<wire_Identifier> identifier,
@@ -2080,6 +2418,188 @@ class KeriDartWire implements FlutterRustBridgeWireBase {
           ffi.Void Function(ffi.Int64,
               ffi.Pointer<wire_uint_8_list>)>>('wire_verify_from_cesr');
   late final _wire_verify_from_cesr = _wire_verify_from_cesrPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_incept_registry(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+  ) {
+    return _wire_incept_registry(
+      port_,
+      identifier,
+    );
+  }
+
+  late final _wire_incept_registryPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_Identifier>)>>('wire_incept_registry');
+  late final _wire_incept_registry = _wire_incept_registryPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_issue_credential(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> credential,
+  ) {
+    return _wire_issue_credential(
+      port_,
+      identifier,
+      credential,
+    );
+  }
+
+  late final _wire_issue_credentialPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_issue_credential');
+  late final _wire_issue_credential = _wire_issue_credentialPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_revoke_credential(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> credential_said,
+  ) {
+    return _wire_revoke_credential(
+      port_,
+      identifier,
+      credential_said,
+    );
+  }
+
+  late final _wire_revoke_credentialPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_revoke_credential');
+  late final _wire_revoke_credential = _wire_revoke_credentialPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_query_tel(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> registry_id,
+    ffi.Pointer<wire_uint_8_list> credential_said,
+  ) {
+    return _wire_query_tel(
+      port_,
+      identifier,
+      registry_id,
+      credential_said,
+    );
+  }
+
+  late final _wire_query_telPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64,
+              ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_query_tel');
+  late final _wire_query_tel = _wire_query_telPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_Identifier>,
+          ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_finalize_tel_query(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> query_event,
+    ffi.Pointer<wire_Signature> signature,
+  ) {
+    return _wire_finalize_tel_query(
+      port_,
+      identifier,
+      query_event,
+      signature,
+    );
+  }
+
+  late final _wire_finalize_tel_queryPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64,
+              ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_Signature>)>>('wire_finalize_tel_query');
+  late final _wire_finalize_tel_query = _wire_finalize_tel_queryPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_Identifier>,
+          ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_Signature>)>();
+
+  void wire_get_credential_state(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> credential_said,
+  ) {
+    return _wire_get_credential_state(
+      port_,
+      identifier,
+      credential_said,
+    );
+  }
+
+  late final _wire_get_credential_statePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_credential_state');
+  late final _wire_get_credential_state =
+      _wire_get_credential_statePtr.asFunction<
+          void Function(int, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_notify_backers(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+  ) {
+    return _wire_notify_backers(
+      port_,
+      identifier,
+    );
+  }
+
+  late final _wire_notify_backersPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_Identifier>)>>('wire_notify_backers');
+  late final _wire_notify_backers = _wire_notify_backersPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_Identifier>)>();
+
+  void wire_add_messagebox(
+    int port_,
+    ffi.Pointer<wire_Identifier> identifier,
+    ffi.Pointer<wire_uint_8_list> messagebox_oobi,
+  ) {
+    return _wire_add_messagebox(
+      port_,
+      identifier,
+      messagebox_oobi,
+    );
+  }
+
+  late final _wire_add_messageboxPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_Identifier>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_add_messagebox');
+  late final _wire_add_messagebox = _wire_add_messageboxPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_Identifier>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_get_messagebox(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> whose,
+  ) {
+    return _wire_get_messagebox(
+      port_,
+      whose,
+    );
+  }
+
+  late final _wire_get_messageboxPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_get_messagebox');
+  late final _wire_get_messagebox = _wire_get_messageboxPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_new_from_str__static_method__Identifier(
@@ -2416,4 +2936,4 @@ class wire_list_data_and_signature extends ffi.Struct {
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<ffi.Bool Function(DartPort, ffi.Pointer<ffi.Void>)>>;
 typedef DartPort = ffi.Int64;
-typedef uintptr_t = ffi.UnsignedLongLong;
+typedef uintptr_t = ffi.UnsignedLong;

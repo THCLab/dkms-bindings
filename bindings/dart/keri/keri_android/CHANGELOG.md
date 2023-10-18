@@ -78,3 +78,36 @@ Added exceptions for `verifyFromCesr`
 
 ## 0.2.3
 Updated jniLibs
+
+## 0.2.4
+Added `getMailboxLocation` and `anchorPayload`
+
+## 0.2.5
+New .so files
+
+## 0.2.6
+New .so files
+
+## 0.2.7
+New .so files
+
+## 0.2.8
+New .so files
+
+## 1.0.0
+Update messagebox setup, use transaction event log events
+
+## 1.0.1
+New .so files
+
+## 1.0.2
+New .so files
+
+## 1.0.3
+New .so files
+
+## 1.1.0
+Fixed `flutter_rust_bridge` dependency
+
+## 1.1.1
+Fixed `issueCredential` function

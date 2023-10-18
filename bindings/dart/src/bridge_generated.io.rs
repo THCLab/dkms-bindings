@@ -226,6 +226,15 @@ pub extern "C" fn wire_get_kel(port_: i64, identifier: *mut wire_Identifier) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_to_cesr_signature(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    signature: *mut wire_Signature,
+) {
+    wire_to_cesr_signature_impl(port_, identifier, signature)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_sign_to_cesr(
     port_: i64,
     identifier: *mut wire_Identifier,
@@ -243,6 +252,77 @@ pub extern "C" fn wire_split_oobis_and_data(port_: i64, stream: *mut wire_uint_8
 #[no_mangle]
 pub extern "C" fn wire_verify_from_cesr(port_: i64, stream: *mut wire_uint_8_list) {
     wire_verify_from_cesr_impl(port_, stream)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_incept_registry(port_: i64, identifier: *mut wire_Identifier) {
+    wire_incept_registry_impl(port_, identifier)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_issue_credential(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    credential: *mut wire_uint_8_list,
+) {
+    wire_issue_credential_impl(port_, identifier, credential)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_revoke_credential(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    credential_said: *mut wire_uint_8_list,
+) {
+    wire_revoke_credential_impl(port_, identifier, credential_said)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_query_tel(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    registry_id: *mut wire_uint_8_list,
+    credential_said: *mut wire_uint_8_list,
+) {
+    wire_query_tel_impl(port_, identifier, registry_id, credential_said)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_finalize_tel_query(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    query_event: *mut wire_uint_8_list,
+    signature: *mut wire_Signature,
+) {
+    wire_finalize_tel_query_impl(port_, identifier, query_event, signature)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_credential_state(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    credential_said: *mut wire_uint_8_list,
+) {
+    wire_get_credential_state_impl(port_, identifier, credential_said)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_notify_backers(port_: i64, identifier: *mut wire_Identifier) {
+    wire_notify_backers_impl(port_, identifier)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_add_messagebox(
+    port_: i64,
+    identifier: *mut wire_Identifier,
+    messagebox_oobi: *mut wire_uint_8_list,
+) {
+    wire_add_messagebox_impl(port_, identifier, messagebox_oobi)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_messagebox(port_: i64, whose: *mut wire_uint_8_list) {
+    wire_get_messagebox_impl(port_, whose)
 }
 
 #[no_mangle]
@@ -655,6 +735,12 @@ impl NewWithNullPtr for wire_DataAndSignature {
 }
 
 impl Default for wire_DataAndSignature {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
+impl Default for wire_DigestType {
     fn default() -> Self {
         Self::new_with_null_ptr()
     }

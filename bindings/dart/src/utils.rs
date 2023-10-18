@@ -1,4 +1,5 @@
 use crate::api::{Digest, Error, PublicKey, Signature};
+use controller::Oobi;
 use keri::prefix::CesrPrimitive;
 pub use keri::{
     oobi::LocationScheme,
@@ -8,6 +9,11 @@ use said::SelfAddressingIdentifier;
 
 pub fn parse_location_schemes(location_str: &str) -> Result<LocationScheme, Error> {
     serde_json::from_str::<LocationScheme>(location_str)
+        .map_err(|_| Error::OobiParseError(location_str.into()))
+}
+
+pub fn parse_oobi(location_str: &str) -> Result<Oobi, Error> {
+    serde_json::from_str::<Oobi>(location_str)
         .map_err(|_| Error::OobiParseError(location_str.into()))
 }
 

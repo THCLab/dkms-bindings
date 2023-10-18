@@ -33,3 +33,35 @@ Added `signToCesr` and `verifyFromCesr`
 ### 0.1.2
 
 Added `splitOobisAndData`
+
+### 0.1.3
+
+Added `getMailboxLocation` and `anchorPayload`
+
+### 0.1.4
+
+TEL update
+
+### 1.0.0
+
+Update messagebox setup, use transaction event log events
+
+### 1.0.1
+
+Removed `getMailboxLocation()`
+
+### 1.0.2
+
+Fixed `String` -> `RegistryData` for `inceptRegistry()`
+
+### 1.0.3
+
+Fixed void -> bool for `finalizeTelQuery` and `notifyBackers()`
+
+### 1.1.0
+
+Fixed `flutter_rust_bridge` dependency
+
+### 1.1.1
+
+Fixed `ffigen` dependency

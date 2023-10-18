@@ -623,4 +623,80 @@ class KeriAndroid extends KeriPlatformInterface {
       {required String stream, dynamic hint}) async {
     return await api.splitOobisAndData(stream: stream);
   }
+
+  @override
+  Future<RegistryData> inceptRegistry(
+      {required Identifier identifier, dynamic hint}) async {
+    return await api.inceptRegistry(identifier: identifier);
+  }
+
+  @override
+  Future<IssuanceData> issueCredential(
+      {required Identifier identifier,
+      required String credential,
+      dynamic hint}) async {
+    return await api.issueCredential(
+        identifier: identifier, credential: credential);
+  }
+
+  @override
+  Future<String> revokeCredential(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) async {
+    return await api.revokeCredential(
+        identifier: identifier, credentialSaid: credentialSaid);
+  }
+
+  @override
+  Future<String> queryTel(
+      {required Identifier identifier,
+      required String registryId,
+      required String credentialSaid,
+      dynamic hint}) async {
+    return await api.queryTel(
+        identifier: identifier,
+        registryId: registryId,
+        credentialSaid: credentialSaid);
+  }
+
+  @override
+  Future<bool> finalizeTelQuery(
+      {required Identifier identifier,
+      required String queryEvent,
+      required Signature signature,
+      dynamic hint}) async {
+    return await api.finalizeTelQuery(
+        identifier: identifier, queryEvent: queryEvent, signature: signature);
+  }
+
+  @override
+  Future<String?> getCredentialState(
+      {required Identifier identifier,
+      required String credentialSaid,
+      dynamic hint}) async {
+    return await api.getCredentialState(
+        identifier: identifier, credentialSaid: credentialSaid);
+  }
+
+  @override
+  Future<bool> notifyBackers(
+      {required Identifier identifier, dynamic hint}) async {
+    return await api.notifyBackers(identifier: identifier);
+  }
+
+  @override
+  Future<String> addMessagebox(
+      {required Identifier identifier,
+      required String messageboxOobi,
+      dynamic hint}) async {
+    return await api.addMessagebox(
+        identifier: identifier, messageboxOobi: messageboxOobi);
+  }
+
+  @override
+  Future<List<String>> getMessagebox(
+      {required String whose, dynamic hint}) async {
+    return await api.getMessagebox(whose: whose);
+  }
 }

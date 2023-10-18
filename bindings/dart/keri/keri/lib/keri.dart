@@ -73,46 +73,6 @@ Future<bool> resolveOobi({required String oobiJson, dynamic hint}) async {
   return await KeriPlatformInterface.instance.resolveOobi(oobiJson: oobiJson);
 }
 
-///Query designated watcher about other identifier's public keys data.
-// static Future<bool> query(
-//     {required Identifier controller,
-//     required String oobisJson,
-//     dynamic hint}) async {
-//   try {
-//     return await api.query(identifier: controller, oobisJson: oobisJson);
-//   } on FfiException catch (e) {
-//     if (e.message.contains('Deserialize error')) {
-//       throw IdentifierException(
-//           'The identifier provided to the controller is incorrect. Check the identifier once again.');
-//     }
-//     if (e.message.contains('Unknown id')) {
-//       throw IdentifierException(
-//           'Unknown controller identifier. Check the confroller for identifier once again.');
-//     }
-//     if (e.message.contains('Can\'t parse controller')) {
-//       throw IdentifierException(
-//           'Can\'t parse controller prefix. Check the confroller for identifier once again.');
-//     }
-//     if (e.message.contains('error sending request for url')) {
-//       throw OobiResolvingErrorException(
-//           "No service is listening under the provided port number. Consider changing it.");
-//     }
-//     if (e.message.contains('Controller wasn\'t initialized')) {
-//       throw ControllerNotInitializedException(
-//           "Controller has not been initialized. Execute initKel() before incepting.");
-//     }
-//     if (e.message.contains('Signature verification failed')) {
-//       throw SignatureVerificationException(
-//           'Signature verification failed - event signature does not match event keys.');
-//     }
-//     if (e.message.contains('Can\'t parse oobi json')) {
-//       throw IncorrectOobiException(
-//           'Provided oobi is incorrect. Please check the JSON once again');
-//     }
-//     rethrow;
-//   }
-// }
-
 //CZY JEST POTRZEBNA?
 Future<void> processStream({required String stream, dynamic hint}) async {
   await KeriPlatformInterface.instance.processStream(stream: stream);
@@ -259,6 +219,7 @@ Future<bool> broadcastReceipts(
       .broadcastReceipts(identifier: identifier, witnessList: witnessList);
 }
 
+///Joins provided payload and signature into cesr stream.
 Future<String> signToCesr(
     {required Identifier identifier,
     required String data,
@@ -268,13 +229,82 @@ Future<String> signToCesr(
       .signToCesr(identifier: identifier, data: data, signature: signature);
 }
 
+///Verifies signatures from provided cesr stream.
 Future<bool> verifyFromCesr({required String stream, dynamic hint}) async {
   return await KeriPlatformInterface.instance.verifyFromCesr(stream: stream);
 }
 
-/// Splits parsed elements from stream into oobis to resolve and other signed
-/// data.
+/// Splits provided stream into oobis and rest of cesr stream.
 Future<SplittingResult> splitOobisAndData(
     {required String stream, dynamic hint}) async {
   return await KeriPlatformInterface.instance.splitOobisAndData(stream: stream);
+}
+
+Future<RegistryData> inceptRegistry(
+    {required Identifier identifier, dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .inceptRegistry(identifier: identifier);
+}
+
+Future<IssuanceData> issueCredential(
+    {required Identifier identifier,
+    required String credential,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .issueCredential(identifier: identifier, credential: credential);
+}
+
+Future<String> revokeCredential(
+    {required Identifier identifier,
+    required String credentialSaid,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .revokeCredential(identifier: identifier, credentialSaid: credentialSaid);
+}
+
+Future<String> queryTel(
+    {required Identifier identifier,
+    required String registryId,
+    required String credentialSaid,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.queryTel(
+      identifier: identifier,
+      registryId: registryId,
+      credentialSaid: credentialSaid);
+}
+
+Future<bool> finalizeTelQuery(
+    {required Identifier identifier,
+    required String queryEvent,
+    required Signature signature,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.finalizeTelQuery(
+      identifier: identifier, queryEvent: queryEvent, signature: signature);
+}
+
+Future<String?> getCredentialState(
+    {required Identifier identifier,
+    required String credentialSaid,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance.getCredentialState(
+      identifier: identifier, credentialSaid: credentialSaid);
+}
+
+Future<bool> notifyBackers(
+    {required Identifier identifier, dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .notifyBackers(identifier: identifier);
+}
+
+Future<String> addMessagebox(
+    {required Identifier identifier,
+    required String messageboxOobi,
+    dynamic hint}) async {
+  return await KeriPlatformInterface.instance
+      .addMessagebox(identifier: identifier, messageboxOobi: messageboxOobi);
+}
+
+Future<List<String>> getMessagebox(
+    {required String whose, dynamic hint}) async {
+  return await KeriPlatformInterface.instance.getMessagebox(whose: whose);
 }
