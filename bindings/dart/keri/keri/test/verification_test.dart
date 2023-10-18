@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:keri/keri.dart';
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:path/path.dart';
 
 Future<void> main() async {
   final api =
@@ -53,10 +52,7 @@ Future<void> main() async {
       expect(onError.toString(), 'error');
     });
 
-    final testDirectory = join(
-      Directory.current.path,
-      Directory.current.path.endsWith('test') ? '' : 'test/db1',
-    );
+    final testDirectory = await Directory.systemTemp.createTemp("sig_test");
 
     var currentKeys = [current];
     var next = await api
@@ -72,7 +68,7 @@ Future<void> main() async {
     //   '{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://localhost:3232/"}'
     // ];
     var witnessId = "BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC";
-    await api.initKel(inputAppDir: testDirectory);
+    await api.initKel(inputAppDir: testDirectory.path);
 
     // Setup signing identifier
     var icpEvent = await api.incept(
@@ -109,8 +105,6 @@ Future<void> main() async {
         identifier: signingIdentifier, event: ixn.ixn, signature: hexSignature);
     await collectReceipts(signingIdentifier, [witnessId], signerKeyPair0);
 
-    // var kel = await api.getKel(identifier: signingIdentifier);
-
     // Sign message
     var message = '{"i":"${signingIdentifier.id}","m":"hello there"}';
     print("\n\nmessage: ${message}");
@@ -135,12 +129,9 @@ Future<void> main() async {
     await api.notifyBackers(identifier: signingIdentifier);
 
     // Setup verifying identifier
-    var verifierDbPath = join(
-      Directory.current.path,
-      Directory.current.path.endsWith('test') ? '' : 'test/db2',
-    );
+    final verTestDirectory = await Directory.systemTemp.createTemp("ver_test");
 
-    await api.changeController(dbPath: verifierDbPath);
+    await api.changeController(dbPath: verTestDirectory.path);
 
     currentKeys = [
       await api
