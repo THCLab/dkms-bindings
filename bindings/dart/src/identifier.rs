@@ -10,14 +10,14 @@ impl From<IdentifierPrefix> for Identifier {
     }
 }
 
-impl Into<IdentifierPrefix> for &Identifier {
-    fn into(self) -> IdentifierPrefix {
-        self.id.parse::<IdentifierPrefix>().unwrap()
+impl From<&Identifier> for IdentifierPrefix {
+    fn from(val: &Identifier) -> Self {
+        val.id.parse::<IdentifierPrefix>().unwrap()
     }
 }
-impl Into<IdentifierPrefix> for Identifier {
-    fn into(self) -> IdentifierPrefix {
-        self.id.parse::<IdentifierPrefix>().unwrap()
+impl From<Identifier> for IdentifierPrefix {
+    fn from(val: Identifier) -> Self {
+        val.id.parse::<IdentifierPrefix>().unwrap()
     }
 }
 

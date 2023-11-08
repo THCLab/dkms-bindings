@@ -30,20 +30,21 @@ pub fn parse_witness_prefix(wit_str: &str) -> Result<BasicPrefix, Error> {
     }
 }
 
-impl Into<SelfSigningPrefix> for Signature {
-    fn into(self) -> SelfSigningPrefix {
-        SelfSigningPrefix::new(self.derivation, self.signature)
+impl From<Signature> for SelfSigningPrefix {
+    fn from(val: Signature) -> Self {
+        SelfSigningPrefix::new(val.derivation, val.signature)
     }
 }
 
-impl Into<SelfAddressingIdentifier> for Digest {
-    fn into(self) -> SelfAddressingIdentifier {
-        SelfAddressingIdentifier::new(self.derivation.into(), self.digest)
+impl From<Digest> for SelfAddressingIdentifier {
+    fn from(val: Digest) -> Self {
+        SelfAddressingIdentifier::new(val.derivation.into(), val.digest)
     }
 }
-impl Into<BasicPrefix> for PublicKey {
-    fn into(self) -> BasicPrefix {
-        BasicPrefix::new(self.derivation, keri::keys::PublicKey::new(self.public_key))
+
+impl From<PublicKey> for BasicPrefix {
+    fn from(val: PublicKey) -> Self {
+        BasicPrefix::new(val.derivation, keri::keys::PublicKey::new(val.public_key))
     }
 }
 

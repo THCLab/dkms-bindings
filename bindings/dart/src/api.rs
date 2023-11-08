@@ -128,10 +128,9 @@ pub struct Config {
     pub initial_oobis: String,
 }
 
-pub fn with_initial_oobis(config: Config, oobis_json: String) -> Config {
+pub fn with_initial_oobis(_config: Config, oobis_json: String) -> Config {
     Config {
         initial_oobis: oobis_json,
-        ..config
     }
 }
 
@@ -259,7 +258,7 @@ pub fn incept(
         .controller();
     let rt = Runtime::new().unwrap();
     let icp = controller.incept(public_keys, next_pub_keys, witnesses, witness_threshold);
-    let icp = rt.block_on(async { icp.await })?;
+    let icp = rt.block_on(icp)?;
     Ok(icp)
 }
 
@@ -271,7 +270,7 @@ pub fn finalize_inception(event: String, signature: Signature) -> Result<Identif
     let ssp = signature.into();
     let controller_id = controller.finalize_inception(event.as_bytes(), &ssp);
     let rt = Runtime::new().unwrap();
-    let controller_id = rt.block_on(async { controller_id.await })?;
+    let controller_id = rt.block_on(controller_id)?;
     println!("\ninception event: {}", event);
     println!("\nController incepted id: {}", controller_id.to_str());
     Ok(Identifier::from(controller_id))
@@ -315,7 +314,7 @@ pub fn rotate(
         witness_threshold,
     );
     let rt = Runtime::new().unwrap();
-    Ok(rt.block_on(async { rotate_future.await })?)
+    Ok(rt.block_on(rotate_future)?)
 }
 
 pub fn anchor(identifier: Identifier, data: String, algo: DigestType) -> Result<String> {
@@ -352,7 +351,7 @@ pub fn add_watcher(identifier: Identifier, watcher_oobi: String) -> Result<Strin
     let resolve_future = controller.resolve_loc_schema(&lc);
     if let IdentifierPrefix::Basic(_bp) = &lc.eid {
         let rt = Runtime::new().unwrap();
-        rt.block_on(async { resolve_future.await })?;
+        rt.block_on(resolve_future)?;
 
         let add_watcher =
             event_generator::generate_end_role(&identifier.into(), &lc.eid, Role::Watcher, true)?;
@@ -371,7 +370,7 @@ pub fn send_oobi_to_watcher(identifier: Identifier, oobis_json: String) -> Resul
     let oobi: Oobi = serde_json::from_str(&oobis_json).unwrap();
     let send_oobi_future = controller.send_oobi_to_watcher(&identifier_controller, &oobi);
     let rt = Runtime::new().unwrap();
-    rt.block_on(async { send_oobi_future.await })?;
+    rt.block_on(send_oobi_future)?;
     Ok(true)
 }
 
@@ -384,7 +383,7 @@ pub fn finalize_event(identifier: Identifier, event: String, signature: Signatur
     let finalize_event_future =
         identifier_controller.finalize_event(event.as_bytes(), signature.into());
     let rt = Runtime::new().unwrap();
-    rt.block_on(async { finalize_event_future.await })?;
+    rt.block_on(finalize_event_future)?;
     Ok(true)
 }
 
@@ -396,7 +395,7 @@ pub fn notify_witnesses(identifier: Identifier) -> Result<bool> {
     let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
     let notify_future = identifier_controller.notify_witnesses();
     let rt = Runtime::new().unwrap();
-    rt.block_on(async { notify_future.await })?;
+    rt.block_on(notify_future)?;
     Ok(true)
 }
 
@@ -409,7 +408,7 @@ pub fn broadcast_receipts(identifier: Identifier, witness_list: Vec<Identifier>)
     let wits: Vec<IdentifierPrefix> = witness_list.iter().map(|wit_id| wit_id.into()).collect();
     let broadcast_future = identifier_controller.broadcast_receipts(&wits);
     let rt = Runtime::new().unwrap();
-    rt.block_on(async { broadcast_future.await })?;
+    rt.block_on(broadcast_future)?;
     Ok(true)
 }
 
@@ -496,7 +495,7 @@ pub fn finalize_group_incept(
     );
 
     let rt = Runtime::new().unwrap();
-    let group_identifier = rt.block_on(async { group_identifier_future.await })?;
+    let group_identifier = rt.block_on(group_identifier_future)?;
     Ok(Identifier::from(group_identifier))
 }
 
@@ -572,7 +571,7 @@ pub fn finalize_query(
 
             let rt = Runtime::new().unwrap();
             let out = rt
-                .block_on(async { finalize_qry_future.await })?
+                .block_on(finalize_qry_future)?
                 .iter()
                 .map(|ar| -> Result<_> {
                     match ar {
@@ -605,7 +604,7 @@ pub fn resolve_oobi(oobi_json: String) -> Result<bool> {
         .controller();
     let resolve_future = controller.resolve_oobi(lc);
     let rt = Runtime::new().unwrap();
-    rt.block_on(async { resolve_future.await })
+    rt.block_on(resolve_future)
         .map_err(|e| Error::OobiResolvingError(e.to_string()))?;
     Ok(true)
 }
@@ -831,7 +830,7 @@ pub fn finalize_tel_query(
     let finalize_query_future =
         identifier_controller.finalize_tel_query(&id, query_event, signature.into());
     let rt = Runtime::new().unwrap();
-    rt.block_on(async { finalize_query_future.await })?;
+    rt.block_on(finalize_query_future)?;
     Ok(true)
 }
 
@@ -893,7 +892,7 @@ pub fn add_messagebox(identifier: Identifier, messagebox_oobi: String) -> Result
     let resolve_future = controller.resolve_loc_schema(&lc);
     if let IdentifierPrefix::Basic(_bp) = &lc.eid {
         let rt = Runtime::new().unwrap();
-        rt.block_on(async { resolve_future.await })?;
+        rt.block_on(resolve_future)?;
 
         let add_messagebox = event_generator::generate_end_role(
             &identifier.into(),
