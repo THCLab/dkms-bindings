@@ -85,7 +85,7 @@ pub fn test_signing_verifing() -> Result<()> {
     // It can be run from keriox/components/witness using command:
     // cargo run -- -c ./witness.yaml
     let witness_id = "BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC".to_string();
-    let wit_location = r#"{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://127.0.0.1:3232/"}"#.to_string();
+    let wit_location = r#"{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}"#.to_string();
 
     // Setup signing identifier
     let key_manager = CryptoBox::new().unwrap();
@@ -152,7 +152,8 @@ pub fn test_signing_verifing() -> Result<()> {
     let verifing_identifier = finalize_inception(icp_event, signature)?;
 
     // Configure watcher for verifing identifier
-    let watcher_oobi = r#"{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://localhost:3236/"}"#.to_string();
+    // let watcher_oobi = r#"{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://localhost:3236/"}"#.to_string();
+    let watcher_oobi = r#"{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}"#.to_string();
 
     let add_watcher_message = add_watcher(verifing_identifier.clone(), watcher_oobi)?;
     println!(

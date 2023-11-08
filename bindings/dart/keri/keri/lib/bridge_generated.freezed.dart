@@ -117,25 +117,26 @@ class _$DigestTypeCopyWithImpl<$Res, $Val extends DigestType>
 }
 
 /// @nodoc
-abstract class _$$DigestType_Blake3_256CopyWith<$Res> {
-  factory _$$DigestType_Blake3_256CopyWith(_$DigestType_Blake3_256 value,
-          $Res Function(_$DigestType_Blake3_256) then) =
-      __$$DigestType_Blake3_256CopyWithImpl<$Res>;
+abstract class _$$DigestType_Blake3_256ImplCopyWith<$Res> {
+  factory _$$DigestType_Blake3_256ImplCopyWith(
+          _$DigestType_Blake3_256Impl value,
+          $Res Function(_$DigestType_Blake3_256Impl) then) =
+      __$$DigestType_Blake3_256ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_Blake3_256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake3_256>
-    implements _$$DigestType_Blake3_256CopyWith<$Res> {
-  __$$DigestType_Blake3_256CopyWithImpl(_$DigestType_Blake3_256 _value,
-      $Res Function(_$DigestType_Blake3_256) _then)
+class __$$DigestType_Blake3_256ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake3_256Impl>
+    implements _$$DigestType_Blake3_256ImplCopyWith<$Res> {
+  __$$DigestType_Blake3_256ImplCopyWithImpl(_$DigestType_Blake3_256Impl _value,
+      $Res Function(_$DigestType_Blake3_256Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_Blake3_256 implements DigestType_Blake3_256 {
-  const _$DigestType_Blake3_256();
+class _$DigestType_Blake3_256Impl implements DigestType_Blake3_256 {
+  const _$DigestType_Blake3_256Impl();
 
   @override
   String toString() {
@@ -145,7 +146,8 @@ class _$DigestType_Blake3_256 implements DigestType_Blake3_256 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_Blake3_256);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_Blake3_256Impl);
   }
 
   @override
@@ -257,29 +259,29 @@ class _$DigestType_Blake3_256 implements DigestType_Blake3_256 {
 }
 
 abstract class DigestType_Blake3_256 implements DigestType {
-  const factory DigestType_Blake3_256() = _$DigestType_Blake3_256;
+  const factory DigestType_Blake3_256() = _$DigestType_Blake3_256Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_SHA3_256CopyWith<$Res> {
-  factory _$$DigestType_SHA3_256CopyWith(_$DigestType_SHA3_256 value,
-          $Res Function(_$DigestType_SHA3_256) then) =
-      __$$DigestType_SHA3_256CopyWithImpl<$Res>;
+abstract class _$$DigestType_SHA3_256ImplCopyWith<$Res> {
+  factory _$$DigestType_SHA3_256ImplCopyWith(_$DigestType_SHA3_256Impl value,
+          $Res Function(_$DigestType_SHA3_256Impl) then) =
+      __$$DigestType_SHA3_256ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_SHA3_256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA3_256>
-    implements _$$DigestType_SHA3_256CopyWith<$Res> {
-  __$$DigestType_SHA3_256CopyWithImpl(
-      _$DigestType_SHA3_256 _value, $Res Function(_$DigestType_SHA3_256) _then)
+class __$$DigestType_SHA3_256ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA3_256Impl>
+    implements _$$DigestType_SHA3_256ImplCopyWith<$Res> {
+  __$$DigestType_SHA3_256ImplCopyWithImpl(_$DigestType_SHA3_256Impl _value,
+      $Res Function(_$DigestType_SHA3_256Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_SHA3_256 implements DigestType_SHA3_256 {
-  const _$DigestType_SHA3_256();
+class _$DigestType_SHA3_256Impl implements DigestType_SHA3_256 {
+  const _$DigestType_SHA3_256Impl();
 
   @override
   String toString() {
@@ -289,7 +291,8 @@ class _$DigestType_SHA3_256 implements DigestType_SHA3_256 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_SHA3_256);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_SHA3_256Impl);
   }
 
   @override
@@ -401,29 +404,29 @@ class _$DigestType_SHA3_256 implements DigestType_SHA3_256 {
 }
 
 abstract class DigestType_SHA3_256 implements DigestType {
-  const factory DigestType_SHA3_256() = _$DigestType_SHA3_256;
+  const factory DigestType_SHA3_256() = _$DigestType_SHA3_256Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_SHA2_256CopyWith<$Res> {
-  factory _$$DigestType_SHA2_256CopyWith(_$DigestType_SHA2_256 value,
-          $Res Function(_$DigestType_SHA2_256) then) =
-      __$$DigestType_SHA2_256CopyWithImpl<$Res>;
+abstract class _$$DigestType_SHA2_256ImplCopyWith<$Res> {
+  factory _$$DigestType_SHA2_256ImplCopyWith(_$DigestType_SHA2_256Impl value,
+          $Res Function(_$DigestType_SHA2_256Impl) then) =
+      __$$DigestType_SHA2_256ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_SHA2_256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA2_256>
-    implements _$$DigestType_SHA2_256CopyWith<$Res> {
-  __$$DigestType_SHA2_256CopyWithImpl(
-      _$DigestType_SHA2_256 _value, $Res Function(_$DigestType_SHA2_256) _then)
+class __$$DigestType_SHA2_256ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA2_256Impl>
+    implements _$$DigestType_SHA2_256ImplCopyWith<$Res> {
+  __$$DigestType_SHA2_256ImplCopyWithImpl(_$DigestType_SHA2_256Impl _value,
+      $Res Function(_$DigestType_SHA2_256Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_SHA2_256 implements DigestType_SHA2_256 {
-  const _$DigestType_SHA2_256();
+class _$DigestType_SHA2_256Impl implements DigestType_SHA2_256 {
+  const _$DigestType_SHA2_256Impl();
 
   @override
   String toString() {
@@ -433,7 +436,8 @@ class _$DigestType_SHA2_256 implements DigestType_SHA2_256 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_SHA2_256);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_SHA2_256Impl);
   }
 
   @override
@@ -545,29 +549,30 @@ class _$DigestType_SHA2_256 implements DigestType_SHA2_256 {
 }
 
 abstract class DigestType_SHA2_256 implements DigestType {
-  const factory DigestType_SHA2_256() = _$DigestType_SHA2_256;
+  const factory DigestType_SHA2_256() = _$DigestType_SHA2_256Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_Blake3_512CopyWith<$Res> {
-  factory _$$DigestType_Blake3_512CopyWith(_$DigestType_Blake3_512 value,
-          $Res Function(_$DigestType_Blake3_512) then) =
-      __$$DigestType_Blake3_512CopyWithImpl<$Res>;
+abstract class _$$DigestType_Blake3_512ImplCopyWith<$Res> {
+  factory _$$DigestType_Blake3_512ImplCopyWith(
+          _$DigestType_Blake3_512Impl value,
+          $Res Function(_$DigestType_Blake3_512Impl) then) =
+      __$$DigestType_Blake3_512ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_Blake3_512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake3_512>
-    implements _$$DigestType_Blake3_512CopyWith<$Res> {
-  __$$DigestType_Blake3_512CopyWithImpl(_$DigestType_Blake3_512 _value,
-      $Res Function(_$DigestType_Blake3_512) _then)
+class __$$DigestType_Blake3_512ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake3_512Impl>
+    implements _$$DigestType_Blake3_512ImplCopyWith<$Res> {
+  __$$DigestType_Blake3_512ImplCopyWithImpl(_$DigestType_Blake3_512Impl _value,
+      $Res Function(_$DigestType_Blake3_512Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_Blake3_512 implements DigestType_Blake3_512 {
-  const _$DigestType_Blake3_512();
+class _$DigestType_Blake3_512Impl implements DigestType_Blake3_512 {
+  const _$DigestType_Blake3_512Impl();
 
   @override
   String toString() {
@@ -577,7 +582,8 @@ class _$DigestType_Blake3_512 implements DigestType_Blake3_512 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_Blake3_512);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_Blake3_512Impl);
   }
 
   @override
@@ -689,29 +695,29 @@ class _$DigestType_Blake3_512 implements DigestType_Blake3_512 {
 }
 
 abstract class DigestType_Blake3_512 implements DigestType {
-  const factory DigestType_Blake3_512() = _$DigestType_Blake3_512;
+  const factory DigestType_Blake3_512() = _$DigestType_Blake3_512Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_SHA3_512CopyWith<$Res> {
-  factory _$$DigestType_SHA3_512CopyWith(_$DigestType_SHA3_512 value,
-          $Res Function(_$DigestType_SHA3_512) then) =
-      __$$DigestType_SHA3_512CopyWithImpl<$Res>;
+abstract class _$$DigestType_SHA3_512ImplCopyWith<$Res> {
+  factory _$$DigestType_SHA3_512ImplCopyWith(_$DigestType_SHA3_512Impl value,
+          $Res Function(_$DigestType_SHA3_512Impl) then) =
+      __$$DigestType_SHA3_512ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_SHA3_512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA3_512>
-    implements _$$DigestType_SHA3_512CopyWith<$Res> {
-  __$$DigestType_SHA3_512CopyWithImpl(
-      _$DigestType_SHA3_512 _value, $Res Function(_$DigestType_SHA3_512) _then)
+class __$$DigestType_SHA3_512ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA3_512Impl>
+    implements _$$DigestType_SHA3_512ImplCopyWith<$Res> {
+  __$$DigestType_SHA3_512ImplCopyWithImpl(_$DigestType_SHA3_512Impl _value,
+      $Res Function(_$DigestType_SHA3_512Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_SHA3_512 implements DigestType_SHA3_512 {
-  const _$DigestType_SHA3_512();
+class _$DigestType_SHA3_512Impl implements DigestType_SHA3_512 {
+  const _$DigestType_SHA3_512Impl();
 
   @override
   String toString() {
@@ -721,7 +727,8 @@ class _$DigestType_SHA3_512 implements DigestType_SHA3_512 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_SHA3_512);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_SHA3_512Impl);
   }
 
   @override
@@ -833,29 +840,30 @@ class _$DigestType_SHA3_512 implements DigestType_SHA3_512 {
 }
 
 abstract class DigestType_SHA3_512 implements DigestType {
-  const factory DigestType_SHA3_512() = _$DigestType_SHA3_512;
+  const factory DigestType_SHA3_512() = _$DigestType_SHA3_512Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_Blake2B512CopyWith<$Res> {
-  factory _$$DigestType_Blake2B512CopyWith(_$DigestType_Blake2B512 value,
-          $Res Function(_$DigestType_Blake2B512) then) =
-      __$$DigestType_Blake2B512CopyWithImpl<$Res>;
+abstract class _$$DigestType_Blake2B512ImplCopyWith<$Res> {
+  factory _$$DigestType_Blake2B512ImplCopyWith(
+          _$DigestType_Blake2B512Impl value,
+          $Res Function(_$DigestType_Blake2B512Impl) then) =
+      __$$DigestType_Blake2B512ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_Blake2B512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2B512>
-    implements _$$DigestType_Blake2B512CopyWith<$Res> {
-  __$$DigestType_Blake2B512CopyWithImpl(_$DigestType_Blake2B512 _value,
-      $Res Function(_$DigestType_Blake2B512) _then)
+class __$$DigestType_Blake2B512ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2B512Impl>
+    implements _$$DigestType_Blake2B512ImplCopyWith<$Res> {
+  __$$DigestType_Blake2B512ImplCopyWithImpl(_$DigestType_Blake2B512Impl _value,
+      $Res Function(_$DigestType_Blake2B512Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_Blake2B512 implements DigestType_Blake2B512 {
-  const _$DigestType_Blake2B512();
+class _$DigestType_Blake2B512Impl implements DigestType_Blake2B512 {
+  const _$DigestType_Blake2B512Impl();
 
   @override
   String toString() {
@@ -865,7 +873,8 @@ class _$DigestType_Blake2B512 implements DigestType_Blake2B512 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_Blake2B512);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_Blake2B512Impl);
   }
 
   @override
@@ -977,29 +986,29 @@ class _$DigestType_Blake2B512 implements DigestType_Blake2B512 {
 }
 
 abstract class DigestType_Blake2B512 implements DigestType {
-  const factory DigestType_Blake2B512() = _$DigestType_Blake2B512;
+  const factory DigestType_Blake2B512() = _$DigestType_Blake2B512Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_SHA2_512CopyWith<$Res> {
-  factory _$$DigestType_SHA2_512CopyWith(_$DigestType_SHA2_512 value,
-          $Res Function(_$DigestType_SHA2_512) then) =
-      __$$DigestType_SHA2_512CopyWithImpl<$Res>;
+abstract class _$$DigestType_SHA2_512ImplCopyWith<$Res> {
+  factory _$$DigestType_SHA2_512ImplCopyWith(_$DigestType_SHA2_512Impl value,
+          $Res Function(_$DigestType_SHA2_512Impl) then) =
+      __$$DigestType_SHA2_512ImplCopyWithImpl<$Res>;
 }
 
 /// @nodoc
-class __$$DigestType_SHA2_512CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA2_512>
-    implements _$$DigestType_SHA2_512CopyWith<$Res> {
-  __$$DigestType_SHA2_512CopyWithImpl(
-      _$DigestType_SHA2_512 _value, $Res Function(_$DigestType_SHA2_512) _then)
+class __$$DigestType_SHA2_512ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_SHA2_512Impl>
+    implements _$$DigestType_SHA2_512ImplCopyWith<$Res> {
+  __$$DigestType_SHA2_512ImplCopyWithImpl(_$DigestType_SHA2_512Impl _value,
+      $Res Function(_$DigestType_SHA2_512Impl) _then)
       : super(_value, _then);
 }
 
 /// @nodoc
 
-class _$DigestType_SHA2_512 implements DigestType_SHA2_512 {
-  const _$DigestType_SHA2_512();
+class _$DigestType_SHA2_512Impl implements DigestType_SHA2_512 {
+  const _$DigestType_SHA2_512Impl();
 
   @override
   String toString() {
@@ -1009,7 +1018,8 @@ class _$DigestType_SHA2_512 implements DigestType_SHA2_512 {
   @override
   bool operator ==(dynamic other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _$DigestType_SHA2_512);
+        (other.runtimeType == runtimeType &&
+            other is _$DigestType_SHA2_512Impl);
   }
 
   @override
@@ -1121,24 +1131,25 @@ class _$DigestType_SHA2_512 implements DigestType_SHA2_512 {
 }
 
 abstract class DigestType_SHA2_512 implements DigestType {
-  const factory DigestType_SHA2_512() = _$DigestType_SHA2_512;
+  const factory DigestType_SHA2_512() = _$DigestType_SHA2_512Impl;
 }
 
 /// @nodoc
-abstract class _$$DigestType_Blake2B256CopyWith<$Res> {
-  factory _$$DigestType_Blake2B256CopyWith(_$DigestType_Blake2B256 value,
-          $Res Function(_$DigestType_Blake2B256) then) =
-      __$$DigestType_Blake2B256CopyWithImpl<$Res>;
+abstract class _$$DigestType_Blake2B256ImplCopyWith<$Res> {
+  factory _$$DigestType_Blake2B256ImplCopyWith(
+          _$DigestType_Blake2B256Impl value,
+          $Res Function(_$DigestType_Blake2B256Impl) then) =
+      __$$DigestType_Blake2B256ImplCopyWithImpl<$Res>;
   @useResult
   $Res call({Uint8List field0});
 }
 
 /// @nodoc
-class __$$DigestType_Blake2B256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2B256>
-    implements _$$DigestType_Blake2B256CopyWith<$Res> {
-  __$$DigestType_Blake2B256CopyWithImpl(_$DigestType_Blake2B256 _value,
-      $Res Function(_$DigestType_Blake2B256) _then)
+class __$$DigestType_Blake2B256ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2B256Impl>
+    implements _$$DigestType_Blake2B256ImplCopyWith<$Res> {
+  __$$DigestType_Blake2B256ImplCopyWithImpl(_$DigestType_Blake2B256Impl _value,
+      $Res Function(_$DigestType_Blake2B256Impl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1146,7 +1157,7 @@ class __$$DigestType_Blake2B256CopyWithImpl<$Res>
   $Res call({
     Object? field0 = null,
   }) {
-    return _then(_$DigestType_Blake2B256(
+    return _then(_$DigestType_Blake2B256Impl(
       null == field0
           ? _value.field0
           : field0 // ignore: cast_nullable_to_non_nullable
@@ -1157,8 +1168,8 @@ class __$$DigestType_Blake2B256CopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
-  const _$DigestType_Blake2B256(this.field0);
+class _$DigestType_Blake2B256Impl implements DigestType_Blake2B256 {
+  const _$DigestType_Blake2B256Impl(this.field0);
 
   @override
   final Uint8List field0;
@@ -1172,7 +1183,7 @@ class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$DigestType_Blake2B256 &&
+            other is _$DigestType_Blake2B256Impl &&
             const DeepCollectionEquality().equals(other.field0, field0));
   }
 
@@ -1183,9 +1194,9 @@ class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$DigestType_Blake2B256CopyWith<_$DigestType_Blake2B256> get copyWith =>
-      __$$DigestType_Blake2B256CopyWithImpl<_$DigestType_Blake2B256>(
-          this, _$identity);
+  _$$DigestType_Blake2B256ImplCopyWith<_$DigestType_Blake2B256Impl>
+      get copyWith => __$$DigestType_Blake2B256ImplCopyWithImpl<
+          _$DigestType_Blake2B256Impl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1294,29 +1305,30 @@ class _$DigestType_Blake2B256 implements DigestType_Blake2B256 {
 
 abstract class DigestType_Blake2B256 implements DigestType {
   const factory DigestType_Blake2B256(final Uint8List field0) =
-      _$DigestType_Blake2B256;
+      _$DigestType_Blake2B256Impl;
 
   Uint8List get field0;
   @JsonKey(ignore: true)
-  _$$DigestType_Blake2B256CopyWith<_$DigestType_Blake2B256> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$DigestType_Blake2B256ImplCopyWith<_$DigestType_Blake2B256Impl>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$DigestType_Blake2S256CopyWith<$Res> {
-  factory _$$DigestType_Blake2S256CopyWith(_$DigestType_Blake2S256 value,
-          $Res Function(_$DigestType_Blake2S256) then) =
-      __$$DigestType_Blake2S256CopyWithImpl<$Res>;
+abstract class _$$DigestType_Blake2S256ImplCopyWith<$Res> {
+  factory _$$DigestType_Blake2S256ImplCopyWith(
+          _$DigestType_Blake2S256Impl value,
+          $Res Function(_$DigestType_Blake2S256Impl) then) =
+      __$$DigestType_Blake2S256ImplCopyWithImpl<$Res>;
   @useResult
   $Res call({Uint8List field0});
 }
 
 /// @nodoc
-class __$$DigestType_Blake2S256CopyWithImpl<$Res>
-    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2S256>
-    implements _$$DigestType_Blake2S256CopyWith<$Res> {
-  __$$DigestType_Blake2S256CopyWithImpl(_$DigestType_Blake2S256 _value,
-      $Res Function(_$DigestType_Blake2S256) _then)
+class __$$DigestType_Blake2S256ImplCopyWithImpl<$Res>
+    extends _$DigestTypeCopyWithImpl<$Res, _$DigestType_Blake2S256Impl>
+    implements _$$DigestType_Blake2S256ImplCopyWith<$Res> {
+  __$$DigestType_Blake2S256ImplCopyWithImpl(_$DigestType_Blake2S256Impl _value,
+      $Res Function(_$DigestType_Blake2S256Impl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1324,7 +1336,7 @@ class __$$DigestType_Blake2S256CopyWithImpl<$Res>
   $Res call({
     Object? field0 = null,
   }) {
-    return _then(_$DigestType_Blake2S256(
+    return _then(_$DigestType_Blake2S256Impl(
       null == field0
           ? _value.field0
           : field0 // ignore: cast_nullable_to_non_nullable
@@ -1335,8 +1347,8 @@ class __$$DigestType_Blake2S256CopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
-  const _$DigestType_Blake2S256(this.field0);
+class _$DigestType_Blake2S256Impl implements DigestType_Blake2S256 {
+  const _$DigestType_Blake2S256Impl(this.field0);
 
   @override
   final Uint8List field0;
@@ -1350,7 +1362,7 @@ class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$DigestType_Blake2S256 &&
+            other is _$DigestType_Blake2S256Impl &&
             const DeepCollectionEquality().equals(other.field0, field0));
   }
 
@@ -1361,9 +1373,9 @@ class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$DigestType_Blake2S256CopyWith<_$DigestType_Blake2S256> get copyWith =>
-      __$$DigestType_Blake2S256CopyWithImpl<_$DigestType_Blake2S256>(
-          this, _$identity);
+  _$$DigestType_Blake2S256ImplCopyWith<_$DigestType_Blake2S256Impl>
+      get copyWith => __$$DigestType_Blake2S256ImplCopyWithImpl<
+          _$DigestType_Blake2S256Impl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1472,10 +1484,10 @@ class _$DigestType_Blake2S256 implements DigestType_Blake2S256 {
 
 abstract class DigestType_Blake2S256 implements DigestType {
   const factory DigestType_Blake2S256(final Uint8List field0) =
-      _$DigestType_Blake2S256;
+      _$DigestType_Blake2S256Impl;
 
   Uint8List get field0;
   @JsonKey(ignore: true)
-  _$$DigestType_Blake2S256CopyWith<_$DigestType_Blake2S256> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$DigestType_Blake2S256ImplCopyWith<_$DigestType_Blake2S256Impl>
+      get copyWith => throw _privateConstructorUsedError;
 }

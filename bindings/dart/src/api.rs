@@ -728,7 +728,7 @@ pub struct IssuanceData {
 }
 
 // Issue credential, returns ixn that anchor tel event. Need to be signed and sent do `finalize_event`.
-pub fn issue_credential(identifier: Identifier, credential: String) -> Result<IssuanceData> {
+pub fn issue_credential(identifier: Identifier, credential_said: String) -> Result<IssuanceData> {
     let state = KEL.lock().map_err(|_e| Error::DatabaseLockingError)?;
     let registry_id = state
         .as_ref()
@@ -743,8 +743,10 @@ pub fn issue_credential(identifier: Identifier, credential: String) -> Result<Is
             .controller(),
         registry_id,
     );
-
-    let (id, ixn) = identifier_controller.issue(&credential)?;
+    let said: SelfAddressingIdentifier = credential_said
+        .parse()
+        .map_err(|_e| Error::SaiParseError("Can't parse digest".to_string()))?;
+    let (id, ixn) = identifier_controller.issue(said)?;
     let ixn = String::from_utf8(ixn).unwrap();
 
     Ok(IssuanceData {
