@@ -21,4 +21,4 @@ With such a client one is able to:
 
 # Development overview
 
-Provides [KERIOX](https://github.com/WebOfTrust/keriox) based bindings for various other languages either through FFI layer or other available approaches (ie. WASM).
+Provides [KERIOX](https://github.com/THCLab/keriox) based bindings for various other languages either through FFI layer or other available approaches (ie. WASM).
