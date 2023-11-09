@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "bindings/dart",
+]
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true

@@ -86,7 +86,8 @@ fn test_tel() -> Result<()> {
     // Issue
     let message = format!("{} said hello", &signing_identifier.id);
     let message_sai = HashFunction::from(HashFunctionCode::Blake3_256).derive(message.as_bytes());
-    let IssuanceData { vc_id, ixn } = issue_credential(signing_identifier.clone(), message_sai.to_string())?;
+    let IssuanceData { vc_id, ixn } =
+        issue_credential(signing_identifier.clone(), message_sai.to_string())?;
 
     // Ixn not eut accepted so vc is not issued yet.
     let state = get_credential_state(signing_identifier.clone(), vc_id.clone())?;

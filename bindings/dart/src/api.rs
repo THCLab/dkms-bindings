@@ -563,7 +563,7 @@ pub fn finalize_query(
     let query =
         parse_event_type(query_event.as_bytes()).map_err(|_e| ControllerError::EventFormatError)?;
 
-    let mut identifier_controller = IdentifierController::new(identifier.into(), controller, None);
+    let identifier_controller = IdentifierController::new(identifier.into(), controller, None);
 
     match query {
         EventType::Qry(ref qry) => {
