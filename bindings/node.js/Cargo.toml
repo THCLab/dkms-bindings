@@ -16,9 +16,9 @@ simple_config_parser = "0.1.5"
 clap = "3.0.0-beta.4"
 tempfile = "3.1"
 serde_json = "1.0.81"
-keri-controller = "0.4.1"
 said = "0.4.1"
-keri-core = "0.12.6"
+keri-core = { version = "0.11.1", features = ["oobi", "mailbox"]}
+keri-controller = { version = "0.4.1" }
 cesrox = "0.1.4"
 
 [target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]

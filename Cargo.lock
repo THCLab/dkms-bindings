@@ -1336,7 +1336,7 @@ dependencies = [
  "cesrox 0.1.4",
  "futures",
  "itertools",
- "keri-core 0.11.1",
+ "keri-core",
  "serde_json",
  "teliox 0.4.1",
  "thiserror",
@@ -1381,38 +1381,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "keri-core"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7679a009306b78b1ac59e302c2855050e652d296c6d23dfaaa5cd5e0785e822f"
-dependencies = [
- "arrayref",
- "base64 0.13.1",
- "blake2",
- "blake3",
- "bytes",
- "cesrox 0.1.4",
- "chrono",
- "ed25519-dalek",
- "fraction",
- "http",
- "k256",
- "rand",
- "ryu",
- "said 0.4.1",
- "serde",
- "serde-hex",
- "serde_cbor",
- "serde_derive",
- "serde_json",
- "sha2",
- "sha3",
- "sled",
- "thiserror",
- "zeroize",
-]
-
-[[package]]
 name = "keri-dart"
 version = "0.1.0"
 dependencies = [
@@ -1444,7 +1412,7 @@ dependencies = [
  "clap",
  "ed25519-compact",
  "keri-controller",
- "keri-core 0.12.6",
+ "keri-core",
  "mimalloc",
  "napi",
  "napi-build",
@@ -2614,7 +2582,7 @@ dependencies = [
  "base64 0.13.1",
  "cesrox 0.1.4",
  "chrono",
- "keri-core 0.11.1",
+ "keri-core",
  "reqwest",
  "said 0.4.1",
  "serde",

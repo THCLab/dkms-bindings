@@ -1,8 +1,8 @@
+use cesrox::primitives::codes::basic::Basic;
+use keri_controller::CesrPrimitive;
 use keri_core::{keys::PublicKey, prefix::BasicPrefix};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
-use cesrox::primitives::codes::basic::Basic;
-use keri_controller::CesrPrimitive;
 
 use crate::KeyType;
 

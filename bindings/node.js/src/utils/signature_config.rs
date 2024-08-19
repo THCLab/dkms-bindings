@@ -1,8 +1,8 @@
+use cesrox::primitives::codes::self_signing::SelfSigning;
+use keri_controller::CesrPrimitive;
 use keri_controller::SelfSigningPrefix;
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
-use cesrox::primitives::codes::self_signing::SelfSigning;
-use keri_controller::CesrPrimitive;
 
 use crate::SignatureType;
 

@@ -44,18 +44,16 @@ export class SignatureBuilder {
   constructor(algorithm: SignatureType, signature: Buffer)
   getSignature(): Signature
 }
+export class JsIdentifier {
+  getKel(): Promise<string>
+  getId(): Promise<string>
+  notifyWitness(): Promise<void>
+  queryMailbox(): Promise<Array<Buffer>>
+  finalizeQueryMailbox(qries: Array<Buffer>, signatures: Array<Signature>): Promise<void>
+}
 export type JsController = Controller
 export class Controller {
   constructor(config?: Configs | undefined | null)
   incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Promise<Buffer>
-  finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): IdController
-}
-export class IdController { }
-export class JsRepo {
-  constructor(dir: string)
-  remote(): JsRemote
-}
-export class JsRemote {
-  constructor(repo: JsRepo)
-  name(): string
+  finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): JsIdentifier
 }

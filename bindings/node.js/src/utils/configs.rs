@@ -1,7 +1,7 @@
-use std::{default, path::PathBuf};
+use std::path::PathBuf;
 
-use napi_derive::napi;
 use keri_controller::{config::ControllerConfig, LocationScheme};
+use napi_derive::napi;
 
 #[napi(constructor)]
 pub struct ConfigBuilder {
@@ -57,11 +57,7 @@ impl Configs {
         } else {
             vec![]
         };
-        let db_path = if let Some(db_path) = &self.db_path {
-            Some(PathBuf::from(db_path))
-        } else {
-            None
-        };
+        let db_path = self.db_path.as_ref().map(PathBuf::from);
         let c = ControllerConfig::default();
         Ok(ControllerConfig {
             initial_oobis: oobis,

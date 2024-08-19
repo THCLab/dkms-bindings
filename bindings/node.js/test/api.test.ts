@@ -36,12 +36,22 @@ describe("Managing controller", () => {
     let sigType = SignatureType.Ed25519Sha512;
     let signaturePrefix = new SignatureBuilder(sigType, Buffer.from(signature));
 
-    let inceptedController = controller.finalizeInception(
+    let inceptedIdentifier = await controller.finalizeInception(
       inceptionEvent,
       [signaturePrefix.getSignature()]
     );
 
-    // console.log(inceptedController.getKel())
+    await inceptedIdentifier.notifyWitness();
+
+    let qry = (await inceptedIdentifier.queryMailbox())[0];
+    console.log(qry.toString())
+    let qry_signature = currentKeyManager.sign(qry);
+
+    let qrySignaturePrefix = new SignatureBuilder(sigType, Buffer.from(qry_signature));
+
+    await inceptedIdentifier.finalizeQueryMailbox([qry], [qrySignaturePrefix.getSignature()]);
+
+    console.log(await inceptedIdentifier.getKel())
 
     // let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"], 0);
     // console.log(rotationEvent.toString())
