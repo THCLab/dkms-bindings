@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::{default, path::PathBuf};
 
-use keri::controller::utils::OptionalConfig;
 use napi_derive::napi;
+use keri_controller::{config::ControllerConfig, LocationScheme};
 
-#[napi]
+#[napi(constructor)]
 pub struct ConfigBuilder {
     pub db_path: Option<String>,
     pub initial_oobis: Option<String>,
@@ -11,7 +11,7 @@ pub struct ConfigBuilder {
 
 #[napi]
 impl ConfigBuilder {
-    #[napi(constructor)]
+    // #[napi(constructor)]
     pub fn new() -> Self {
         ConfigBuilder {
             db_path: None,
@@ -51,20 +51,22 @@ pub struct Configs {
 }
 
 impl Configs {
-    pub fn build(&self) -> napi::Result<OptionalConfig> {
+    pub fn build(&self) -> napi::Result<ControllerConfig> {
         let oobis = if let Some(oobis) = &self.initial_oobis {
-            serde_json::from_str(oobis)?
+            vec![serde_json::from_str::<LocationScheme>(oobis).ok().unwrap()]
         } else {
-            None
+            vec![]
         };
         let db_path = if let Some(db_path) = &self.db_path {
             Some(PathBuf::from(db_path))
         } else {
             None
         };
-        Ok(OptionalConfig {
+        let c = ControllerConfig::default();
+        Ok(ControllerConfig {
             initial_oobis: oobis,
-            db_path,
+            db_path: db_path.unwrap(),
+            ..c
         })
     }
 }

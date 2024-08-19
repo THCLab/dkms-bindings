@@ -25,15 +25,15 @@ export const enum SignatureType {
   ECDSAsecp256k1Sha256 = 1,
   Ed448 = 2
 }
-export function incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Buffer
 export class ConfigBuilder {
   dbPath?: string
   initialOobis?: string
-  constructor()
+  constructor(dbPath?: string, initialOobis?: string)
   withInitialOobis(oobisJson: string): ConfigBuilder
   withDbPath(dbPath: string): ConfigBuilder
   build(): Configs
 }
+export type JsPublicKey = PublicKey
 export class PublicKey {
   prefix: string
   constructor(algorithm: KeyType, key: Buffer)
@@ -44,17 +44,18 @@ export class SignatureBuilder {
   constructor(algorithm: SignatureType, signature: Buffer)
   getSignature(): Signature
 }
+export type JsController = Controller
 export class Controller {
   constructor(config?: Configs | undefined | null)
-  incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Buffer
+  incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Promise<Buffer>
   finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): IdController
-  getByIdentifier(id: string): IdController
 }
-export class IdController {
-  getKel(): string
-  getId(): string
-  rotate(pks: Array<Key>, npks: Array<Key>, witnessesToAdd: Array<string>, witnessesToRemove: Array<string>, witnessThreshold: number): Buffer
-  anchor(anchoredData: Array<string>): Buffer
-  finalizeEvent(event: Buffer, signatures: Array<Signature>): void
-  signData(signature: Signature): string
+export class IdController { }
+export class JsRepo {
+  constructor(dir: string)
+  remote(): JsRemote
+}
+export class JsRemote {
+  constructor(repo: JsRepo)
+  name(): string
 }
