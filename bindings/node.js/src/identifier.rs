@@ -1,10 +1,11 @@
 use std::{iter::zip, str::FromStr, sync::Arc};
 
-use crate::Signature;
+use crate::{utils::tel_utils::{IssuanceData, RegistryInceptionData}, Signature};
 use keri_controller::{identifier::Identifier, SelfSigningPrefix};
-use keri_core::actor::prelude::Message;
+use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal};
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
+use said::{derivation::{HashFunction, HashFunctionCode}, SelfAddressingIdentifier};
 
 #[napi]
 pub struct JsIdentifier {
@@ -79,7 +80,7 @@ impl JsIdentifier {
     }
 
     // #[napi]
-    // pub fn rotate(
+    // pub async fn rotate(
     //     &self,
     //     pks: Vec<Key>,
     //     npks: Vec<Key>,
@@ -101,8 +102,8 @@ impl JsIdentifier {
     //         .map(|wit| wit.parse::<BasicPrefix>())
     //         .collect::<Result<Vec<_>, _>>()
     //         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    //     Ok(self
-    //         .controller
+    //     let id = self.inner.lock().await;
+    //     Ok(id
     //         .rotate(
     //             curr_keys,
     //             next_keys,
@@ -111,6 +112,7 @@ impl JsIdentifier {
     //             witnesses_to_remove,
     //             witness_threshold as u64,
     //         )
+    //         .await
     //         .unwrap()
     //         .as_bytes()
     //         .into())
@@ -136,18 +138,81 @@ impl JsIdentifier {
     //         .map_err(|e| napi::Error::from_reason(e.to_string()))
     // }
 
-    // #[napi]
-    // pub fn sign_data(&self, signature: Signature) -> napi::Result<String> {
-    //     let attached_signature = AttachedSignaturePrefix {
-    //         index: 0,
-    //         signature: signature.to_prefix(),
-    //     };
+    #[napi]
+    pub async fn incept_registry(&self) -> napi::Result<RegistryInceptionData> {
 
-    //     let event_seal = self
-    //         .controller
-    //         .get_last_establishment_event_seal()
-    //         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    //     let att = Attachment::SealSignaturesGroups(vec![(event_seal, vec![attached_signature])]);
-    //     Ok(att.to_cesr())
-    // }
+        let mut id  = self.inner.lock().await;
+        let (registry_id, vcp) = id.incept_registry().unwrap();
+
+        Ok(RegistryInceptionData { ixn: vcp.into(), registry_id: registry_id.to_string()})
+    }
+
+    #[napi]
+    pub async fn finalize_incept_registry(&self, event: Buffer, signature: Signature) -> napi::Result<()> {
+
+        let mut id  = self.inner.lock().await;
+        id.finalize_incept_registry(&event, signature.to_prefix()).await.unwrap();
+        
+        Ok(())
+    }
+
+    #[napi]
+    pub async fn issue(&self, vc: Buffer) -> napi::Result<IssuanceData> {
+        let said = HashFunction::from(HashFunctionCode::Blake3_256).derive(&vc);
+        let id  = self.inner.lock().await;
+        let (vc_hash, iss) = id.issue(said).unwrap();
+        
+        Ok(IssuanceData { ixn: iss.into(), vc_hash: vc_hash.to_string() })
+    }
+
+    #[napi]
+    pub async fn finalize_issue(&self, event: Buffer, signature: Signature) -> napi::Result<()> {
+
+        let mut id  = self.inner.lock().await;
+        id.finalize_issue(&event, signature.to_prefix()).await.unwrap();
+        
+        Ok(())
+    }
+
+    #[napi]
+    pub async fn notify_backers(&self) -> napi::Result<()> {
+
+        let id  = self.inner.lock().await;
+        id.notify_backers().await.unwrap();
+        
+        Ok(())
+    }
+
+    #[napi]
+    pub async fn add_watcher(&self, watcher_id: String) -> napi::Result<String> {
+        let watcher_id = watcher_id.parse().unwrap();
+        let id  = self.inner.lock().await;
+        
+        Ok(id.add_watcher(watcher_id).unwrap())
+    }
+
+    #[napi]
+    pub async fn finalize_add_watcher(&self, event: Buffer, signature: Signature) -> napi::Result<()> {
+        let id  = self.inner.lock().await;
+        id.finalize_add_watcher(&event, signature.to_prefix()).await.unwrap();
+        
+        Ok(())
+    }
+
+    #[napi]
+    pub async fn query_kel(&self, about_id: String, sn: u32, digest: String) -> napi::Result<Vec<Buffer>> {
+        let id  = self.inner.lock().await;
+        let about_id = about_id.parse().unwrap();
+        let seal = EventSeal { prefix: about_id, sn: sn.into(), event_digest: digest.parse().unwrap() };
+        Ok(id.query_watchers(&seal).unwrap().into_iter().map(|qry| Buffer::from(qry.encode().unwrap())).collect())
+    }
+
+    #[napi]
+    pub async fn vc_state(&self, digest: String) -> napi::Result<String> {
+        let id  = self.inner.lock().await;
+        let vc_hash: SelfAddressingIdentifier = digest.parse().unwrap();
+        let out = id.find_vc_state(&vc_hash).unwrap();
+
+        Ok(format!("{:?}", out))
+    }
 }

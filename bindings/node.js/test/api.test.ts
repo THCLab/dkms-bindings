@@ -1,6 +1,20 @@
 import KeyPair from "./support/key_pair";
-// import { ConfigBuilder, Controller, KeyType, PublicKey, SignatureBuilder, SignatureType } from "index";
 import { Controller, KeyType, SignatureType, ConfigBuilder, PublicKey, SignatureBuilder} from "index";
+
+/**
+ * Helper function for sending new events to witnesses and collecting their receipts
+*/  
+async function publish(identifier, sigType, currentKeyManager) {
+  await identifier.notifyWitness();
+
+    let qry = (await identifier.queryMailbox())[0];
+    console.log(qry.toString())
+    let qry_signature = currentKeyManager.sign(qry);
+
+    let qrySignaturePrefix = new SignatureBuilder(sigType, Buffer.from(qry_signature));
+
+    await identifier.finalizeQueryMailbox([qry], [qrySignaturePrefix.getSignature()]);
+}
 
 describe("Managing controller", () => {
   it("", async () => {
@@ -12,8 +26,6 @@ describe("Managing controller", () => {
     console.log(config)
     console.log(typeof(config))
     let controller = new Controller(config);
-    // console.log(controller);
-    // controller.init(config)
 
     let keyType = KeyType.Ed25519;
     let pk = new PublicKey(keyType, Buffer.from(currentKeyManager.pubKey));
@@ -41,17 +53,30 @@ describe("Managing controller", () => {
       [signaturePrefix.getSignature()]
     );
 
-    await inceptedIdentifier.notifyWitness();
+    await publish(inceptedIdentifier, sigType, currentKeyManager)
 
-    let qry = (await inceptedIdentifier.queryMailbox())[0];
-    console.log(qry.toString())
-    let qry_signature = currentKeyManager.sign(qry);
+    let data = Buffer.from('{"hello":"world"}');
+  
+    let ixn = (await inceptedIdentifier.inceptRegistry()).ixn;
+    let ixnSignature = currentKeyManager.sign(ixn);
+    let ixnSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(ixnSignature));
+    inceptedIdentifier.finalizeInceptRegistry(ixn, ixnSignaturePrefix.getSignature())
+    
+    await publish(inceptedIdentifier, sigType, currentKeyManager)
 
-    let qrySignaturePrefix = new SignatureBuilder(sigType, Buffer.from(qry_signature));
+    let issueData = await inceptedIdentifier.issue(data);
+    let issueIxnSignature = currentKeyManager.sign(issueData.ixn);
+    let vcHash = issueData.vcHash;
+    let issueIxnSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(issueIxnSignature));
+    inceptedIdentifier.finalizeInceptRegistry(issueData.ixn, issueIxnSignaturePrefix.getSignature())
 
-    await inceptedIdentifier.finalizeQueryMailbox([qry], [qrySignaturePrefix.getSignature()]);
-
+    await publish(inceptedIdentifier, sigType, currentKeyManager)
     console.log(await inceptedIdentifier.getKel())
+
+    await inceptedIdentifier.notifyBackers()
+
+    let tel_state = await inceptedIdentifier.vcState(vcHash)
+    console.log(tel_state);
 
     // let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"], 0);
     // console.log(rotationEvent.toString())

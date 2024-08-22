@@ -44,12 +44,29 @@ export class SignatureBuilder {
   constructor(algorithm: SignatureType, signature: Buffer)
   getSignature(): Signature
 }
+export class RegistryInceptionData {
+  ixn: Buffer
+  registryId: string
+}
+export class IssuanceData {
+  ixn: Buffer
+  vcHash: string
+}
 export class JsIdentifier {
   getKel(): Promise<string>
   getId(): Promise<string>
   notifyWitness(): Promise<void>
   queryMailbox(): Promise<Array<Buffer>>
   finalizeQueryMailbox(qries: Array<Buffer>, signatures: Array<Signature>): Promise<void>
+  inceptRegistry(): Promise<RegistryInceptionData>
+  finalizeInceptRegistry(event: Buffer, signature: Signature): Promise<void>
+  issue(vc: Buffer): Promise<IssuanceData>
+  finalizeIssue(event: Buffer, signature: Signature): Promise<void>
+  notifyBackers(): Promise<void>
+  addWatcher(watcherId: string): Promise<string>
+  finalizeAddWatcher(event: Buffer, signature: Signature): Promise<void>
+  queryKel(aboutId: string, sn: number, digest: string): Promise<Array<Buffer>>
+  vcState(digest: string): Promise<string>
 }
 export type JsController = Controller
 export class Controller {

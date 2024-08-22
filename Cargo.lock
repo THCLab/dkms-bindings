@@ -1328,9 +1328,9 @@ dependencies = [
 
 [[package]]
 name = "keri-controller"
-version = "0.4.1"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a969be8c096bf1f3a2bd6f0fd05ffc4980b667650c9837d1b39ac258b46a7dfb"
+checksum = "2b84aaa73bc19fe73b1f643eedc8ef1f3e941e4d7c9d17199bb0bcad2dba2789"
 dependencies = [
  "async-std",
  "cesrox 0.1.4",
@@ -1338,16 +1338,16 @@ dependencies = [
  "itertools",
  "keri-core",
  "serde_json",
- "teliox 0.4.1",
+ "teliox 0.12.6",
  "thiserror",
  "url",
 ]
 
 [[package]]
 name = "keri-core"
-version = "0.11.1"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1a11b1bcebaa179e18493858e3f32fafe187661e13c9d0943d100dd652603f2"
+checksum = "7679a009306b78b1ac59e302c2855050e652d296c6d23dfaaa5cd5e0785e822f"
 dependencies = [
  "arrayref",
  "async-trait",
@@ -2573,9 +2573,9 @@ dependencies = [
 
 [[package]]
 name = "teliox"
-version = "0.4.1"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3934ded53a229d0d642bd446f7b79d6c77d11645c95ac5f3855feabedd99101"
+checksum = "255fefb7efee65a94937100cde3a3cd82a03d9b38edb0a6cce0ea0678afb2f40"
 dependencies = [
  "arrayref",
  "async-trait",
