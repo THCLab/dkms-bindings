@@ -54,6 +54,7 @@ export class IssuanceData {
 }
 export class JsIdentifier {
   getKel(): Promise<string>
+  findState(aboutId: string): Promise<string>
   getId(): Promise<string>
   notifyWitness(): Promise<void>
   queryMailbox(): Promise<Array<Buffer>>
@@ -63,10 +64,17 @@ export class JsIdentifier {
   issue(vc: Buffer): Promise<IssuanceData>
   finalizeIssue(event: Buffer, signature: Signature): Promise<void>
   notifyBackers(): Promise<void>
-  addWatcher(watcherId: string): Promise<string>
+  addWatcher(watcherOobi: string): Promise<Buffer>
   finalizeAddWatcher(event: Buffer, signature: Signature): Promise<void>
   queryKel(aboutId: string, sn: number, digest: string): Promise<Array<Buffer>>
+  finalizeQueryKel(qries: Array<Buffer>, signatures: Array<Signature>): Promise<boolean>
+  queryFullKel(aboutId: string): Promise<Array<Buffer>>
   vcState(digest: string): Promise<string>
+  sendOobiToWatcher(oobi: string): Promise<void>
+  queryTel(registryId: string, vcId: string): Promise<Buffer>
+  finalizeQueryTel(event: Buffer, signature: Signature): Promise<void>
+  oobi(): Promise<Array<string>>
+  registryIdOobi(): Promise<Array<string>>
 }
 export type JsController = Controller
 export class Controller {

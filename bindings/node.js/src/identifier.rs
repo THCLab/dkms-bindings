@@ -1,7 +1,7 @@
 use std::{iter::zip, str::FromStr, sync::Arc};
 
 use crate::{utils::tel_utils::{IssuanceData, RegistryInceptionData}, Signature};
-use keri_controller::{identifier::Identifier, SelfSigningPrefix};
+use keri_controller::{identifier::{self, Identifier}, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi, SelfSigningPrefix};
 use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal};
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
@@ -30,6 +30,14 @@ impl JsIdentifier {
             .map(|event| String::from_utf8(Message::Notice(event).to_cesr().unwrap()).unwrap())
             .fold(String::new(), |a, b| a + &b + "\n");
         Ok(kel_str)
+    }
+
+    #[napi]
+    pub async fn find_state(&self, about_id: String) -> napi::Result<String> {
+        let inner = self.inner.lock().await;
+        let about_who: IdentifierPrefix = about_id.parse().unwrap();
+        let state = inner.find_state(&about_who).unwrap();
+        Ok(format!("{:?}", state))
     }
 
     #[napi]
@@ -184,11 +192,14 @@ impl JsIdentifier {
     }
 
     #[napi]
-    pub async fn add_watcher(&self, watcher_id: String) -> napi::Result<String> {
-        let watcher_id = watcher_id.parse().unwrap();
+    pub async fn add_watcher(&self, watcher_oobi: String) -> napi::Result<Buffer> {
+        let oobi: LocationScheme = serde_json::from_str(&watcher_oobi).unwrap();
+
+        let watcher_id = oobi.eid.clone();
         let id  = self.inner.lock().await;
         
-        Ok(id.add_watcher(watcher_id).unwrap())
+        id.resolve_oobi(&Oobi::Location(oobi)).await.unwrap();
+        Ok(id.add_watcher(watcher_id).unwrap().as_bytes().into())
     }
 
     #[napi]
@@ -208,6 +219,43 @@ impl JsIdentifier {
     }
 
     #[napi]
+    pub async fn finalize_query_kel(
+        &self,
+        qries: Vec<Buffer>,
+        signatures: Vec<Signature>,
+    ) -> napi::Result<bool> {
+        let inner = self.inner.lock().await;
+        let qries_and_sigs = zip(qries, signatures).map(|(qry, sig)| {
+            (
+                serde_json::from_slice(&qry).unwrap(),
+                SelfSigningPrefix::from_str(&sig.p).unwrap(),
+            )
+        });
+        let (res, err) = inner
+            .finalize_query(qries_and_sigs.collect())
+            .await;
+        dbg!(err);
+
+        Ok(match res {
+            keri_controller::identifier::query::QueryResponse::Updates => true,
+            keri_controller::identifier::query::QueryResponse::NoUpdates => false,
+        })
+    }
+
+    #[napi]
+    pub async fn query_full_kel(&self, about_id: String) -> napi::Result<Vec<Buffer>> {
+        let id  = self.inner.lock().await;
+        let about_id = &about_id.parse().unwrap();
+        let watchers = id.watchers().unwrap();
+        let mut qries = vec![];
+        for watcher in watchers {
+            let qry = id.query_full_log(about_id,watcher).unwrap().encode().unwrap();
+            qries.push(Buffer::from(qry));
+        }
+        Ok(qries)
+    }
+
+    #[napi]
     pub async fn vc_state(&self, digest: String) -> napi::Result<String> {
         let id  = self.inner.lock().await;
         let vc_hash: SelfAddressingIdentifier = digest.parse().unwrap();
@@ -215,4 +263,75 @@ impl JsIdentifier {
 
         Ok(format!("{:?}", out))
     }
+
+    #[napi]
+    pub async fn send_oobi_to_watcher(&self, oobi: String) -> napi::Result<()> {
+        let id  = self.inner.lock().await;
+        let oobi: Oobi = serde_json::from_str(&oobi).unwrap();
+        id.send_oobi_to_watcher(id.id(), &oobi).await.unwrap();
+        
+        Ok(())
+    }
+
+    #[napi]
+    pub async fn query_tel(&self, registry_id: String, vc_id: String) -> napi::Result<Buffer> {
+        let id  = self.inner.lock().await;
+        let reg_id = registry_id.parse().unwrap();
+        let vc_id= vc_id.parse().unwrap();
+        let qry = id.query_tel(reg_id, vc_id).unwrap();
+        
+        Ok(qry.encode().unwrap().into())
+    }
+
+
+    #[napi]
+    pub async fn finalize_query_tel(&self, event: Buffer, signature: Signature) -> napi::Result<()> {
+        let id  = self.inner.lock().await;
+        let qry: teliox::query::TelQueryEvent = serde_json::from_slice(&event).unwrap();
+        id.finalize_query_tel(qry, signature.to_prefix()).await.unwrap();
+        
+        Ok(())
+    }
+
+    #[napi]
+    pub async fn oobi(&self) -> napi::Result<Vec<String>> {
+        let locked_id = self.inner.lock().await;
+        let filter_locations = |identifiers: &[BasicPrefix]| -> Vec<Oobi> {
+        identifiers
+            .into_iter()
+            .flat_map(|id| locked_id.get_location(&IdentifierPrefix::Basic(id.clone())).unwrap())
+            .map(Oobi::Location)
+            .collect()
+        };
+
+        let witnesses = locked_id.witnesses().collect::<Vec<_>>();
+        let locations = filter_locations(&witnesses);
+        let witnesses_oobi = witnesses.iter().map(|cid| {
+            Oobi::EndRole(EndRole {
+                eid: IdentifierPrefix::Basic(cid.clone()),
+                role: keri_core::oobi::Role::Witness,
+                cid: locked_id.id().clone(),
+            })
+        });
+        let oobis: Vec<String> = locations.into_iter().chain(witnesses_oobi).map(|oobi| serde_json::to_string(&oobi).unwrap()).collect();
+        Ok(oobis)
+    }
+
+    #[napi]
+    pub async fn registry_id_oobi(&self) -> napi::Result<Vec<String>> {
+        let locked_id = self.inner.lock().await;
+        let registry_id = locked_id.registry_id().unwrap().clone();
+        let oobis = locked_id.witnesses().map(|witness| {
+            Oobi::EndRole(EndRole {
+                cid: registry_id.clone(),
+                role: keri_core::oobi::Role::Witness,
+                eid: IdentifierPrefix::Basic(witness),
+            })
+        }).map(|oobi| serde_json::to_string(&oobi).unwrap()).collect();
+
+
+        Ok(oobis)
+    }
+
+
 }

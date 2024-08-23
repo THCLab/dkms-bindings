@@ -1,5 +1,7 @@
 import KeyPair from "./support/key_pair";
 import { Controller, KeyType, SignatureType, ConfigBuilder, PublicKey, SignatureBuilder} from "index";
+import * as path from 'path';
+import { tmpdir } from 'os';
 
 /**
  * Helper function for sending new events to witnesses and collecting their receipts
@@ -17,12 +19,14 @@ async function publish(identifier, sigType, currentKeyManager) {
 }
 
 describe("Managing controller", () => {
-  it("", async () => {
+  it("Issue VC", async () => {
     const currentKeyManager = new KeyPair();
     const nextKeyManager = new KeyPair();
     const nextNextKeyManager = new KeyPair();
+    const tmpFileName = path.join(tmpdir(), `tmpfile-${Date.now()}.txt`);
 
-    let config = new ConfigBuilder().withDbPath("./database").build();
+    let config = new ConfigBuilder().withDbPath(tmpFileName).build();
+
     console.log(config)
     console.log(typeof(config))
     let controller = new Controller(config);
@@ -30,10 +34,10 @@ describe("Managing controller", () => {
     let keyType = KeyType.Ed25519;
     let pk = new PublicKey(keyType, Buffer.from(currentKeyManager.pubKey));
     let pk2 = new PublicKey(keyType, Buffer.from(nextKeyManager.pubKey));
-    let pk3 = new PublicKey(keyType, Buffer.from(nextNextKeyManager.pubKey));
 
     console.log(pk.getKey())
-    let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    // let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
 
     let inceptionEvent = await controller.incept(
       [pk.getKey()],
@@ -55,9 +59,11 @@ describe("Managing controller", () => {
 
     await publish(inceptedIdentifier, sigType, currentKeyManager)
 
-    let data = Buffer.from('{"hello":"world"}');
+    let data = Buffer.from('{"hello":"world1"}');
   
-    let ixn = (await inceptedIdentifier.inceptRegistry()).ixn;
+    let registryData = await inceptedIdentifier.inceptRegistry();
+    let ixn = registryData.ixn;
+    let registry_id = registryData.registryId;
     let ixnSignature = currentKeyManager.sign(ixn);
     let ixnSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(ixnSignature));
     inceptedIdentifier.finalizeInceptRegistry(ixn, ixnSignaturePrefix.getSignature())
@@ -78,32 +84,88 @@ describe("Managing controller", () => {
     let tel_state = await inceptedIdentifier.vcState(vcHash)
     console.log(tel_state);
 
-    // let rotationEvent = inceptedController.rotate([pk2.getKey()], [pk3.getKey()], [], ["BSuhyBcPZEZLK-fcw5tzHn2N46wRCG_ZOoeKtWTOunRA"], 0);
-    // console.log(rotationEvent.toString())
+    // Setup identifier for verification
+    const currentVerifierKeyManager = new KeyPair();
+    const nextVerifierKeyManager = new KeyPair();
 
-    // let signature2 = nextKeyManager.sign(rotationEvent);
-    // let signaturePrefix2 = new SignatureBuilder(sigType, Buffer.from(signature2));
+    const verifierTmpFileName = path.join(tmpdir(), `verifier-tmpfile-${Date.now()}.txt`);
+    let verifierConfig = new ConfigBuilder().withDbPath(verifierTmpFileName).build();
+    console.log(config)
+    console.log(typeof(config))
+    let verifier = new Controller(verifierConfig);
 
-    // inceptedController.finalizeEvent(rotationEvent, [signaturePrefix2.getSignature()])
-    // console.log(inceptedController.getKel())
+    let verifier_pk = new PublicKey(keyType, Buffer.from(currentVerifierKeyManager.pubKey));
+    let verifier_pk2 = new PublicKey(keyType, Buffer.from(nextVerifierKeyManager.pubKey));
 
-    // let interactionEvent = inceptedController.anchor(["E3WFzw8WgDMFPpup9UJI3Wwu41h16NNJVzkKclj2_6Rc"]);
-    // let signature3 = nextKeyManager.sign(interactionEvent);
-    // let signaturePrefix3 = new SignatureBuilder(sigType, Buffer.from(signature3));
+    let verifierInceptionEvent = await verifier.incept(
+      [verifier_pk.getKey()],
+      [verifier_pk2.getKey()],
+      [witness_oobi],
+      1
+    );
 
-    // inceptedController.finalizeEvent(interactionEvent, [signaturePrefix3.getSignature()])
-    // console.log(inceptedController.getKel())
+    let verifierSignature = currentVerifierKeyManager.sign(verifierInceptionEvent);
 
-    // console.log(inceptedController.getId())
-    // // let id_cont = cont.getByIdentifier(controller)
-    // // console.log(cont)
-    // let stringData = `{"data":"important data"}`
-    // let dataToSign = Buffer.from(stringData)
-    // let dataSignature = nextKeyManager.sign(dataToSign);
-    // let dataSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(dataSignature));
-    // let attachedSignature = inceptedController.signData(dataSignaturePrefix.getSignature());
+    let verifierSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(verifierSignature));
 
-    // let signedACDC = stringData.concat(attachedSignature);
-    // console.log(signedACDC)
+    let verifierIdentifier = await verifier.finalizeInception(
+      verifierInceptionEvent,
+      [verifierSignaturePrefix.getSignature()]
+    );
+
+    await publish(verifierIdentifier, sigType, currentVerifierKeyManager)
+
+    // let watcherOobi = '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
+    let watcherOobi = ' {"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
+    let add_watcher_event = await verifierIdentifier.addWatcher(watcherOobi);
+
+    let addWatcherSignature = currentVerifierKeyManager.sign(Buffer.from(add_watcher_event));
+    let addWatcherSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(addWatcherSignature));
+
+    await verifierIdentifier.finalizeAddWatcher(add_watcher_event, addWatcherSignaturePrefix.getSignature());
+
+    // Query KEL
+    let oobis = await inceptedIdentifier.oobi();
+    console.log(oobis)
+    for (let item of oobis) {
+      console.log(item);
+      await verifierIdentifier.sendOobiToWatcher(item);
+    }
+
+    let kelQueries = await verifierIdentifier.queryFullKel(await inceptedIdentifier.getId());
+    for (let item of kelQueries) {
+      let kelQrySignature = currentVerifierKeyManager.sign(item);
+      let kelQrySigPrefix= new SignatureBuilder(sigType, Buffer.from(kelQrySignature));
+
+      let resp = await verifierIdentifier.finalizeQueryKel([item], [kelQrySigPrefix.getSignature()]);
+      while (!resp) {
+        console.log(resp)
+        resp = await verifierIdentifier.finalizeQueryKel([item], [kelQrySigPrefix.getSignature()]);
+        await sleep(5000);
+      }
+    }   
+
+    let st = await verifierIdentifier.findState(await inceptedIdentifier.getId());
+    console.log(st);
+
+    // Query TEL
+    let registry_oobi = await inceptedIdentifier.registryIdOobi();
+    for (let item of registry_oobi) {
+      await verifierIdentifier.sendOobiToWatcher(item)
+    }
+    
+    for (var element of [1,2,3]) {
+      await sleep(2000)
+      let telQry = await verifierIdentifier.queryTel(registry_id, vcHash);
+      let telQrySignature = currentVerifierKeyManager.sign(telQry);
+      let telQrySigPrefix= new SignatureBuilder(sigType, Buffer.from(telQrySignature));
+      await verifierIdentifier.finalizeQueryTel(telQry, telQrySigPrefix.getSignature());
+
+    }
+    let tst = await verifierIdentifier.vcState(vcHash);
+    console.log(tst)
+
   });
 });
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

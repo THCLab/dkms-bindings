@@ -20,6 +20,7 @@ said = "0.4.1"
 keri-core = { version = "0.12.6", features = ["oobi", "mailbox"]}
 keri-controller = { version = "0.12.6" }
 cesrox = "0.1.4"
+teliox = "0.12.6"
 
 [target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
 mimalloc = {version = "0.1"}

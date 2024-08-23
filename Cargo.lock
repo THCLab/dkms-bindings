@@ -1420,6 +1420,7 @@ dependencies = [
  "said 0.4.1",
  "serde_json",
  "simple_config_parser",
+ "teliox 0.12.6",
  "tempfile",
  "thiserror",
 ]
