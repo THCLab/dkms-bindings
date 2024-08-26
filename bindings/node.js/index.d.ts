@@ -58,7 +58,7 @@ export class JsIdentifier {
   getId(): Promise<string>
   notifyWitness(): Promise<void>
   queryMailbox(): Promise<Array<Buffer>>
-  finalizeQueryMailbox(qries: Array<Buffer>, signatures: Array<Signature>): Promise<void>
+  finalizeQueryMailbox(queries: Array<Buffer>, signatures: Array<Signature>): Promise<void>
   inceptRegistry(): Promise<RegistryInceptionData>
   finalizeInceptRegistry(event: Buffer, signature: Signature): Promise<void>
   issue(vc: Buffer): Promise<IssuanceData>
@@ -74,7 +74,7 @@ export class JsIdentifier {
   queryTel(registryId: string, vcId: string): Promise<Buffer>
   finalizeQueryTel(event: Buffer, signature: Signature): Promise<void>
   oobi(): Promise<Array<string>>
-  registryIdOobi(): Promise<Array<string>>
+  registryIdOobi(): Promise<Array<string> | null>
 }
 export type JsController = Controller
 export class Controller {

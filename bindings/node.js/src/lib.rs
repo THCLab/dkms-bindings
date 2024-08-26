@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
+use crate::error::Error;
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
+pub mod error;
 pub mod utils;
-use keri_controller::{controller::Controller, LocationScheme};
+use keri_controller::{controller::Controller, BasicPrefix, LocationScheme};
 use utils::{configs, key_config::Key, signature_config::Signature};
 mod identifier;
 use identifier::JsIdentifier;
@@ -34,13 +36,11 @@ pub struct JsController {
 #[napi]
 impl JsController {
     #[napi(constructor)]
-    pub fn new(config: Option<configs::Configs>) -> Self {
+    pub fn new(config: Option<configs::Configs>) -> napi::Result<Self> {
         let optional_configs = config.map(|c| c.build().unwrap()).unwrap();
 
-        let c = Controller::new(optional_configs)
-            .map_err(|e| napi::Error::from_reason(e.to_string()))
-            .unwrap();
-        JsController { inner: c }
+        let c = Controller::new(optional_configs).map_err(Error::ControllerError)?;
+        Ok(JsController { inner: c })
     }
 
     #[napi]
@@ -54,23 +54,26 @@ impl JsController {
     ) -> napi::Result<Buffer> {
         let curr_keys = pks
             .iter()
-            .map(|k| k.p.to_string().parse().unwrap())
-            .collect::<Vec<_>>(); //k.to_prefix()).collect::<Vec<_>>();
+            .map(|k| k.p.to_string().parse())
+            .collect::<Result<Vec<BasicPrefix>, _>>()
+            .map_err(|e| Error::KeyParsingError(e))?;
         let next_keys = npks
             .iter()
-            .map(|k| k.p.to_string().parse().unwrap())
-            .collect::<Vec<_>>(); //k.to_prefix()).collect::<Vec<_>>();
+            .map(|k| k.p.to_string().parse())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| Error::KeyParsingError(e))?;
         let witnesses = witnesses
             .iter()
-            .map(|wit| serde_json::from_str::<LocationScheme>(wit))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+            .map(|wit| {
+                serde_json::from_str::<LocationScheme>(wit)
+                    .map_err(|_| Error::OobiParsingError(wit.clone()))
+            })
+            .collect::<Result<Vec<_>, Error>>()?;
         let icp = self
             .inner
             .incept(curr_keys, next_keys, witnesses, witness_threshold as u64)
             .await
-            .map_err(|e| napi::Error::from_reason(e.to_string()))
-            .unwrap();
+            .map_err(Error::MechanicError)?;
         Ok(icp.as_bytes().into())
     }
 
@@ -84,7 +87,7 @@ impl JsController {
         let incepted_identifier = self
             .inner
             .finalize_incept(&icp_event, &ssp)
-            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+            .map_err(Error::ControllerError)?;
         Ok(JsIdentifier {
             inner: Arc::new(Mutex::new(incepted_identifier)),
         })

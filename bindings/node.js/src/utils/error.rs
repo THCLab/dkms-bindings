@@ -1,5 +1,5 @@
 use base64::DecodeError;
-use keri::error::Error as KeriError;
+use keri_controller::error::ControllerError;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 
@@ -9,7 +9,7 @@ pub enum Error {
     DynError(#[from] Box<dyn std::error::Error>),
 
     #[error(transparent)]
-    KeriError(#[from] KeriError),
+    KeriError(#[from] ControllerError),
 
     #[error("{0}")]
     Generic(String),

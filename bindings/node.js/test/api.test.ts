@@ -22,7 +22,6 @@ describe("Managing controller", () => {
   it("Issue VC", async () => {
     const currentKeyManager = new KeyPair();
     const nextKeyManager = new KeyPair();
-    const nextNextKeyManager = new KeyPair();
     const tmpFileName = path.join(tmpdir(), `tmpfile-${Date.now()}.txt`);
 
     let config = new ConfigBuilder().withDbPath(tmpFileName).build();
@@ -36,8 +35,8 @@ describe("Managing controller", () => {
     let pk2 = new PublicKey(keyType, Buffer.from(nextKeyManager.pubKey));
 
     console.log(pk.getKey())
-    // let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    // let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
 
     let inceptionEvent = await controller.incept(
       [pk.getKey()],
@@ -52,36 +51,37 @@ describe("Managing controller", () => {
     let sigType = SignatureType.Ed25519Sha512;
     let signaturePrefix = new SignatureBuilder(sigType, Buffer.from(signature));
 
-    let inceptedIdentifier = await controller.finalizeInception(
+    let signingIdentifier = await controller.finalizeInception(
       inceptionEvent,
       [signaturePrefix.getSignature()]
     );
 
-    await publish(inceptedIdentifier, sigType, currentKeyManager)
+    await publish(signingIdentifier, sigType, currentKeyManager)
 
-    let data = Buffer.from('{"hello":"world1"}');
   
-    let registryData = await inceptedIdentifier.inceptRegistry();
+    let registryData = await signingIdentifier.inceptRegistry();
     let ixn = registryData.ixn;
     let registry_id = registryData.registryId;
     let ixnSignature = currentKeyManager.sign(ixn);
     let ixnSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(ixnSignature));
-    inceptedIdentifier.finalizeInceptRegistry(ixn, ixnSignaturePrefix.getSignature())
+    signingIdentifier.finalizeInceptRegistry(ixn, ixnSignaturePrefix.getSignature())
+    await publish(signingIdentifier, sigType, currentKeyManager)
     
-    await publish(inceptedIdentifier, sigType, currentKeyManager)
+    let json = {"hello":"world1","ri":registry_id};
+    console.log(JSON.stringify(json));
 
-    let issueData = await inceptedIdentifier.issue(data);
+    let issueData = await signingIdentifier.issue(Buffer.from(JSON.stringify(json)));
     let issueIxnSignature = currentKeyManager.sign(issueData.ixn);
     let vcHash = issueData.vcHash;
     let issueIxnSignaturePrefix = new SignatureBuilder(sigType, Buffer.from(issueIxnSignature));
-    inceptedIdentifier.finalizeInceptRegistry(issueData.ixn, issueIxnSignaturePrefix.getSignature())
+    signingIdentifier.finalizeInceptRegistry(issueData.ixn, issueIxnSignaturePrefix.getSignature())
 
-    await publish(inceptedIdentifier, sigType, currentKeyManager)
-    console.log(await inceptedIdentifier.getKel())
+    await publish(signingIdentifier, sigType, currentKeyManager)
+    console.log(await signingIdentifier.getKel())
 
-    await inceptedIdentifier.notifyBackers()
+    await signingIdentifier.notifyBackers()
 
-    let tel_state = await inceptedIdentifier.vcState(vcHash)
+    let tel_state = await signingIdentifier.vcState(vcHash)
     console.log(tel_state);
 
     // Setup identifier for verification
@@ -90,8 +90,6 @@ describe("Managing controller", () => {
 
     const verifierTmpFileName = path.join(tmpdir(), `verifier-tmpfile-${Date.now()}.txt`);
     let verifierConfig = new ConfigBuilder().withDbPath(verifierTmpFileName).build();
-    console.log(config)
-    console.log(typeof(config))
     let verifier = new Controller(verifierConfig);
 
     let verifier_pk = new PublicKey(keyType, Buffer.from(currentVerifierKeyManager.pubKey));
@@ -115,8 +113,8 @@ describe("Managing controller", () => {
 
     await publish(verifierIdentifier, sigType, currentVerifierKeyManager)
 
-    // let watcherOobi = '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
-    let watcherOobi = ' {"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
+    let watcherOobi = '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
+    // let watcherOobi = ' {"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
     let add_watcher_event = await verifierIdentifier.addWatcher(watcherOobi);
 
     let addWatcherSignature = currentVerifierKeyManager.sign(Buffer.from(add_watcher_event));
@@ -125,14 +123,14 @@ describe("Managing controller", () => {
     await verifierIdentifier.finalizeAddWatcher(add_watcher_event, addWatcherSignaturePrefix.getSignature());
 
     // Query KEL
-    let oobis = await inceptedIdentifier.oobi();
+    let oobis = await signingIdentifier.oobi();
     console.log(oobis)
     for (let item of oobis) {
       console.log(item);
       await verifierIdentifier.sendOobiToWatcher(item);
     }
 
-    let kelQueries = await verifierIdentifier.queryFullKel(await inceptedIdentifier.getId());
+    let kelQueries = await verifierIdentifier.queryFullKel(await signingIdentifier.getId());
     for (let item of kelQueries) {
       let kelQrySignature = currentVerifierKeyManager.sign(item);
       let kelQrySigPrefix= new SignatureBuilder(sigType, Buffer.from(kelQrySignature));
@@ -145,11 +143,11 @@ describe("Managing controller", () => {
       }
     }   
 
-    let st = await verifierIdentifier.findState(await inceptedIdentifier.getId());
+    let st = await verifierIdentifier.findState(await signingIdentifier.getId());
     console.log(st);
 
     // Query TEL
-    let registry_oobi = await inceptedIdentifier.registryIdOobi();
+    let registry_oobi = await signingIdentifier.registryIdOobi();
     for (let item of registry_oobi) {
       await verifierIdentifier.sendOobiToWatcher(item)
     }
