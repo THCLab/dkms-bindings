@@ -76,9 +76,20 @@ export class JsIdentifier {
   oobi(): Promise<Array<string>>
   registryIdOobi(): Promise<Array<string> | null>
 }
+export class InceptionConfiguration {
+  currentPublicKeys: Array<string>
+  nextPublicKeys: Array<string>
+  witnessesLocation: Array<string>
+  witnessThreshold: number
+  constructor()
+  withCurrentKeys(keys: Array<PublicKey>): InceptionConfiguration
+  withNextKeys(keys: Array<PublicKey>): InceptionConfiguration
+  withWitness(locations: Array<string>): InceptionConfiguration
+  withWitnessThreshold(threshold: number): InceptionConfiguration
+}
 export type JsController = Controller
 export class Controller {
   constructor(config?: Configs | undefined | null)
-  incept(pks: Array<Key>, npks: Array<Key>, witnesses: Array<string>, witnessThreshold: number): Promise<Buffer>
-  finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): JsIdentifier
+  incept(config: InceptionConfiguration): Promise<Buffer>
+  finalizeInception(icpEvent: Buffer, signatures: Array<SignatureBuilder>): JsIdentifier
 }

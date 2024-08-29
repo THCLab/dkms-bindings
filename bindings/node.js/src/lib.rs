@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use crate::error::Error;
+use inception_configuration::InceptionConfiguration;
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
 pub mod error;
 pub mod utils;
 use keri_controller::{controller::Controller, BasicPrefix, LocationScheme};
-use utils::{configs, key_config::Key, signature_config::Signature};
+use utils::{configs, signature_config::{Signature, SignatureBuilder}};
 mod identifier;
+mod inception_configuration;
 use identifier::JsIdentifier;
 
 #[napi]
@@ -46,23 +48,19 @@ impl JsController {
     #[napi]
     pub async fn incept(
         &self,
-        pks: Vec<Key>,
-        npks: Vec<Key>,
-        // witnesses location schemes jsons
-        witnesses: Vec<String>,
-        witness_threshold: u32,
+        config: &InceptionConfiguration
     ) -> napi::Result<Buffer> {
-        let curr_keys = pks
+        let curr_keys = config.current_public_keys
             .iter()
-            .map(|k| k.p.to_string().parse())
+            .map(|k| k.parse())
             .collect::<Result<Vec<BasicPrefix>, _>>()
             .map_err(|e| Error::KeyParsingError(e))?;
-        let next_keys = npks
+        let next_keys = config.next_public_keys
             .iter()
-            .map(|k| k.p.to_string().parse())
+            .map(|k| k.parse())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| Error::KeyParsingError(e))?;
-        let witnesses = witnesses
+        let witnesses = config.witnesses_location
             .iter()
             .map(|wit| {
                 serde_json::from_str::<LocationScheme>(wit)
@@ -71,7 +69,7 @@ impl JsController {
             .collect::<Result<Vec<_>, Error>>()?;
         let icp = self
             .inner
-            .incept(curr_keys, next_keys, witnesses, witness_threshold as u64)
+            .incept(curr_keys, next_keys, witnesses, config.witness_threshold as u64)
             .await
             .map_err(Error::MechanicError)?;
         Ok(icp.as_bytes().into())
@@ -81,7 +79,7 @@ impl JsController {
     pub fn finalize_inception(
         &self,
         icp_event: Buffer,
-        signatures: Vec<Signature>,
+        signatures: Vec<&SignatureBuilder>,
     ) -> napi::Result<JsIdentifier> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>()[0].clone();
         let incepted_identifier = self

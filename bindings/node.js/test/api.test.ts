@@ -1,5 +1,5 @@
 import KeyPair from "./support/key_pair";
-import { Controller, KeyType, SignatureType, ConfigBuilder, PublicKey, SignatureBuilder} from "index";
+import { Controller, KeyType, SignatureType, ConfigBuilder, PublicKey, SignatureBuilder, InceptionConfiguration} from "index";
 import * as path from 'path';
 import { tmpdir } from 'os';
 
@@ -35,14 +35,16 @@ describe("Managing controller", () => {
     let pk2 = new PublicKey(keyType, Buffer.from(nextKeyManager.pubKey));
 
     console.log(pk.getKey())
-    let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    let witness_oobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
     // let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    let inceptionConfiguration = (new InceptionConfiguration)
+	  	.withCurrentKeys([pk])
+	  	.withNextKeys([pk2])
+      .withWitness([witness_oobi])
+      .withWitnessThreshold(1);
 
     let inceptionEvent = await controller.incept(
-      [pk.getKey()],
-      [pk2.getKey()],
-      [witness_oobi],
-      1
+      inceptionConfiguration
     );
     console.log(inceptionEvent.toString())
 
@@ -53,7 +55,7 @@ describe("Managing controller", () => {
 
     let signingIdentifier = await controller.finalizeInception(
       inceptionEvent,
-      [signaturePrefix.getSignature()]
+      [signaturePrefix]
     );
 
     await publish(signingIdentifier, sigType, currentKeyManager)
@@ -137,9 +139,9 @@ describe("Managing controller", () => {
 
       let resp = await verifierIdentifier.finalizeQueryKel([item], [kelQrySigPrefix.getSignature()]);
       while (!resp) {
-        console.log(resp)
+        await sleep(1000);
         resp = await verifierIdentifier.finalizeQueryKel([item], [kelQrySigPrefix.getSignature()]);
-        await sleep(5000);
+        console.log(resp)
       }
     }   
 
@@ -152,7 +154,7 @@ describe("Managing controller", () => {
       await verifierIdentifier.sendOobiToWatcher(item)
     }
     
-    for (var element of [1,2,3]) {
+    for (var element of [1,2,3, 4, 5]) {
       await sleep(2000)
       let telQry = await verifierIdentifier.queryTel(registry_id, vcHash);
       let telQrySignature = currentVerifierKeyManager.sign(telQry);

@@ -41,6 +41,10 @@ impl SignatureBuilder {
         }
     }
 
+    pub fn to_prefix(&self) -> keri_controller::SelfSigningPrefix {
+        self.prefix.parse().unwrap()
+    }
+
     #[napi]
     pub fn get_signature(&self) -> Signature {
         Signature {
