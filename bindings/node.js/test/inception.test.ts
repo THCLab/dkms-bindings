@@ -1,7 +1,7 @@
 import { tmpdir } from "os";
 import KeyPair from "./support/key_pair";
 import * as path from 'path';
-import { ConfigBuilder, Controller, PublicKey, KeyType, InceptionConfiguration, SignatureType, SignatureBuilder } from "index";
+import { ConfigBuilder, Controller, PublicKey, KeyType, InceptionConfiguration, SignatureType, Signature } from "index";
 
 /**
  * Helper function for sending new events to witnesses and collecting their receipts
@@ -13,9 +13,9 @@ async function publish(identifier, sigType, currentKeyManager) {
     console.log(qry.toString())
     let qry_signature = currentKeyManager.sign(qry);
 
-    let qrySignaturePrefix = new SignatureBuilder(sigType, Buffer.from(qry_signature));
+    let qrySignaturePrefix = new Signature(sigType, Buffer.from(qry_signature));
 
-    await identifier.finalizeQueryMailbox([qry], [qrySignaturePrefix.getSignature()]);
+    await identifier.finalizeQueryMailbox([qry], [qrySignaturePrefix]);
 }
 
 describe("Incepting", () => {
@@ -51,7 +51,7 @@ describe("Incepting", () => {
 	  let signature = currentKeyManager.sign(inceptionEvent);
   
 	  let sigType = SignatureType.Ed25519Sha512;
-	  let signaturePrefix = new SignatureBuilder(sigType, Buffer.from(signature));
+	  let signaturePrefix = new Signature(sigType, Buffer.from(signature));
   
 	  let signingIdentifier = await controller.finalizeInception(
 		inceptionEvent,

@@ -27,11 +27,11 @@ impl From<SelfSigning> for SignatureType {
 }
 
 #[napi]
-pub struct SignatureBuilder {
+pub struct Signature {
     pub prefix: String,
 }
 #[napi]
-impl SignatureBuilder {
+impl Signature {
     #[napi(constructor)]
     pub fn new(algorithm: SignatureType, signature: Buffer) -> Self {
         let d: SelfSigning = algorithm.into();
@@ -43,23 +43,5 @@ impl SignatureBuilder {
 
     pub fn to_prefix(&self) -> keri_controller::SelfSigningPrefix {
         self.prefix.parse().unwrap()
-    }
-
-    #[napi]
-    pub fn get_signature(&self) -> Signature {
-        Signature {
-            p: self.prefix.clone(),
-        }
-    }
-}
-
-#[napi(object)]
-pub struct Signature {
-    pub p: String,
-}
-
-impl Signature {
-    pub fn to_prefix(&self) -> keri_controller::SelfSigningPrefix {
-        self.p.parse().unwrap()
     }
 }

@@ -1,4 +1,4 @@
-use std::{iter::zip, str::FromStr, sync::Arc};
+use std::{iter::zip, sync::Arc};
 
 use crate::{
     error::Error,
@@ -7,7 +7,6 @@ use crate::{
 };
 use keri_controller::{
     identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi,
-    SelfSigningPrefix,
 };
 use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal};
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
@@ -93,15 +92,14 @@ impl JsIdentifier {
     pub async fn finalize_query_mailbox(
         &self,
         queries: Vec<Buffer>,
-        signatures: Vec<Signature>,
+        signatures: Vec<&Signature>,
     ) -> napi::Result<()> {
         let mut inner = self.inner.lock().await;
         let qries_and_sigs = zip(queries, signatures)
             .map(|(qry, sig)| {
                 Ok((
                     serde_json::from_slice(&qry).map_err(|_| Error::EventParsingError)?,
-                    SelfSigningPrefix::from_str(&sig.p)
-                        .map_err(|e| Error::SignatureParsingError(e))?,
+                        sig.to_prefix(),
                 ))
             })
             .collect::<Result<Vec<_>, Error>>()?;
@@ -187,7 +185,7 @@ impl JsIdentifier {
     pub async fn finalize_incept_registry(
         &self,
         event: Buffer,
-        signature: Signature,
+        signature: &Signature,
     ) -> napi::Result<()> {
         let mut id = self.inner.lock().await;
         id.finalize_incept_registry(&event, signature.to_prefix())
@@ -210,7 +208,7 @@ impl JsIdentifier {
     }
 
     #[napi]
-    pub async fn finalize_issue(&self, event: Buffer, signature: Signature) -> napi::Result<()> {
+    pub async fn finalize_issue(&self, event: Buffer, signature: &Signature) -> napi::Result<()> {
         let mut id = self.inner.lock().await;
         id.finalize_issue(&event, signature.to_prefix())
             .await
@@ -249,7 +247,7 @@ impl JsIdentifier {
     pub async fn finalize_add_watcher(
         &self,
         event: Buffer,
-        signature: Signature,
+        signature: &Signature,
     ) -> napi::Result<()> {
         let id = self.inner.lock().await;
         id.finalize_add_watcher(&event, signature.to_prefix())
@@ -289,19 +287,18 @@ impl JsIdentifier {
     pub async fn finalize_query_kel(
         &self,
         qries: Vec<Buffer>,
-        signatures: Vec<Signature>,
+        signatures: Vec<&Signature>,
     ) -> napi::Result<bool> {
         let inner = self.inner.lock().await;
         let qries_and_sigs = zip(qries, signatures)
             .map(|(qry, sig)| {
                 Ok((
                     serde_json::from_slice(&qry).map_err(|_| Error::EventParsingError)?,
-                    SelfSigningPrefix::from_str(&sig.p)
-                        .map_err(|e| Error::SignatureParsingError(e))?,
+                    sig.to_prefix()
                 ))
             })
             .collect::<Result<Vec<_>, Error>>()?;
-        let (res, err) = inner.finalize_query(qries_and_sigs).await;
+        let (res, _err) = inner.finalize_query(qries_and_sigs).await;
 
         Ok(match res {
             keri_controller::identifier::query::QueryResponse::Updates => true,
@@ -363,7 +360,7 @@ impl JsIdentifier {
     pub async fn finalize_query_tel(
         &self,
         event: Buffer,
-        signature: Signature,
+        signature: &Signature,
     ) -> napi::Result<()> {
         let id = self.inner.lock().await;
         let qry: teliox::query::TelQueryEvent =

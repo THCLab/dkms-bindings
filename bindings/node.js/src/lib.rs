@@ -7,7 +7,7 @@ use napi_derive::napi;
 pub mod error;
 pub mod utils;
 use keri_controller::{controller::Controller, BasicPrefix, LocationScheme};
-use utils::{configs, signature_config::{Signature, SignatureBuilder}};
+use utils::{configs, signature_config::Signature};
 mod identifier;
 mod inception_configuration;
 use identifier::JsIdentifier;
@@ -79,7 +79,7 @@ impl JsController {
     pub fn finalize_inception(
         &self,
         icp_event: Buffer,
-        signatures: Vec<&SignatureBuilder>,
+        signatures: Vec<&Signature>,
     ) -> napi::Result<JsIdentifier> {
         let ssp = signatures.iter().map(|p| p.to_prefix()).collect::<Vec<_>>()[0].clone();
         let incepted_identifier = self

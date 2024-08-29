@@ -48,7 +48,7 @@ impl InceptionConfiguration {
 
 	#[napi]
 	pub fn with_witness(&mut self, locations: Vec<String>) -> InceptionConfiguration {
-		let lc: Vec<LocationScheme> = locations.iter().map(|l| {
+		let _lc: Vec<LocationScheme> = locations.iter().map(|l| {
 			serde_json::from_str::<LocationScheme>(&l).unwrap()
 		}).collect();
 		InceptionConfiguration {

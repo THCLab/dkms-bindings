@@ -10,9 +10,6 @@ export interface Configs {
 export interface Key {
   p: string
 }
-export interface Signature {
-  p: string
-}
 export const enum KeyType {
   ECDSAsecp256k1 = 0,
   Ed25519 = 1,
@@ -39,10 +36,9 @@ export class PublicKey {
   constructor(algorithm: KeyType, key: Buffer)
   getKey(): Key
 }
-export class SignatureBuilder {
+export class Signature {
   prefix: string
   constructor(algorithm: SignatureType, signature: Buffer)
-  getSignature(): Signature
 }
 export class RegistryInceptionData {
   ixn: Buffer
@@ -91,5 +87,5 @@ export type JsController = Controller
 export class Controller {
   constructor(config?: Configs | undefined | null)
   incept(config: InceptionConfiguration): Promise<Buffer>
-  finalizeInception(icpEvent: Buffer, signatures: Array<SignatureBuilder>): JsIdentifier
+  finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): JsIdentifier
 }
