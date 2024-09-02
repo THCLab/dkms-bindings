@@ -6,7 +6,7 @@ use crate::{
     Signature,
 };
 use keri_controller::{
-    identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi,
+    identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi, TelState,
 };
 use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal};
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
@@ -324,12 +324,16 @@ impl JsIdentifier {
     }
 
     #[napi]
-    pub async fn vc_state(&self, digest: String) -> napi::Result<String> {
+    pub async fn vc_state(&self, digest: String) -> napi::Result<Option<VcState>> {
         let id = self.inner.lock().await;
         let vc_hash: SelfAddressingIdentifier = digest.parse().map_err(Error::HashParsingError)?;
         let out = id.find_vc_state(&vc_hash).map_err(Error::ControllerError)?;
 
-        Ok(format!("{:?}", out))
+        Ok(out.map(|st| match st {
+            TelState::Issued(_) => VcState::Issued,
+            TelState::Revoked => VcState::Revoked,
+            TelState::NotIssued => VcState::NotIssued,
+        }))
     }
 
     #[napi]
@@ -423,4 +427,19 @@ impl JsIdentifier {
         });
         registry_id
     }
+
+    #[napi]
+    pub async fn registry_id(&self) -> Option<String> {
+        let locked_id = self.inner.lock().await;
+
+        let registry_id = locked_id.registry_id().map(|id| id.to_string());
+        registry_id
+    }
+}
+    
+#[napi]
+pub enum VcState {
+    Issued,
+    Revoked,
+    NotIssued
 }
