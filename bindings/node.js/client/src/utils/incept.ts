@@ -1,10 +1,6 @@
 import { publish } from "./publish";
 import { mechanics } from "index";
 
-// controller: mechanics.JsIdentifier,
-//   inceptionConfiguration: mechanics.InceptionConfiguration,
-//   signingOperation: (payload: any) => any)
-
 export async function inception(
   controller: mechanics.Controller,
   inceptionConfiguration: mechanics.InceptionConfiguration,

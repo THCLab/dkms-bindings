@@ -1,17 +1,21 @@
 import { mechanics } from "index";
-import { inception, inceptRegistry } from "./utils/incept";
+import { addWatcher, inception, inceptRegistry } from "./utils/incept";
 import { issuance } from "./utils/issue";
 import { queryKel, queryTel } from "./utils/query";
 import { VcState } from "mechanics";
 
 export async function incept(controller: mechanics.Controller,
   inceptionConfiguration: mechanics.InceptionConfiguration,
+  watcherOobis: string[],
   signingOperation: (payload: any) => any) {
 	let identifier = await inception(controller, inceptionConfiguration, signingOperation);
 	await inceptRegistry(identifier, signingOperation);
+  for (let item of watcherOobis) {
+    await addWatcher(identifier, item, signingOperation);
+  }
+
 	return identifier
 }
-
 
 export async function issue(identifier: mechanics.JsIdentifier,
   acdc: string,

@@ -1,13 +1,12 @@
 import KeyPair from "./support/key_pair";
-import { inception, inceptRegistry, addWatcher } from "../client/src/utils/incept";
-import { issuance } from "../client/src/utils/issue";
+import { inceptRegistry, addWatcher } from "../client/src/utils/incept";
 import { queryKel, queryTel } from "../client/src/utils/query";
 import * as path from "path";
 import { tmpdir } from "os";
 
-import { mechanics } from "index";
+import { mechanics, issuing } from "../client/src/index";
 
-describe("Managing controller", () => {
+describe("Issuing", () => {
   it("Issue VC", async () => {
     const currentKeyManager = new KeyPair();
     const nextKeyManager = new KeyPair();
@@ -21,8 +20,8 @@ describe("Managing controller", () => {
     let pk = new mechanics.PublicKey(keyType, Buffer.from(currentKeyManager.pubKey));
     let pk2 = new mechanics.PublicKey(keyType, Buffer.from(nextKeyManager.pubKey));
 
-    // let witnessOobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    let witnessOobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    // let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
@@ -34,18 +33,20 @@ describe("Managing controller", () => {
       return new mechanics.Signature(mechanics.SignatureType.Ed25519Sha512, Buffer.from(signature));
     };
 
-    let signingIdentifier = await inception(
+    let signingIdentifier = await issuing.incept(
       controller,
       inceptionConfiguration,
+      [], // no watchers
       signing_op
     );
 
-    let registryId = await inceptRegistry(signingIdentifier, signing_op);
+    let registryId = await signingIdentifier.registryId()
+    console.log(registryId);
 
-    let json = JSON.stringify({ hello: "world1", ri: registryId });
-    console.log(json);
+    let json = { hello: "world1", ri: registryId };
+    console.log(JSON.stringify(json));
 
-    let vcHash = await issuance(signingIdentifier, json, signing_op);
+    let vcHash = await issuing.issue(signingIdentifier, JSON.stringify(json), signing_op);
 
     console.log(await signingIdentifier.getKel());
 
@@ -85,45 +86,24 @@ describe("Managing controller", () => {
       .withWitness([witnessOobi])
       .withWitnessThreshold(1);
 
-    let verifierIdentifier = await inception(
+     let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}'];
+    // let watcherOobis =
+    //   ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}'];
+    let verifierIdentifier = await issuing.incept(
       verifier,
       verifierInceptionConfiguration,
+      watcherOobis,
       verifier_signing_op
     );
-
-    let watcherOobi = '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
-    // let watcherOobi =
-    //   '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
-  await addWatcher(verifierIdentifier, watcherOobi, verifier_signing_op);
 
     // Query KEL
     let oobis = await signingIdentifier.oobi();
-    let signerId = await signingIdentifier.getId();
-
-    await queryKel(
-      verifierIdentifier,
-      signerId,
-      oobis,
-      verifier_signing_op
-    );
-
-    let st = await verifierIdentifier.findState(
-      await signingIdentifier.getId()
-    );
-    console.log(st);
-
-    // Query TEL
     let registryOobi = await signingIdentifier.registryIdOobi();
+    console.log(registryOobi[0])
+    console.log(oobis[0])
 
-    await queryTel(
-      verifierIdentifier,
-      vcHash,
-      registryId,
-      registryOobi,
-      verifier_signing_op
-    );
+    let res = await issuing.verify(verifierIdentifier, vcHash, await signingIdentifier.getId(), oobis, await signingIdentifier.registryId(), registryOobi, verifier_signing_op);
+    console.log(res)
 
-    let tst = await verifierIdentifier.vcState(vcHash);
-    console.log(tst);
   });
 });
