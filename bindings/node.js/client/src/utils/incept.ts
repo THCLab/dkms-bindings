@@ -18,7 +18,10 @@ export async function inception(
   return signingIdentifier;
 }
 
-export async function inceptRegistry(identifier: mechanics.JsIdentifier, signingOperation: (payload: any) => any) {
+export async function inceptRegistry(
+  identifier: mechanics.JsIdentifier,
+  signingOperation: (payload: any) => any
+) {
   let registryData = await identifier.inceptRegistry();
   let ixn = registryData.ixn;
   let registryId = registryData.registryId;
@@ -29,7 +32,11 @@ export async function inceptRegistry(identifier: mechanics.JsIdentifier, signing
   return registryId;
 }
 
-export async function addWatcher(identifier: mechanics.JsIdentifier, watcherOobi: string, signingOperation: (payload: any) => any) {
+export async function addWatcher(
+  identifier: mechanics.JsIdentifier,
+  watcherOobi: string,
+  signingOperation: (payload: any) => any
+) {
   let add_watcher_event = await identifier.addWatcher(watcherOobi);
   let addWatcherSignaturePrefix = signingOperation(add_watcher_event);
   await identifier.finalizeAddWatcher(

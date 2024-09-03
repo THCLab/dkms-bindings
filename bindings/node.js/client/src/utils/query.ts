@@ -34,7 +34,7 @@ export async function queryTel(
     await identifier.sendOobiToWatcher(item);
   }
 
-  while (await identifier.vcState(vcHash) == null) {
+  while ((await identifier.vcState(vcHash)) == null) {
     await sleep(1000);
     let telQry = await identifier.queryTel(registryId, vcHash);
     let telQrySigPrefix = signingOperation(telQry);
