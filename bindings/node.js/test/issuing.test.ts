@@ -24,8 +24,8 @@ describe("Issuing", () => {
       Buffer.from(nextKeyManager.pubKey)
     );
 
-    // let witnessOobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    // let witnessOobi = `{"eid":"BDg1zxxf8u4Hx5IPraZzmStfSCZFZbDzMHjqVcFW5OfP","scheme":"http","url":"http://172.17.0.1:3234/"}`;
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
@@ -50,7 +50,7 @@ describe("Issuing", () => {
     let registryId = await signingIdentifier.registryId();
     console.log(registryId);
 
-    let json = { hello: "world1", ri: registryId };
+    let json = { hello: "world", ri: registryId };
     console.log(JSON.stringify(json));
 
     let vcHash = await issuing.issue(
@@ -60,9 +60,6 @@ describe("Issuing", () => {
     );
 
     console.log(await signingIdentifier.getKel());
-
-    let tel_state = await signingIdentifier.vcState(vcHash);
-    console.log(tel_state);
 
     // Setup identifier for verification
     const currentVerifierKeyManager = new KeyPair();
@@ -100,10 +97,10 @@ describe("Issuing", () => {
       .withWitness([witnessOobi])
       .withWitnessThreshold(1);
 
-    //  let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}'];
     let watcherOobis = [
-      '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}',
+      '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}',
     ];
+    // let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}']
     let verifierIdentifier = await issuing.incept(
       verifier,
       verifierInceptionConfiguration,

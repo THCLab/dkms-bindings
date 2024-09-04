@@ -24,8 +24,7 @@ describe("Signing", () => {
       Buffer.from(nextKeyManager.pubKey)
     );
 
-    // let witnessOobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    let witnessOobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
@@ -89,10 +88,7 @@ describe("Signing", () => {
       );
     };
 
-    let watcherOobis = [
-      '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}',
-    ];
-    // let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}'];
+    let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}'];
     let verifiengIdentifier = await issuing.incept(
       verifierController,
       verifierInceptionConfiguration,

@@ -11,7 +11,6 @@ async function publish(identifier, sigType, currentKeyManager) {
   await identifier.notifyWitness();
 
   let qry = (await identifier.queryMailbox())[0];
-  console.log(qry.toString());
   let qry_signature = currentKeyManager.sign(qry);
 
   let qrySignaturePrefix = new mechanics.Signature(
@@ -30,8 +29,6 @@ describe("Mechanics", () => {
 
     let config = new mechanics.ConfigBuilder().withDbPath(tmpFileName).build();
 
-    console.log(config);
-    console.log(typeof config);
     let controller = new mechanics.Controller(config);
 
     let keyType = mechanics.KeyType.Ed25519;
@@ -44,9 +41,8 @@ describe("Mechanics", () => {
       Buffer.from(nextKeyManager.pubKey)
     );
 
-    console.log(pk.getKey());
-    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    // let witness_oobi=`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    // let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
@@ -54,7 +50,6 @@ describe("Mechanics", () => {
       .withWitnessThreshold(1);
 
     let inceptionEvent = await controller.incept(inceptionConfiguration);
-    console.log(inceptionEvent.toString());
 
     let signature = currentKeyManager.sign(inceptionEvent);
 
@@ -81,8 +76,7 @@ describe("Mechanics", () => {
     signingIdentifier.finalizeInceptRegistry(ixn, ixnSignaturePrefix);
     await publish(signingIdentifier, sigType, currentKeyManager);
 
-    let json = { hello: "world1", ri: registry_id };
-    console.log(JSON.stringify(json));
+    let json = { hello: "world", ri: registry_id };
 
     let issueData = await signingIdentifier.issue(
       Buffer.from(JSON.stringify(json))
@@ -99,12 +93,8 @@ describe("Mechanics", () => {
     );
 
     await publish(signingIdentifier, sigType, currentKeyManager);
-    console.log(await signingIdentifier.getKel());
 
     await signingIdentifier.notifyBackers();
-
-    let tel_state = await signingIdentifier.vcState(vcHash);
-    console.log(tel_state);
 
     // Setup identifier for verification
     const currentVerifierKeyManager = new KeyPair();
@@ -153,9 +143,10 @@ describe("Mechanics", () => {
 
     await publish(verifierIdentifier, sigType, currentVerifierKeyManager);
 
+    // let watcherOobi =
+    // '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
     let watcherOobi =
-      '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
-    // let watcherOobi = ' {"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
+      ' {"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
     let add_watcher_event = await verifierIdentifier.addWatcher(watcherOobi);
 
     let addWatcherSignature = currentVerifierKeyManager.sign(
@@ -173,9 +164,7 @@ describe("Mechanics", () => {
 
     // Query KEL
     let oobis = await signingIdentifier.oobi();
-    console.log(oobis);
     for (let item of oobis) {
-      console.log(item);
       await verifierIdentifier.sendOobiToWatcher(item);
     }
 
@@ -193,20 +182,23 @@ describe("Mechanics", () => {
         [item],
         [kelQrySigPrefix]
       );
-      while (!resp) {
-        await sleep(1000);
+
+      for (let count = 1; count <= 10; count++) {
         resp = await verifierIdentifier.finalizeQueryKel(
           [item],
           [kelQrySigPrefix]
         );
-        console.log(resp);
+        if (resp) {
+          break;
+        }
+        await sleep(1000);
       }
     }
 
     let st = await verifierIdentifier.findState(
       await signingIdentifier.getId()
     );
-    console.log(st);
+    // console.log(st)
 
     // Query TEL
     let registry_oobi = await signingIdentifier.registryIdOobi();
@@ -214,8 +206,7 @@ describe("Mechanics", () => {
       await verifierIdentifier.sendOobiToWatcher(item);
     }
 
-    for (var element of [1, 2, 3, 4, 5]) {
-      await sleep(2000);
+    for (let count = 1; count <= 10; count++) {
       let telQry = await verifierIdentifier.queryTel(registry_id, vcHash);
       let telQrySignature = currentVerifierKeyManager.sign(telQry);
       let telQrySigPrefix = new mechanics.Signature(
@@ -223,7 +214,13 @@ describe("Mechanics", () => {
         Buffer.from(telQrySignature)
       );
       await verifierIdentifier.finalizeQueryTel(telQry, telQrySigPrefix);
+      let st = await verifierIdentifier.vcState(vcHash);
+      if (st != null) {
+        break;
+      }
+      await sleep(1000);
     }
+
     let tst = await verifierIdentifier.vcState(vcHash);
     expect(tst).toEqual(VcState.Issued);
   });

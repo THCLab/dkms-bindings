@@ -62,12 +62,17 @@ export async function queryTel(
     await identifier.sendOobiToWatcher(item);
   }
 
-  while ((await identifier.vcState(vcHash)) == null) {
-    await sleep(1000);
-    let telQry = await identifier.queryTel(registryId, vcHash);
-    let telQrySigPrefix = signingOperation(telQry);
-    await identifier.finalizeQueryTel(telQry, telQrySigPrefix);
-  }
+  for (let count = 1; count <= 10; count++) {
+      let telQry = await identifier.queryTel(registryId, vcHash);
+      let telQrySigPrefix = signingOperation(telQry);
+      await identifier.finalizeQueryTel(telQry, telQrySigPrefix);
+      let st = await identifier.vcState(vcHash);
+      if (st != null) {
+        break
+      }
+      await sleep(1000);
+      
+    }
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -17,9 +17,15 @@ This library also advocates cryptographic agility, hence it does not enforce to 
 * **Controller** -- manages Identifiers;
 * **KERI** -- see https://keri.one/ page;
 
+# Building
+
+`napi build --platform --release --js client/src/mechanics.js --dts client/src/mechanics.d.ts`
+
+`mv ./index.<platform>.node ./client/src`
+
 # Usage
 
-See tests.
+See [tests](https://github.com/THCLab/keri-bindings/tree/master/bindings/node.js/test).
 
 ## Interface overview
 
@@ -28,7 +34,7 @@ Most methods listed below require a three step process to either establish new I
 * sign data;
 * provide data along with signature to desired `finalizeX`.
 
-It may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their environment and use case.
+It may look quite complex, as any time signature is required, an external third party must be interacted with to provide the signature. However, delegation the keys management to the consumers is not to move the burden on their shoulders, but to allow them to decide in what way they deem reasonable, secure and possible in their environment and use case. All those functions are available in the `mechanics` module.
 
 ### `#anchor`
 
