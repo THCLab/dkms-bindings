@@ -25,47 +25,48 @@ impl InceptionConfiguration {
     }
 
     #[napi]
-	pub fn with_current_keys(&self, keys: Vec<&JsPublicKey>) -> InceptionConfiguration {
-		let keys_str = keys.into_iter().map(|k| k.get_key().p).collect();
-		InceptionConfiguration {
-			current_public_keys: keys_str,
-			next_public_keys: self.next_public_keys.clone(),
+    pub fn with_current_keys(&self, keys: Vec<&JsPublicKey>) -> InceptionConfiguration {
+        let keys_str = keys.into_iter().map(|k| k.get_key().p).collect();
+        InceptionConfiguration {
+            current_public_keys: keys_str,
+            next_public_keys: self.next_public_keys.clone(),
             witnesses_location: self.witnesses_location.clone(),
-			witness_threshold: self.witness_threshold.clone()
-		}
-	}
+            witness_threshold: self.witness_threshold.clone(),
+        }
+    }
 
-	#[napi]
-	pub fn with_next_keys(&mut self, keys: Vec<&JsPublicKey>) -> InceptionConfiguration {
-		let keys_str = keys.into_iter().map(|k| k.get_key().p).collect();
-		InceptionConfiguration {
-			current_public_keys: self.current_public_keys.clone(),
-			next_public_keys: keys_str,
+    #[napi]
+    pub fn with_next_keys(&mut self, keys: Vec<&JsPublicKey>) -> InceptionConfiguration {
+        let keys_str = keys.into_iter().map(|k| k.get_key().p).collect();
+        InceptionConfiguration {
+            current_public_keys: self.current_public_keys.clone(),
+            next_public_keys: keys_str,
             witnesses_location: self.witnesses_location.clone(),
-			witness_threshold: self.witness_threshold.clone()
-		}
-	}
+            witness_threshold: self.witness_threshold.clone(),
+        }
+    }
 
-	#[napi]
-	pub fn with_witness(&mut self, locations: Vec<String>) -> InceptionConfiguration {
-		let _lc: Vec<LocationScheme> = locations.iter().map(|l| {
-			serde_json::from_str::<LocationScheme>(&l).unwrap()
-		}).collect();
-		InceptionConfiguration {
-			current_public_keys: self.current_public_keys.clone(),
-			next_public_keys: self.next_public_keys.clone(),
+    #[napi]
+    pub fn with_witness(&mut self, locations: Vec<String>) -> InceptionConfiguration {
+        let _lc: Vec<LocationScheme> = locations
+            .iter()
+            .map(|l| serde_json::from_str::<LocationScheme>(&l).unwrap())
+            .collect();
+        InceptionConfiguration {
+            current_public_keys: self.current_public_keys.clone(),
+            next_public_keys: self.next_public_keys.clone(),
             witnesses_location: locations,
-			witness_threshold: self.witness_threshold.clone()
-		}
-	}
+            witness_threshold: self.witness_threshold.clone(),
+        }
+    }
 
-	#[napi]
-	pub fn with_witness_threshold(&mut self, threshold: u32) -> InceptionConfiguration {
-		InceptionConfiguration {
-			current_public_keys: self.current_public_keys.clone(),
-			next_public_keys: self.next_public_keys.clone(),
+    #[napi]
+    pub fn with_witness_threshold(&mut self, threshold: u32) -> InceptionConfiguration {
+        InceptionConfiguration {
+            current_public_keys: self.current_public_keys.clone(),
+            next_public_keys: self.next_public_keys.clone(),
             witnesses_location: self.witnesses_location.clone(),
-			witness_threshold: threshold
-		}
-	}
+            witness_threshold: threshold,
+        }
+    }
 }

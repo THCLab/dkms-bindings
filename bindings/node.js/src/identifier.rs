@@ -99,7 +99,7 @@ impl JsIdentifier {
             .map(|(qry, sig)| {
                 Ok((
                     serde_json::from_slice(&qry).map_err(|_| Error::EventParsingError)?,
-                        sig.to_prefix(),
+                    sig.to_prefix(),
                 ))
             })
             .collect::<Result<Vec<_>, Error>>()?;
@@ -294,7 +294,7 @@ impl JsIdentifier {
             .map(|(qry, sig)| {
                 Ok((
                     serde_json::from_slice(&qry).map_err(|_| Error::EventParsingError)?,
-                    sig.to_prefix()
+                    sig.to_prefix(),
                 ))
             })
             .collect::<Result<Vec<_>, Error>>()?;
@@ -435,11 +435,26 @@ impl JsIdentifier {
         let registry_id = locked_id.registry_id().map(|id| id.to_string());
         registry_id
     }
-}
+
+    #[napi]
+    pub async fn sign(&self, input: String, signatures: Vec<&Signature>) -> Option<String> {
+        let locked_id = self.inner.lock().await;
+        let stream = locked_id.sign_to_cesr(&input, &signatures.into_iter().map(|s| s.to_prefix()).collect::<Vec<_>>()).unwrap();
     
+        Some(stream)
+    }
+
+    #[napi]
+    pub async fn verify(&self, stream: String) -> napi::Result<()> {
+        let locked_id = self.inner.lock().await;
+        Ok(locked_id.verify_from_cesr(&stream).map_err(Error::ControllerError)?)
+    }
+
+}
+
 #[napi]
 pub enum VcState {
     Issued,
     Revoked,
-    NotIssued
+    NotIssued,
 }

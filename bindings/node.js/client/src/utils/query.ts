@@ -14,11 +14,39 @@ export async function queryKel(
   for (let item of kelQueries) {
     let kelQrySignature = signingOperation(item);
 
-    let resp = await identifier.finalizeQueryKel([item], [kelQrySignature]);
-    while (!resp) {
+    for (let count = 1; count <= 10; count++) {
+      var resp = await identifier.finalizeQueryKel([item], [kelQrySignature]);
+      if (resp) {
+        break
+      }
       await sleep(1000);
-      resp = await identifier.finalizeQueryKel([item], [kelQrySignature]);
-      console.log(resp);
+    }
+  }
+}
+
+export async function queryKelWithSeal(
+  identifier: mechanics.JsIdentifier,
+  aboutIdentifier: string,
+  sn: number,
+  digest: string,
+  oobis: string[],
+  signingOperation: (payload: any) => any
+) {
+  for (let item of oobis) {
+    await identifier.sendOobiToWatcher(item);
+  }
+
+  let kelQueries = await identifier.queryKel(aboutIdentifier,sn, digest);
+  for (let item of kelQueries) {
+    let kelQrySignature = signingOperation(item);
+
+    for (let count = 1; count <= 10; count++) {
+      var resp = await identifier.finalizeQueryKel([item], [kelQrySignature]);
+      if (resp) {
+        break
+      }
+      await sleep(1000);
+      
     }
   }
 }

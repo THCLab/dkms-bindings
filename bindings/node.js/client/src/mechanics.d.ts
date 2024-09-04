@@ -77,6 +77,8 @@ export class JsIdentifier {
   oobi(): Promise<Array<string>>
   registryIdOobi(): Promise<Array<string> | null>
   registryId(): Promise<string | null>
+  sign(input: string, signatures: Array<Signature>): Promise<string | null>
+  verify(stream: string): Promise<void>
 }
 export class InceptionConfiguration {
   currentPublicKeys: Array<string>

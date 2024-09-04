@@ -46,21 +46,21 @@ impl JsController {
     }
 
     #[napi]
-    pub async fn incept(
-        &self,
-        config: &InceptionConfiguration
-    ) -> napi::Result<Buffer> {
-        let curr_keys = config.current_public_keys
+    pub async fn incept(&self, config: &InceptionConfiguration) -> napi::Result<Buffer> {
+        let curr_keys = config
+            .current_public_keys
             .iter()
             .map(|k| k.parse())
             .collect::<Result<Vec<BasicPrefix>, _>>()
             .map_err(|e| Error::KeyParsingError(e))?;
-        let next_keys = config.next_public_keys
+        let next_keys = config
+            .next_public_keys
             .iter()
             .map(|k| k.parse())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| Error::KeyParsingError(e))?;
-        let witnesses = config.witnesses_location
+        let witnesses = config
+            .witnesses_location
             .iter()
             .map(|wit| {
                 serde_json::from_str::<LocationScheme>(wit)
@@ -69,7 +69,12 @@ impl JsController {
             .collect::<Result<Vec<_>, Error>>()?;
         let icp = self
             .inner
-            .incept(curr_keys, next_keys, witnesses, config.witness_threshold as u64)
+            .incept(
+                curr_keys,
+                next_keys,
+                witnesses,
+                config.witness_threshold as u64,
+            )
             .await
             .map_err(Error::MechanicError)?;
         Ok(icp.as_bytes().into())
