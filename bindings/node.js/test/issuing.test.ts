@@ -4,6 +4,8 @@ import { tmpdir } from "os";
 
 import { mechanics, issuing } from "../client/src/index";
 
+let infra = require('./infrastructure.json');
+
 describe("Issuing", () => {
   it("Issue VC", async () => {
     const currentKeyManager = new KeyPair();
@@ -24,15 +26,15 @@ describe("Issuing", () => {
       Buffer.from(nextKeyManager.pubKey)
     );
 
-    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    // let witnessOobi = `{"eid":"BDg1zxxf8u4Hx5IPraZzmStfSCZFZbDzMHjqVcFW5OfP","scheme":"http","url":"http://172.17.0.1:3234/"}`;
+    let witnessOobi = infra.witnesses.map(witness => JSON.stringify(witness));
+    console.log(witnessOobi);
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
-      .withWitness([witnessOobi])
+      .withWitness(witnessOobi)
       .withWitnessThreshold(1);
 
-    let signing_op = (payload) => {
+    let signer = (payload) => {
       let signature = currentKeyManager.sign(payload);
       return new mechanics.Signature(
         mechanics.SignatureType.Ed25519Sha512,
@@ -44,7 +46,7 @@ describe("Issuing", () => {
       controller,
       inceptionConfiguration,
       [], // no watchers
-      signing_op
+      signer
     );
 
     let registryId = await signingIdentifier.registryId();
@@ -56,7 +58,7 @@ describe("Issuing", () => {
     let vcHash = await issuing.issue(
       signingIdentifier,
       JSON.stringify(json),
-      signing_op
+      signer
     );
 
     console.log(await signingIdentifier.getKel());
@@ -94,13 +96,10 @@ describe("Issuing", () => {
     let verifierInceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([verifierPk])
       .withNextKeys([verifierPk2])
-      .withWitness([witnessOobi])
+      .withWitness(witnessOobi)
       .withWitnessThreshold(1);
 
-    let watcherOobis = [
-      '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}',
-    ];
-    // let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}']
+    let watcherOobis = infra.watchers.map(watcher => JSON.stringify(watcher));
     let verifierIdentifier = await issuing.incept(
       verifier,
       verifierInceptionConfiguration,

@@ -4,6 +4,8 @@ import { tmpdir } from "os";
 
 import { mechanics, issuing, signing } from "../client/src/index";
 
+let infra = require('./infrastructure.json');
+
 describe("Signing", () => {
   it("Signing payload", async () => {
     const currentKeyManager = new KeyPair();
@@ -24,14 +26,14 @@ describe("Signing", () => {
       Buffer.from(nextKeyManager.pubKey)
     );
 
-    let witnessOobi =`{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
+    let witnessOobi = infra.witnesses.map(witness => JSON.stringify(witness));
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
-      .withWitness([witnessOobi])
+      .withWitness(witnessOobi)
       .withWitnessThreshold(1);
 
-    let signing_op = (payload) => {
+    let signer = (payload) => {
       let signature = currentKeyManager.sign(payload);
       return new mechanics.Signature(
         mechanics.SignatureType.Ed25519Sha512,
@@ -43,12 +45,12 @@ describe("Signing", () => {
       controller,
       inceptionConfiguration,
       [], //no watchers
-      signing_op
+      signer
     );
-    let stream = await signing.sign(
+    let streamCipher = await signing.sign(
       signingIdentifier,
       '{"hello":"world"}',
-      signing_op
+      signer
     );
 
     // Setup verifying identifier
@@ -67,33 +69,33 @@ describe("Signing", () => {
 
     let verifierPk = new mechanics.PublicKey(
       keyType,
-      Buffer.from(currentKeyManager.pubKey)
+      Buffer.from(verifierCurrentKeyManager.pubKey)
     );
     let verifierPk2 = new mechanics.PublicKey(
       keyType,
-      Buffer.from(nextKeyManager.pubKey)
+      Buffer.from(verifierNextKeyManager.pubKey)
     );
 
     let verifierInceptionConfiguration = new mechanics.InceptionConfiguration()
-      .withCurrentKeys([pk])
-      .withNextKeys([pk2])
-      .withWitness([witnessOobi])
+      .withCurrentKeys([verifierPk])
+      .withNextKeys([verifierPk2])
+      .withWitness(witnessOobi)
       .withWitnessThreshold(1);
 
-    let verifierSigningOp = (payload) => {
-      let signature = currentKeyManager.sign(payload);
+    let verifierSigner = (payload) => {
+      let signature = verifierCurrentKeyManager.sign(payload);
       return new mechanics.Signature(
         mechanics.SignatureType.Ed25519Sha512,
         Buffer.from(signature)
       );
     };
 
-    let watcherOobis = ['{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}'];
+    let watcherOobis = infra.watchers.map(watcher => JSON.stringify(watcher));
     let verifiengIdentifier = await issuing.incept(
       verifierController,
       verifierInceptionConfiguration,
       watcherOobis,
-      verifierSigningOp
+      verifierSigner
     );
 
     let signerOobi = await signingIdentifier.oobi();
@@ -101,8 +103,8 @@ describe("Signing", () => {
     let ver = await signing.verify(
       verifiengIdentifier,
       signerOobi,
-      stream,
-      verifierSigningOp
+      streamCipher,
+      verifierSigner
     );
      expect(ver).toEqual(true);
   });

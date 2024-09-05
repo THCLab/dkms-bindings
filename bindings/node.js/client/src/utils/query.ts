@@ -14,12 +14,13 @@ export async function queryKel(
   for (let item of kelQueries) {
     let kelQrySignature = signingOperation(item);
 
-    for (let count = 1; count <= 10; count++) {
+    for (let retryCount = 1; retryCount <= 10; retryCount++) {
       var resp = await identifier.finalizeQueryKel([item], [kelQrySignature]);
       if (resp) {
         break
       }
-      await sleep(1000);
+      const delay = Math.min(2000 ** retryCount, 16000);
+      await sleep(delay);
     }
   }
 }
@@ -40,12 +41,13 @@ export async function queryKelWithSeal(
   for (let item of kelQueries) {
     let kelQrySignature = signingOperation(item);
 
-    for (let count = 1; count <= 10; count++) {
+    for (let retryCount = 1; retryCount <= 10; retryCount++) {
       var resp = await identifier.finalizeQueryKel([item], [kelQrySignature]);
       if (resp) {
         break
       }
-      await sleep(1000);
+      const delay = Math.min(2000 ** retryCount, 16000);
+      await sleep(delay);
       
     }
   }
@@ -62,7 +64,7 @@ export async function queryTel(
     await identifier.sendOobiToWatcher(item);
   }
 
-  for (let count = 1; count <= 10; count++) {
+  for (let retryCount = 1; retryCount <= 10; retryCount++) {
       let telQry = await identifier.queryTel(registryId, vcHash);
       let telQrySigPrefix = signingOperation(telQry);
       await identifier.finalizeQueryTel(telQry, telQrySigPrefix);
@@ -70,7 +72,8 @@ export async function queryTel(
       if (st != null) {
         break
       }
-      await sleep(1000);
+      const delay = Math.min(2000 ** retryCount, 16000);
+      await sleep(delay);
       
     }
 }

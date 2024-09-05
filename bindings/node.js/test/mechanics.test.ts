@@ -4,6 +4,7 @@ import * as path from "path";
 import { tmpdir } from "os";
 import { VcState } from "mechanics";
 
+let infra = require("./infrastructure.json");
 /**
  * Helper function for sending new events to witnesses and collecting their receipts
  */
@@ -41,12 +42,11 @@ describe("Mechanics", () => {
       Buffer.from(nextKeyManager.pubKey)
     );
 
-    // let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}`;
-    let witnessOobi = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://172.17.0.1:3232/"}`;
+    let witnessOobi = infra.witnesses.map((witness) => JSON.stringify(witness));
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
-      .withWitness([witnessOobi])
+      .withWitness(witnessOobi)
       .withWitnessThreshold(1);
 
     let inceptionEvent = await controller.incept(inceptionConfiguration);
@@ -121,7 +121,7 @@ describe("Mechanics", () => {
     let verifierInceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([verifierPk])
       .withNextKeys([verifierPk2])
-      .withWitness([witnessOobi])
+      .withWitness(witnessOobi)
       .withWitnessThreshold(1);
     let verifierInceptionEvent = await verifier.incept(
       verifierInceptionConfiguration
@@ -143,24 +143,23 @@ describe("Mechanics", () => {
 
     await publish(verifierIdentifier, sigType, currentVerifierKeyManager);
 
-    // let watcherOobi =
-    // '{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}';
-    let watcherOobi =
-      ' {"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://172.17.0.1:3235/"}';
-    let add_watcher_event = await verifierIdentifier.addWatcher(watcherOobi);
+    let watcherOobis = infra.watchers.map((watcher) => JSON.stringify(watcher));
+    for (const oobi of watcherOobis) {
+      let add_watcher_event = await verifierIdentifier.addWatcher(oobi);
 
-    let addWatcherSignature = currentVerifierKeyManager.sign(
-      Buffer.from(add_watcher_event)
-    );
-    let addWatcherSignaturePrefix = new mechanics.Signature(
-      sigType,
-      Buffer.from(addWatcherSignature)
-    );
+      let addWatcherSignature = currentVerifierKeyManager.sign(
+        Buffer.from(add_watcher_event)
+      );
+      let addWatcherSignaturePrefix = new mechanics.Signature(
+        sigType,
+        Buffer.from(addWatcherSignature)
+      );
 
-    await verifierIdentifier.finalizeAddWatcher(
-      add_watcher_event,
-      addWatcherSignaturePrefix
-    );
+      await verifierIdentifier.finalizeAddWatcher(
+        add_watcher_event,
+        addWatcherSignaturePrefix
+      );
+    }
 
     // Query KEL
     let oobis = await signingIdentifier.oobi();
