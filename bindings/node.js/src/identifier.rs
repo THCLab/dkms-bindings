@@ -6,9 +6,9 @@ use crate::{
     Signature,
 };
 use keri_controller::{
-    identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi, TelState,
+    error::ControllerError, identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi, TelState
 };
-use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal};
+use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal, processor::validator::VerificationError};
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
 use said::{
@@ -473,11 +473,22 @@ impl JsIdentifier {
     }
 
     #[napi]
-    pub async fn verify(&self, stream: String) -> napi::Result<()> {
+    pub async fn verify(&self, stream: String) -> napi::Result<bool> {
         let locked_id = self.inner.lock().await;
-        Ok(locked_id
-            .verify_from_cesr(&stream)
-            .map_err(Error::ControllerError)?)
+        let verification_result = locked_id
+            .verify_from_cesr(&stream);
+        match verification_result {
+            Ok(_) => Ok(true),
+            Err(ControllerError::FaultySignature) => { Ok(false)}
+            Err(ControllerError::VerificationError(errors)) => {
+                if errors.iter().any(|(reason, _)| matches!(reason, VerificationError::VerificationFailure)) {
+                    Ok(false)
+                } else {
+                    Err(Error::ControllerError(keri_controller::error::ControllerError::VerificationError(errors)))?
+                }
+            },
+            Err(e) => Err(Error::ControllerError(e))?,
+        }
     }
 }
 

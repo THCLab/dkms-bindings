@@ -80,7 +80,7 @@ export class JsIdentifier {
   registryIdOobi(): Promise<Array<string> | null>
   registryId(): Promise<string | null>
   sign(input: string, signatures: Array<Signature>): Promise<string | null>
-  verify(stream: string): Promise<void>
+  verify(stream: string): Promise<boolean>
 }
 export class InceptionConfiguration {
   currentPublicKeys: Array<string>

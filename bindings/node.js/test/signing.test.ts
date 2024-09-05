@@ -2,7 +2,7 @@ import KeyPair from "./support/key_pair";
 import * as path from "path";
 import { tmpdir } from "os";
 
-import { mechanics, issuing, signing } from "../client/src/index";
+import { mechanics, signing } from "../client/src/index";
 
 let infra = require('./infrastructure.json');
 
@@ -41,7 +41,7 @@ describe("Signing", () => {
       );
     };
 
-    let signingIdentifier = await issuing.incept(
+    let signingIdentifier = await signing.incept(
       controller,
       inceptionConfiguration,
       [], //no watchers
@@ -52,6 +52,8 @@ describe("Signing", () => {
       '{"hello":"world"}',
       signer
     );
+
+    let wrongStreamCipher = streamCipher.replace("hello", "wrong");
 
     // Setup verifying identifier
     const verifierCurrentKeyManager = new KeyPair();
@@ -91,7 +93,7 @@ describe("Signing", () => {
     };
 
     let watcherOobis = infra.watchers.map(watcher => JSON.stringify(watcher));
-    let verifiengIdentifier = await issuing.incept(
+    let verifiengIdentifier = await signing.incept(
       verifierController,
       verifierInceptionConfiguration,
       watcherOobis,
@@ -100,12 +102,20 @@ describe("Signing", () => {
 
     let signerOobi = await signingIdentifier.oobi();
 
-    let ver = await signing.verify(
+    let okVer = await signing.verify(
       verifiengIdentifier,
       signerOobi,
       streamCipher,
       verifierSigner
     );
-     expect(ver).toEqual(true);
+     expect(okVer).toEqual(true);
+
+    let wrongVer = await signing.verify(
+      verifiengIdentifier,
+      signerOobi,
+      wrongStreamCipher,
+      verifierSigner
+    );
+    expect(wrongVer).toEqual(false);
   });
 });

@@ -39,13 +39,12 @@ export async function verify(
 ){
 
 	try {
-		await identifier.verify(stream);
-		return true
+		return await identifier.verify(stream)
 
 	} catch (error) {
 		 // Extract JSON part from the error message
 		const jsonRegex = /\{ prefix:[^]+, sn:[^]+, event_digest:[^]+ \}/;
-    	const jsonMatch = error.message.match(jsonRegex); 
+    const jsonMatch = error.message.match(jsonRegex); 
 
 		if (jsonMatch) {
 			try {
@@ -64,8 +63,7 @@ export async function verify(
             console.error(jsonError);
         }
 
-		let ver = await identifier.verify(stream);
-		return true
+		return await identifier.verify(stream)
 	}
 }
 }
