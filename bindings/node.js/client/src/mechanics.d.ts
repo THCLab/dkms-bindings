@@ -64,6 +64,8 @@ export class JsIdentifier {
   finalizeInceptRegistry(event: Buffer, signature: Signature): Promise<void>
   issue(vc: Buffer): Promise<IssuanceData>
   finalizeIssue(event: Buffer, signature: Signature): Promise<void>
+  revoke(vcHash: string): Promise<Buffer>
+  finalizeRevoke(event: Buffer, signature: Signature): Promise<void>
   notifyBackers(): Promise<void>
   addWatcher(watcherOobi: string): Promise<Buffer>
   finalizeAddWatcher(event: Buffer, signature: Signature): Promise<void>

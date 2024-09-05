@@ -9,9 +9,23 @@ export async function issuance(
   let issueData = await identifier.issue(Buffer.from(JSON.stringify(acdcJSON)));
   let issueIxnSignature = signingOperation(issueData.ixn);
   let vcHash = issueData.vcHash;
-  identifier.finalizeInceptRegistry(issueData.ixn, issueIxnSignature);
+  identifier.finalizeIssue(issueData.ixn, issueIxnSignature);
 
   await publish(identifier, signingOperation);
   await identifier.notifyBackers();
   return vcHash;
 }
+
+export async function revocation(
+  identifier: mechanics.JsIdentifier,
+  vcHash: string,
+  signingOperation: (payload: any) => any
+) {
+  let ixn = await identifier.revoke(vcHash);
+  let revokeIxnSignature = signingOperation(ixn);
+  await identifier.finalizeRevoke(ixn, revokeIxnSignature);
+
+  await publish(identifier, signingOperation);
+  await identifier.notifyBackers();
+}
+

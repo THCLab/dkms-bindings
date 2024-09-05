@@ -64,12 +64,13 @@ export async function queryTel(
     await identifier.sendOobiToWatcher(item);
   }
 
+  let cached_state = await identifier.vcState(vcHash);
   for (let retryCount = 1; retryCount <= 10; retryCount++) {
       let telQry = await identifier.queryTel(registryId, vcHash);
       let telQrySigPrefix = signingOperation(telQry);
       await identifier.finalizeQueryTel(telQry, telQrySigPrefix);
       let st = await identifier.vcState(vcHash);
-      if (st != null) {
+      if (st != cached_state) {
         break
       }
       const delay = Math.min(2000 ** retryCount, 16000);

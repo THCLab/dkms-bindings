@@ -1,6 +1,6 @@
 import { mechanics } from "index";
 import { addWatcher, inception, inceptRegistry } from "./utils/incept";
-import { issuance } from "./utils/issue";
+import { issuance, revocation } from "./utils/issue";
 import { queryKel, queryTel } from "./utils/query";
 import { VcState } from "mechanics";
 
@@ -30,6 +30,18 @@ export async function issue(
 ) {
   let vcHash = await issuance(identifier, acdc, signingOperation);
   return vcHash;
+}
+
+export async function revoke(
+  identifier: mechanics.JsIdentifier,
+  vcHash: string,
+  signingOperation: (payload: any) => any
+) {
+  try {
+    await revocation(identifier, vcHash, signingOperation);
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 export async function verify(

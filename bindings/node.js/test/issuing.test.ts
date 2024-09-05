@@ -85,7 +85,7 @@ describe("Issuing", () => {
       Buffer.from(nextVerifierKeyManager.pubKey)
     );
 
-    let verifier_signing_op = (payload) => {
+    let verifierSigner = (payload) => {
       let signature = currentVerifierKeyManager.sign(payload);
       return new mechanics.Signature(
         mechanics.SignatureType.Ed25519Sha512,
@@ -104,7 +104,7 @@ describe("Issuing", () => {
       verifier,
       verifierInceptionConfiguration,
       watcherOobis,
-      verifier_signing_op
+      verifierSigner
     );
 
     // Query KEL
@@ -120,11 +120,26 @@ describe("Issuing", () => {
       oobis,
       await signingIdentifier.registryId(),
       registryOobi,
-      verifier_signing_op
+      verifierSigner
     );
-    console.log(res);
     var parsedData = JSON.parse(res);
     expect(parsedData.verified).toEqual(true);
     expect(parsedData.status).toEqual("issued");
+
+    issuing.revoke(signingIdentifier, vcHash, signer);
+
+    let revoked_res = await issuing.verify(
+      verifierIdentifier,
+      vcHash,
+      await signingIdentifier.getId(),
+      oobis,
+      await signingIdentifier.registryId(),
+      registryOobi,
+      verifierSigner
+    );
+    var parsedData = JSON.parse(revoked_res);
+    expect(parsedData.verified).toEqual(false);
+    expect(parsedData.status).toEqual("revoked");
+
   });
 });

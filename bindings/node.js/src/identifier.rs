@@ -218,6 +218,26 @@ impl JsIdentifier {
     }
 
     #[napi]
+    pub async fn revoke(&self, vc_hash: String) -> napi::Result<Buffer> {
+        let id = self.inner.lock().await;
+        let ixn = id
+            .revoke(&vc_hash.parse().map_err(|e| Error::HashParsingError(e))?)
+            .map_err(Error::ControllerError)?;
+
+        Ok(ixn.into())
+    }
+
+    #[napi]
+    pub async fn finalize_revoke(&self, event: Buffer, signature: &Signature) -> napi::Result<()> {
+        let mut id = self.inner.lock().await;
+        id.finalize_revoke(&event, signature.to_prefix())
+            .await
+            .map_err(Error::MechanicError)?;
+
+        Ok(())
+    }
+
+    #[napi]
     pub async fn notify_backers(&self) -> napi::Result<()> {
         let id = self.inner.lock().await;
         id.notify_backers().await.map_err(Error::MechanicError)?;
@@ -439,17 +459,26 @@ impl JsIdentifier {
     #[napi]
     pub async fn sign(&self, input: String, signatures: Vec<&Signature>) -> Option<String> {
         let locked_id = self.inner.lock().await;
-        let stream = locked_id.sign_to_cesr(&input, &signatures.into_iter().map(|s| s.to_prefix()).collect::<Vec<_>>()).unwrap();
-    
+        let stream = locked_id
+            .sign_to_cesr(
+                &input,
+                &signatures
+                    .into_iter()
+                    .map(|s| s.to_prefix())
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+
         Some(stream)
     }
 
     #[napi]
     pub async fn verify(&self, stream: String) -> napi::Result<()> {
         let locked_id = self.inner.lock().await;
-        Ok(locked_id.verify_from_cesr(&stream).map_err(Error::ControllerError)?)
+        Ok(locked_id
+            .verify_from_cesr(&stream)
+            .map_err(Error::ControllerError)?)
     }
-
 }
 
 #[napi]
