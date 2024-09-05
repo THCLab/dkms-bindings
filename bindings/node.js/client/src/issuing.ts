@@ -37,11 +37,7 @@ export async function revoke(
   vcHash: string,
   signingOperation: (payload: any) => any
 ) {
-  try {
     await revocation(identifier, vcHash, signingOperation);
-  } catch (error) {
-    console.log(error)
-  }
 }
 
 export async function verify(

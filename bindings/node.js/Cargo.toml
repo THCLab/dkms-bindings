@@ -1,5 +1,5 @@
 [package]
-name = "keri-node"
+name = "dkms-node"
 version = "0.1.0"
 edition = "2021"
 exclude = ["index.node"]

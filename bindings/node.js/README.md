@@ -1,10 +1,6 @@
-# Installation
-
-`npm i keri.js`
-
 # Overview
 
-Javascript (NodeJS) client for managing KERI based Identifiers. See top level [README](https://github.com/THCLab/keri-bindings) to get acquainted with more generic overview and clients features.
+Javascript (NodeJS) client for managing KERI based Identifiers. See top level [README](https://github.com/THCLab/dkms-bindings) to get acquainted with more generic overview and clients features.
 
 ## A note for consumers
 
@@ -19,13 +15,11 @@ This library also advocates cryptographic agility, hence it does not enforce to 
 
 # Building
 
-`napi build --platform --release --js client/src/mechanics.js --dts client/src/mechanics.d.ts`
-
-`mv ./index.<platform>.node ./client/src`
+`napi build --platform --release --js ./client/src/mechanics.js --dts mechanics.d.ts ./client/src`
 
 # Usage
 
-See [tests](https://github.com/THCLab/keri-bindings/tree/master/bindings/node.js/test).
+See [tests](https://github.com/THCLab/dkms-bindings/tree/master/bindings/node.js/test).
 
 ## Interface overview
 

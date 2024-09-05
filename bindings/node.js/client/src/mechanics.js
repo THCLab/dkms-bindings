@@ -30,7 +30,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.android-arm64.node')
           } else {
-            nativeBinding = require('keri.js-android-arm64')
+            nativeBinding = require('dkms.js-android-arm64')
           }
         } catch (e) {
           loadError = e
@@ -42,7 +42,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.android-arm-eabi.node')
           } else {
-            nativeBinding = require('keri.js-android-arm-eabi')
+            nativeBinding = require('dkms.js-android-arm-eabi')
           }
         } catch (e) {
           loadError = e
@@ -62,7 +62,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.win32-x64-msvc.node')
           } else {
-            nativeBinding = require('keri.js-win32-x64-msvc')
+            nativeBinding = require('dkms.js-win32-x64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -76,7 +76,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.win32-ia32-msvc.node')
           } else {
-            nativeBinding = require('keri.js-win32-ia32-msvc')
+            nativeBinding = require('dkms.js-win32-ia32-msvc')
           }
         } catch (e) {
           loadError = e
@@ -90,7 +90,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.win32-arm64-msvc.node')
           } else {
-            nativeBinding = require('keri.js-win32-arm64-msvc')
+            nativeBinding = require('dkms.js-win32-arm64-msvc')
           }
         } catch (e) {
           loadError = e
@@ -108,7 +108,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.darwin-x64.node')
           } else {
-            nativeBinding = require('keri.js-darwin-x64')
+            nativeBinding = require('dkms.js-darwin-x64')
           }
         } catch (e) {
           loadError = e
@@ -122,7 +122,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.darwin-arm64.node')
           } else {
-            nativeBinding = require('keri.js-darwin-arm64')
+            nativeBinding = require('dkms.js-darwin-arm64')
           }
         } catch (e) {
           loadError = e
@@ -141,7 +141,7 @@ switch (platform) {
       if (localFileExisted) {
         nativeBinding = require('./index.freebsd-x64.node')
       } else {
-        nativeBinding = require('keri.js-freebsd-x64')
+        nativeBinding = require('dkms.js-freebsd-x64')
       }
     } catch (e) {
       loadError = e
@@ -158,7 +158,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./index.linux-x64-musl.node')
             } else {
-              nativeBinding = require('keri.js-linux-x64-musl')
+              nativeBinding = require('dkms.js-linux-x64-musl')
             }
           } catch (e) {
             loadError = e
@@ -171,7 +171,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./index.linux-x64-gnu.node')
             } else {
-              nativeBinding = require('keri.js-linux-x64-gnu')
+              nativeBinding = require('dkms.js-linux-x64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -187,7 +187,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./index.linux-arm64-musl.node')
             } else {
-              nativeBinding = require('keri.js-linux-arm64-musl')
+              nativeBinding = require('dkms.js-linux-arm64-musl')
             }
           } catch (e) {
             loadError = e
@@ -200,7 +200,7 @@ switch (platform) {
             if (localFileExisted) {
               nativeBinding = require('./index.linux-arm64-gnu.node')
             } else {
-              nativeBinding = require('keri.js-linux-arm64-gnu')
+              nativeBinding = require('dkms.js-linux-arm64-gnu')
             }
           } catch (e) {
             loadError = e
@@ -215,7 +215,7 @@ switch (platform) {
           if (localFileExisted) {
             nativeBinding = require('./index.linux-arm-gnueabihf.node')
           } else {
-            nativeBinding = require('keri.js-linux-arm-gnueabihf')
+            nativeBinding = require('dkms.js-linux-arm-gnueabihf')
           }
         } catch (e) {
           loadError = e

@@ -639,6 +639,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "dkms-node"
+version = "0.1.0"
+dependencies = [
+ "base64 0.13.1",
+ "cesrox 0.1.4",
+ "clap",
+ "ed25519-compact",
+ "keri-controller",
+ "keri-core",
+ "mimalloc",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "said 0.4.1",
+ "serde_json",
+ "simple_config_parser",
+ "teliox 0.13.0",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "ecdsa"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1401,28 +1423,6 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "keri-node"
-version = "0.1.0"
-dependencies = [
- "base64 0.13.1",
- "cesrox 0.1.4",
- "clap",
- "ed25519-compact",
- "keri-controller",
- "keri-core",
- "mimalloc",
- "napi",
- "napi-build",
- "napi-derive",
- "said 0.4.1",
- "serde_json",
- "simple_config_parser",
- "teliox 0.13.0",
- "tempfile",
- "thiserror",
 ]
 
 [[package]]
