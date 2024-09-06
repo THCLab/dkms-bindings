@@ -3,7 +3,7 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "package": "dkms-bindings-node.js",
-  "version":"0.2.5",
+  "version": "0.2.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/THCLab/dkms-bindings/tree/master/bindings/node.js"
@@ -13,7 +13,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^1.0.0",
     "@types/chai": "^4.2.18",
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^27.4.0",
     "@types/node": "^15.12.2",
     "@types/urlsafe-base64": "^1.0.28",
     "chai": "^4.3.4",
