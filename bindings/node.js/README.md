@@ -15,7 +15,8 @@ This library also advocates cryptographic agility, hence it does not enforce to 
 
 # Building
 
-`napi build --platform --release --js ./client/src/mechanics.js --dts mechanics.d.ts ./client/src`
+1. Install [napi](https://napi.rs/docs/introduction/getting-started#install-cli)
+2. Run `npm run build`
 
 # Usage
 
