@@ -11,7 +11,6 @@
   "homepage": "https://github.com/THCLab/dkms-bindings/tree/master/bindings/node.js",
   "license": "EUPL-1.2",
   "devDependencies": {
-    "@napi-rs/cli": "^1.0.0",
     "@types/chai": "^4.2.18",
     "@types/jest": "^27.4.0",
     "@types/node": "^15.12.2",
@@ -31,7 +30,7 @@
     "name": "index"
   },
   "scripts": {
-    "build": "napi build --release",
+    "build": "napi build --platform --release --js ./mechanics.js --dts mechanics.d.ts ./client/src",
     "build:debug": "napi build",
     "test": "jest -c jest.ts-config.js",
     "compile": "ttsc -p tsconfig.json"
