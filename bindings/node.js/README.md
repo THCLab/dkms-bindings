@@ -2,7 +2,17 @@
 
 Javascript (NodeJS) client for managing KERI based Identifiers. See top level [README](https://github.com/THCLab/dkms-bindings) to get acquainted with more generic overview and clients features.
 
-## A note for consumers
+# Building
+
+1. Install [napi](https://napi.rs/docs/introduction/getting-started#install-cli)
+2. Run `npm run build`
+
+# Usage
+
+See [tests](https://github.com/THCLab/dkms-bindings/tree/master/bindings/node.js/test).
+
+
+# A note for consumers
 
 This library requires a third party key provider that derives public private key pairs. It is on the consumer shoulders to manage key pairs in a secure way. Nowadays various approaches exist to tackle this problem, ie. TPM mentioned below or others like HSM or Secure Element.
 
@@ -12,15 +22,6 @@ This library also advocates cryptographic agility, hence it does not enforce to 
 
 * **Controller** -- manages Identifiers;
 * **KERI** -- see https://keri.one/ page;
-
-# Building
-
-1. Install [napi](https://napi.rs/docs/introduction/getting-started#install-cli)
-2. Run `npm run build`
-
-# Usage
-
-See [tests](https://github.com/THCLab/dkms-bindings/tree/master/bindings/node.js/test).
 
 ## Interface overview
 
