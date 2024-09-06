@@ -5,10 +5,12 @@ on:
     branches: ["master"]
     paths:
       - "bindings/node.js/**"
+      - ".github/workflows/**"
   pull_request:
     branches: ["master"]
     paths:
       - "bindings/node.js/**"
+      - ".github/workflows/**"
 
 jobs:
   build:
@@ -27,4 +29,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
       - run: npm ci
+        working-directory: ./bindings/node.js
       - run: npm run test
+        working-directory: ./bindings/node.js
