@@ -1,7 +1,6 @@
 import { mechanics } from "./index";
 import { addWatcher, inception, inceptRegistry } from "./utils/incept";
-import { issuance } from "./utils/issue";
-import { queryKel, queryKelWithSeal, queryTel } from "./utils/query";
+import { queryKelWithSeal } from "./utils/query";
 
 export async function incept(
   controller: mechanics.Controller,
