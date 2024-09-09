@@ -177,13 +177,8 @@ describe("Mechanics", () => {
         Buffer.from(kelQrySignature)
       );
 
-      let resp = await verifierIdentifier.finalizeQueryKel(
-        [item],
-        [kelQrySigPrefix]
-      );
-
       for (let count = 1; count <= 10; count++) {
-        resp = await verifierIdentifier.finalizeQueryKel(
+        var resp = await verifierIdentifier.finalizeQueryKel(
           [item],
           [kelQrySigPrefix]
         );
