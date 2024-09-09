@@ -49,7 +49,7 @@ impl JsIdentifier {
         let inner = self.inner.lock().await;
         let about_who: IdentifierPrefix = about_id.parse().map_err(Error::IdParsingError)?;
         let state = inner.find_state(&about_who).map_err(Error::MechanicError)?;
-        Ok(format!("{:?}", state))
+        Ok(serde_json::to_string(&state).unwrap())
     }
 
     #[napi]
