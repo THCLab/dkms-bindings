@@ -4,6 +4,7 @@ import { tmpdir } from "os";
 
 import { mechanics, signing } from "../client/src/index";
 
+jest.setTimeout(30000);
 let infra = require('./infrastructure.json');
 
 describe("Signing", () => {

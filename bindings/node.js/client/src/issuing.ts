@@ -64,14 +64,9 @@ export async function verify(
   switch (tst) {
     case VcState.Issued:
       return JSON.stringify({ verified: true, status: "issued" });
-      break;
     case VcState.NotIssued:
       return JSON.stringify({ verified: false, status: "not issued" });
-      break;
     case VcState.Revoked:
       return JSON.stringify({ verified: false, status: "revoked" });
-      break;
-    default:
-      console.log("No match found");
   }
 }

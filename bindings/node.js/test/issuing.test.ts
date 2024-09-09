@@ -4,6 +4,7 @@ import { tmpdir } from "os";
 
 import { mechanics, issuing } from "../client/src/index";
 
+jest.setTimeout(30000);
 let infra = require('./infrastructure.json');
 
 describe("Issuing", () => {
@@ -27,7 +28,6 @@ describe("Issuing", () => {
     );
 
     let witnessOobi = infra.witnesses.map(witness => JSON.stringify(witness));
-    console.log(witnessOobi);
     let inceptionConfiguration = new mechanics.InceptionConfiguration()
       .withCurrentKeys([pk])
       .withNextKeys([pk2])
@@ -50,18 +50,14 @@ describe("Issuing", () => {
     );
 
     let registryId = await signingIdentifier.registryId();
-    console.log(registryId);
 
     let json = { hello: "world", ri: registryId };
-    console.log(JSON.stringify(json));
 
     let vcHash = await issuing.issue(
       signingIdentifier,
       JSON.stringify(json),
       signer
     );
-
-    console.log(await signingIdentifier.getKel());
 
     // Setup identifier for verification
     const currentVerifierKeyManager = new KeyPair();
@@ -110,8 +106,6 @@ describe("Issuing", () => {
     // Query KEL
     let oobis = await signingIdentifier.oobi();
     let registryOobi = await signingIdentifier.registryIdOobi();
-    console.log(registryOobi[0]);
-    console.log(oobis[0]);
 
     let res = await issuing.verify(
       verifierIdentifier,

@@ -4,6 +4,8 @@ import * as path from "path";
 import { tmpdir } from "os";
 import { VcState } from "mechanics";
 
+jest.setTimeout(30000);
+
 let infra = require("./infrastructure.json");
 /**
  * Helper function for sending new events to witnesses and collecting their receipts
@@ -192,7 +194,6 @@ describe("Mechanics", () => {
     let st = await verifierIdentifier.findState(
       await signingIdentifier.getId()
     );
-    // console.log(st)
 
     // Query TEL
     let registry_oobi = await signingIdentifier.registryIdOobi();
