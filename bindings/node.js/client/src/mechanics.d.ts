@@ -41,6 +41,19 @@ export class PublicKey {
   constructor(algorithm: KeyType, key: Buffer)
   getKey(): Key
 }
+export class RotationConfiguration {
+  currentPublicKeys: Array<string>
+  nextPublicKeys: Array<string>
+  witnessesToAdd: Array<string>
+  witnessesToRemove: Array<string>
+  witnessThreshold: number
+  constructor()
+  withCurrentKeys(keys: Array<PublicKey>): RotationConfiguration
+  withNextKeys(keys: Array<PublicKey>): RotationConfiguration
+  withWitnessToAdd(locations: Array<string>): RotationConfiguration
+  withWitnessToRemove(witnessIds: Array<string>): RotationConfiguration
+  withWitnessThreshold(threshold: number): RotationConfiguration
+}
 export class Signature {
   prefix: string
   constructor(algorithm: SignatureType, signature: Buffer)
@@ -60,6 +73,8 @@ export class JsIdentifier {
   notifyWitness(): Promise<void>
   queryMailbox(): Promise<Array<Buffer>>
   finalizeQueryMailbox(queries: Array<Buffer>, signatures: Array<Signature>): Promise<void>
+  rotate(config: RotationConfiguration): Promise<Buffer>
+  finalizeRotation(rotEvent: Buffer, signature: Signature): Promise<void>
   inceptRegistry(): Promise<RegistryInceptionData>
   finalizeInceptRegistry(event: Buffer, signature: Signature): Promise<void>
   issue(vc: Buffer): Promise<IssuanceData>

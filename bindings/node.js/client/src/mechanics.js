@@ -236,10 +236,11 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { ConfigBuilder, PublicKey, Signature, RegistryInceptionData, IssuanceData, JsIdentifier, VcState, InceptionConfiguration, KeyType, SignatureType, Controller } = nativeBinding
+const { ConfigBuilder, PublicKey, RotationConfiguration, Signature, RegistryInceptionData, IssuanceData, JsIdentifier, VcState, InceptionConfiguration, KeyType, SignatureType, Controller } = nativeBinding
 
 module.exports.ConfigBuilder = ConfigBuilder
 module.exports.PublicKey = PublicKey
+module.exports.RotationConfiguration = RotationConfiguration
 module.exports.Signature = Signature
 module.exports.RegistryInceptionData = RegistryInceptionData
 module.exports.IssuanceData = IssuanceData

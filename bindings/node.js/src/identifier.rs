@@ -2,13 +2,20 @@ use std::{iter::zip, sync::Arc};
 
 use crate::{
     error::Error,
-    utils::tel_utils::{IssuanceData, RegistryInceptionData},
+    utils::{
+        rotation_configuration::RotationConfiguration,
+        tel_utils::{IssuanceData, RegistryInceptionData},
+    },
     Signature,
 };
 use keri_controller::{
-    error::ControllerError, identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix, LocationScheme, Oobi, TelState
+    error::ControllerError, identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix,
+    LocationScheme, Oobi, TelState,
 };
-use keri_core::{actor::prelude::Message, event::sections::seal::EventSeal, processor::validator::VerificationError};
+use keri_core::{
+    actor::prelude::Message, event::sections::seal::EventSeal,
+    processor::validator::VerificationError,
+};
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
 use said::{
@@ -23,13 +30,6 @@ pub struct JsIdentifier {
 
 #[napi]
 impl JsIdentifier {
-    // pub fn new(id: IdentifierPrefix, kel: Arc<keri_controller::controller::Controller>) -> Self {
-    //     let id = Identifier::new(id, None, kel.known_events.clone(), kel.communication.clone());
-    //     Self {
-    //         inner: id
-    //       }
-    //     }
-    // }
     #[napi]
     pub async fn get_kel(&self) -> napi::Result<String> {
         let inner = self.inner.lock().await;
@@ -111,44 +111,64 @@ impl JsIdentifier {
         Ok(())
     }
 
-    // #[napi]
-    // pub async fn rotate(
-    //     &self,
-    //     pks: Vec<Key>,
-    //     npks: Vec<Key>,
-    //     // loc scheme json of witness
-    //     witnesses_to_add: Vec<String>,
-    //     // identifiers of witness to remove
-    //     witnesses_to_remove: Vec<String>,
-    //     witness_threshold: u32,
-    // ) -> napi::Result<Buffer> {
-    //     let curr_keys = pks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
-    //     let next_keys = npks.iter().map(|k| k.to_prefix()).collect::<Vec<_>>();
-    //     let witnesses_to_add = witnesses_to_add
-    //         .iter()
-    //         .map(|wit| serde_json::from_str::<LocationScheme>(wit).map_err(|e| e.to_string()))
-    //         .collect::<Result<Vec<_>, _>>()
-    //         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    //     let witnesses_to_remove = witnesses_to_remove
-    //         .iter()
-    //         .map(|wit| wit.parse::<BasicPrefix>())
-    //         .collect::<Result<Vec<_>, _>>()
-    //         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    //     let id = self.inner.lock().await;
-    //     Ok(id
-    //         .rotate(
-    //             curr_keys,
-    //             next_keys,
-    //             1,
-    //             witnesses_to_add,
-    //             witnesses_to_remove,
-    //             witness_threshold as u64,
-    //         )
-    //         .await
-    //         .unwrap()
-    //         .as_bytes()
-    //         .into())
-    // }
+    #[napi]
+    pub async fn rotate(&self, config: &RotationConfiguration) -> napi::Result<Buffer> {
+        let curr_keys = config
+            .current_public_keys
+            .iter()
+            .map(|k| k.parse())
+            .collect::<Result<Vec<BasicPrefix>, _>>()
+            .map_err(|e| Error::KeyParsingError(e))?;
+        let next_keys = config
+            .next_public_keys
+            .iter()
+            .map(|k| k.parse())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| Error::KeyParsingError(e))?;
+        let witnesses_to_add = config
+            .witnesses_to_add
+            .iter()
+            .map(|wit| {
+                serde_json::from_str::<LocationScheme>(wit)
+                    .map_err(|_| Error::OobiParsingError(wit.clone()))
+            })
+            .collect::<Result<Vec<_>, Error>>()?;
+        let witnesses_to_remove = config
+            .witnesses_to_remove
+            .iter()
+            .map(|wit| wit.parse::<BasicPrefix>())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let id = self.inner.lock().await;
+        Ok(id
+            .rotate(
+                curr_keys,
+                next_keys,
+                1,
+                witnesses_to_add,
+                witnesses_to_remove,
+                config.witness_threshold as u64,
+            )
+            .await
+            .unwrap()
+            .as_bytes()
+            .into())
+    }
+
+    #[napi]
+    pub async fn finalize_rotation(
+        &self,
+        rot_event: Buffer,
+        signature: &Signature,
+    ) -> napi::Result<()> {
+        let mut id = self.inner.lock().await;
+
+        let ssp = signature.to_prefix();
+        id.finalize_rotate(&rot_event, ssp)
+            .await
+            .map_err(Error::MechanicError)?;
+        Ok(())
+    }
 
     // #[napi]
     // pub fn anchor(&self, anchored_data: Vec<String>) -> napi::Result<Buffer> {
@@ -475,18 +495,22 @@ impl JsIdentifier {
     #[napi]
     pub async fn verify(&self, stream: String) -> napi::Result<bool> {
         let locked_id = self.inner.lock().await;
-        let verification_result = locked_id
-            .verify_from_cesr(&stream);
+        let verification_result = locked_id.verify_from_cesr(&stream);
         match verification_result {
             Ok(_) => Ok(true),
-            Err(ControllerError::FaultySignature) => { Ok(false)}
+            Err(ControllerError::FaultySignature) => Ok(false),
             Err(ControllerError::VerificationError(errors)) => {
-                if errors.iter().any(|(reason, _)| matches!(reason, VerificationError::VerificationFailure)) {
+                if errors
+                    .iter()
+                    .any(|(reason, _)| matches!(reason, VerificationError::VerificationFailure))
+                {
                     Ok(false)
                 } else {
-                    Err(Error::ControllerError(keri_controller::error::ControllerError::VerificationError(errors)))?
+                    Err(Error::ControllerError(
+                        keri_controller::error::ControllerError::VerificationError(errors),
+                    ))?
                 }
-            },
+            }
             Err(e) => Err(Error::ControllerError(e))?,
         }
     }
