@@ -6,6 +6,8 @@ on:
     paths:
       - "bindings/node.js/**"
       - ".github/workflows/**"
+    tags:
+      - 'node.js-[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     branches: ["master"]
     paths:
