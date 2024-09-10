@@ -7,7 +7,7 @@ on:
       - "bindings/node.js/**"
       - ".github/workflows/**"
     tags:
-      - "*"
+      - "node*"
   pull_request:
     branches: ["master"]
     paths:
@@ -57,6 +57,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: "./bindings/node.js/package-lock.json"
       - run: npm ci
+        working-directory: ./bindings/node.js
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        working-directory: ./bindings/node.js
