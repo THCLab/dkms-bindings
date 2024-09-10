@@ -1,9 +1,8 @@
 {
-  "name": "dkms.js",
+  "name": "dkms",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "package": "dkms-bindings-node.js",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/THCLab/dkms-bindings/tree/master/bindings/node.js"
