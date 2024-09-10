@@ -11,7 +11,7 @@ define release
         require('fs').writeFileSync('./package.json', s);" && \
     npm i && \
 		git add package.json package-lock.json && git commit -m "chore: Version $$NEXT_VERSION" && \
-    git tag "$$NEXT_VERSION" -m "Version $$NEXT_VERSION"
+    git tag "node.js-$$NEXT_VERSION" -m "Version $$NEXT_VERSION"
 endef
 
 release-patch:
