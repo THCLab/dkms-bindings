@@ -1,12 +1,12 @@
-import KeyPair from "./support/key_pair";
-import { mechanics } from "../client/src/index";
+import KeyPair from "./../support/key_pair";
+import { mechanics } from "../../client/src/index";
 import * as path from "path";
 import { tmpdir } from "os";
 import { VcState } from "mechanics";
 
 jest.setTimeout(30000);
 
-let infra = require("./infrastructure.json");
+let infra = require("../infrastructure.json");
 /**
  * Helper function for sending new events to witnesses and collecting their receipts
  */

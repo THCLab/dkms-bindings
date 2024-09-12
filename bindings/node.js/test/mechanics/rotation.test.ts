@@ -1,9 +1,9 @@
 import { tmpdir } from "os";
-import KeyPair from "./support/key_pair";
+import KeyPair from "../support/key_pair";
 import path from "path";
-import { mechanics, signing, rotating } from "../client/src/index";
+import { mechanics, signing, rotating } from "../../client/src/index";
 
-let infra = require("./infrastructure.json");
+let infra = require("../infrastructure.json");
 
 describe("Rotating", () => {
   it("Rotate keys", async () => {
