@@ -27,7 +27,7 @@ export const enum SignatureType {
   ECDSAsecp256k1Sha256 = 1,
   Ed448 = 2
 }
-export class ConfigBuilder {
+export declare class ConfigBuilder {
   dbPath?: string
   initialOobis?: string
   constructor(dbPath?: string, initialOobis?: string)
@@ -36,12 +36,12 @@ export class ConfigBuilder {
   build(): Configs
 }
 export type JsPublicKey = PublicKey
-export class PublicKey {
+export declare class PublicKey {
   prefix: string
   constructor(algorithm: KeyType, key: Buffer)
   getKey(): Key
 }
-export class RotationConfiguration {
+export declare class RotationConfiguration {
   currentPublicKeys: Array<string>
   nextPublicKeys: Array<string>
   witnessesToAdd: Array<string>
@@ -54,19 +54,19 @@ export class RotationConfiguration {
   withWitnessToRemove(witnessIds: Array<string>): RotationConfiguration
   withWitnessThreshold(threshold: number): RotationConfiguration
 }
-export class Signature {
+export declare class Signature {
   prefix: string
   constructor(algorithm: SignatureType, signature: Buffer)
 }
-export class RegistryInceptionData {
+export declare class RegistryInceptionData {
   ixn: Buffer
   registryId: string
 }
-export class IssuanceData {
+export declare class IssuanceData {
   ixn: Buffer
   vcHash: string
 }
-export class JsIdentifier {
+export declare class JsIdentifier {
   getKel(): Promise<string>
   findState(aboutId: string): Promise<string>
   getId(): Promise<string>
@@ -97,7 +97,7 @@ export class JsIdentifier {
   sign(input: string, signatures: Array<Signature>): Promise<string | null>
   verify(stream: string): Promise<boolean>
 }
-export class InceptionConfiguration {
+export declare class InceptionConfiguration {
   currentPublicKeys: Array<string>
   nextPublicKeys: Array<string>
   witnessesLocation: Array<string>
@@ -109,7 +109,7 @@ export class InceptionConfiguration {
   withWitnessThreshold(threshold: number): InceptionConfiguration
 }
 export type JsController = Controller
-export class Controller {
+export declare class Controller {
   constructor(config?: Configs | undefined | null)
   incept(config: InceptionConfiguration): Promise<Buffer>
   finalizeInception(icpEvent: Buffer, signatures: Array<Signature>): JsIdentifier

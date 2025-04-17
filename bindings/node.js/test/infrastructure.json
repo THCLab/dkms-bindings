@@ -1,4 +1,4 @@
 {
-	"witnesses": [{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://witness1.sandbox.argo.colossi.network/"}],
-	"watchers": [{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://watcher.sandbox.argo.colossi.network/"}]
+	"witnesses": [{"eid":"BALatHR3OQVuj9X16D5tV8Eqokp4OSN6dsyids1VjLDr","scheme":"http","url":"http://w1.eb.argo.colossi.network/"}],
+	"watchers": [{"eid":"BHQ0eV0aQB0CTuviYa61Yiy5V9kpE_k1YUNkn8BnHTfD","scheme":"http","url":"http://wa1.ea.argo.colossi.network/"}]
 }

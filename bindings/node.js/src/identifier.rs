@@ -106,7 +106,7 @@ impl JsIdentifier {
         inner
             .finalize_query_mailbox(qries_and_sigs)
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::ControllerError)?;
 
         Ok(())
     }
@@ -196,7 +196,7 @@ impl JsIdentifier {
         let (registry_id, vcp) = id.incept_registry().map_err(Error::ControllerError)?;
 
         Ok(RegistryInceptionData {
-            ixn: vcp.into(),
+            ixn: vcp.encode().unwrap().into(),
             registry_id: registry_id.to_string(),
         })
     }
@@ -222,7 +222,7 @@ impl JsIdentifier {
         let (vc_hash, iss) = id.issue(said).map_err(Error::ControllerError)?;
 
         Ok(IssuanceData {
-            ixn: iss.into(),
+            ixn: iss.encode().unwrap().into(),
             vc_hash: vc_hash.to_string(),
         })
     }
@@ -306,11 +306,11 @@ impl JsIdentifier {
     ) -> napi::Result<Vec<Buffer>> {
         let id = self.inner.lock().await;
         let about_id = about_id.parse().map_err(Error::IdParsingError)?;
-        let seal = EventSeal {
-            prefix: about_id,
-            sn: sn.into(),
-            event_digest: digest.parse().map_err(Error::HashParsingError)?,
-        };
+        let seal = EventSeal::new(
+            about_id,
+            sn.into(),
+            digest.parse().map_err(Error::HashParsingError)?,
+        );
         Ok(id
             .query_watchers(&seal)
             .map_err(Error::ControllerError)?
@@ -477,7 +477,7 @@ impl JsIdentifier {
     }
 
     #[napi]
-    pub async fn sign(&self, input: String, signatures: Vec<&Signature>) -> Option<String> {
+    pub async fn sign(&self, input: String, signatures: Vec<&Signature>) -> napi::Result<Option<String>> {
         let locked_id = self.inner.lock().await;
         let stream = locked_id
             .sign_to_cesr(
@@ -486,10 +486,9 @@ impl JsIdentifier {
                     .into_iter()
                     .map(|s| s.to_prefix())
                     .collect::<Vec<_>>(),
-            )
-            .unwrap();
+            ).map_err(Error::ControllerError)?;
 
-        Some(stream)
+        Ok(Some(stream))
     }
 
     #[napi]

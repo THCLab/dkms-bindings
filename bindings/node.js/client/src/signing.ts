@@ -42,22 +42,15 @@ export async function verify(
 
 	} catch (error) {
 		 // Extract JSON part from the error message
-		const jsonRegex = /\{ prefix:[^]+, sn:[^]+, event_digest:[^]+ \}/;
+		const jsonRegex = /\{"i":".*?","s":".*?","d":".*?"\}/;
     const jsonMatch = error.message.match(jsonRegex); 
 
 		if (jsonMatch) {
 			try {
         // KEL need to be find
-				let jsonString = jsonMatch[0];
-				// Step 1: Add quotes around keys
-				jsonString = jsonString.replace(/(\w+):/g, '"$1":');
+				const seal = JSON.parse(jsonMatch[0]);
 
-				// Step 2: Replace SelfAddressing("...") with just the content inside the quotes
-				jsonString = jsonString.replace(/SelfAddressing\("([^"]+)"\)/g, '"$1"');
-
-				const seal = JSON.parse(jsonString);
-
-				await queryKelWithSeal(identifier, seal.prefix, seal.sn, seal.event_digest, oobi, signingOperation)
+				await queryKelWithSeal(identifier, seal.i, Number(seal.s), seal.d, oobi, signingOperation)
         } catch (jsonError) {
             console.error(jsonError);
         }
