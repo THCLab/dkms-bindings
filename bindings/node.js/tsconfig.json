@@ -32,7 +32,8 @@
   },
   "include": [
     "src/**/*",
-    "src/**/*.json"
-, "client/src/index.ts"  ],
+    "src/**/*.json",
+    "client/src/index.ts"
+  ],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
