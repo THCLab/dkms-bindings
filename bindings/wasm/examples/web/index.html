@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DKMS</title>
+  </head>
+  <body>
+    <script type="module" src="/main.js"></script>
+
+    <label for="acdc">ACDC:</label><br>
+    <textarea id="acdc" rows="22" cols="60">
+{
+  "v": "ACDC10JSON000207_",
+  "d": "EGRIIeNj2HIP787COJFiQbYqsp6UwAR22oeqWsEVhq42",
+  "i": "EHIydjfGpSu8mKvrDeWWPaV-mBPeP6Ad7DE6v5fZv2ps",
+  "ri": "EMDfCDynqGvpaN7Fbm5FADyfS98q_WUkPKmbZapBB1J_",
+  "s": "EHLjK9n1i1osh8SPYpyotPxC8IeBqtdfK-Qrz4_TZp6G",
+  "a": {
+    "d": "ENaVuh9EMbTGgVjbnPHDZDDxvhsvzIZsuvTEIkFa3JPP",
+    "a": {
+      "last_name": "KOWALSKI",
+      "first_name": "JAN",
+      "birth_date": "07.04.1964",
+      "birth_place": "WARSZAWA",
+      "issue_date": "06.03.2019",
+      "expiry_date": "18.01.2028",
+      "issuer": "PREZYDENT m.st. WARSZAWY",
+      "pesel": "64040738293",
+      "number": "SP006/15/1"
+    }
+  }
+}
+    </textarea>
+    <br>
+    <label for="oobi">OOBI:</label><br>
+    <textarea id="oobi" rows="18" cols="60">
+[
+  {
+    "eid": "BNJJhjUnhlw-lsbYdehzLsX1hJMG9QJlK_wJ5AunJLrM",
+    "scheme": "http",
+    "url": "http://w1.ea.argo.colossi.network/"
+  },
+  {
+    "cid": "EHIydjfGpSu8mKvrDeWWPaV-mBPeP6Ad7DE6v5fZv2ps",
+    "role": "witness",
+    "eid": "BNJJhjUnhlw-lsbYdehzLsX1hJMG9QJlK_wJ5AunJLrM"
+  },
+  {
+    "cid": "EMDfCDynqGvpaN7Fbm5FADyfS98q_WUkPKmbZapBB1J_",
+    "role": "witness",
+    "eid": "BNJJhjUnhlw-lsbYdehzLsX1hJMG9QJlK_wJ5AunJLrM"
+  }
+]
+    </textarea>
+    <br>
+    <button id="verify">Verify</button>
+    <span id="result"></span>
+  </body>
+
+  <script type="module">
+    import { verify } from "./main.js";
+
+    document.getElementById("verify").addEventListener("click", async () => {
+      const acdc = document.getElementById("acdc").value;
+      const oobi = document.getElementById("oobi").value;
+
+      document.getElementById("result").textContent = "Verifying...";
+      const result = await verify(acdc, oobi);
+      document.getElementById("result").textContent = result ? "Valid" : "Invalid";
+    });
+  </script>
+</html>

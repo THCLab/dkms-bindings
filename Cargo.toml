@@ -2,8 +2,9 @@
 resolver = "2"
 
 members = [
-    "bindings/dart",
-    "bindings/node.js"
+  "bindings/dart",
+  "bindings/node.js",
+  "bindings/wasm",
 ]
 
 [profile.release]

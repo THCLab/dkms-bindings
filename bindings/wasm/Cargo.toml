@@ -1,0 +1,52 @@
+[package]
+name = "dkms-wasm"
+version = "0.1.0"
+license = "EUPL-1.2"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+acdc = { version = "0.1.0" }
+cesrox = { version = "0.1.6" }
+ed25519-dalek = { version = "2.1.0", features = ["rand_core"] }
+gloo-net = "0.6"
+gloo-timers = { version = "0.3", features = ["futures"] }
+idb = { version = "=0.6.3", default-features = false }
+js-sys = { version = "0.3" }
+keri-core = { version = "0.17.8", features = ["query", "oobi"] }
+keri-sdk = { version = "0.1.6" }
+log = "0.4"
+rand = "0.8.5"
+said = "0.4.2"
+serde-wasm-bindgen = "0.6"
+serde_cbor = { version = "0.11" }
+serde_json = "1.0"
+teliox = { version = "0.17.8", default-features = false }
+thiserror = "2"
+url = { version = "2.5", features = ["serde"] }
+wasm-bindgen = { version = "=0.2.92" }
+wasm-bindgen-console-logger = "0.1"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = [
+  "Window",
+  "IdbDatabase",
+  "IdbFactory",
+  "IdbObjectStore",
+  "IdbObjectStoreParameters",
+  "IdbTransaction",
+  "IdbOpenDbRequest",
+  "IdbCursorWithValue",
+  "IdbRequest",
+  "IdbVersionChangeEvent",
+  "Event",
+] }
+
+[dependencies.getrandom]
+features = ["js"]
+version = "0.2"
+
+[dependencies.uuid]
+features = ["v4", "js"]
+version = "1.16.0"

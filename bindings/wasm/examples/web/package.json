@@ -1,0 +1,21 @@
+{
+  "name": "dkms-web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dkms-wasm": "file:../../pkg",
+    "vite": "^6.3.5"
+  },
+  "devDependencies": {
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
+  }
+}

@@ -1,0 +1,60 @@
+name: CI wasm
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "bindings/wasm/**"
+      - ".github/workflows/**"
+    tags:
+      - "node*"
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "bindings/wasm/**"
+      - ".github/workflows/**"
+env:
+  CARGO_TERM_COLOR: always
+
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04        
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all-features --verbose --manifest-path bindings/wasm/Cargo.toml
+
+  publish-npm:
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: wasm32-unknown-unknown
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version 0.2.92
+      - name: Build wasm
+        working-directory: js/wasm
+        run: wasm-pack build --target web --release --out-dir pkg
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+      - working-directory: bindings/wasm/pkg
+        run: npm install
+      - working-directory: bindings/wasm/pkg
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
