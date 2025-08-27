@@ -1,8 +1,15 @@
 [package]
 name = "dkms-wasm"
+description = "Decentralised Key Management System WebAssembly bindings"
+repository = "https://github.com/THCLab/dkms-bindings/tree/master/bindings/wasm"
 version = "0.1.0"
 license = "EUPL-1.2"
 edition = "2021"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
 
 [lib]
 crate-type = ["cdylib"]
