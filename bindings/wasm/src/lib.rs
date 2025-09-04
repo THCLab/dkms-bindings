@@ -250,7 +250,7 @@ impl JsController {
             .map_err(|_| JsValue::from_str("Finalize error"))?;
 
         let kel = format!("{:?}", signing_identifier.get_own_kel().unwrap());
-        self.process_kel(kel)?;
+        self.process_kel(kel, None, None)?;
 
         let prefix = signing_identifier.get_prefix();
         let alias = prefix.to_string();
@@ -264,14 +264,25 @@ impl JsController {
     pub fn process_kel(
         &self,
         kel: String,
+        from: Option<u64>,
+        limit: Option<u64>,
     ) -> Result<(), JsValue> {
-        let parsed_kel: Vec<Message> = parse_event_stream(kel.as_bytes())
+        let mut parsed_kel: Vec<Message> = parse_event_stream(kel.as_bytes())
             .map_err(|e| {
                 JsValue::from_str(&format!("Failed to parse KEL: {}", e))
             })?;
-        let parsed_kel = parsed_kel
-            .into_iter()
-            .collect::<Vec<_>>();
+        if let Some(from) = from {
+            parsed_kel = parsed_kel
+                .into_iter()
+                .skip(from as usize)
+                .collect();
+        }
+        if let Some(limit) = limit {
+            parsed_kel = parsed_kel
+                .into_iter()
+                .take(limit as usize + 1)
+                .collect();
+        }
 
         self.inner.process_kel(&parsed_kel).map_err(|e| {
             JsValue::from_str(&format!("Process events error: {}", e))
@@ -348,7 +359,7 @@ impl JsController {
             self.query_kel(identifier, issuer_id).await.map_err(|e| {
                 JsValue::from_str(&format!("Failed to query KEL: {:?}", e))
             })?;
-        self.process_kel(kel).map_err(|e| {
+        self.process_kel(kel, None, None).map_err(|e| {
             JsValue::from_str(&format!("Failed to process KEL: {:?}", e))
         })?;
 
