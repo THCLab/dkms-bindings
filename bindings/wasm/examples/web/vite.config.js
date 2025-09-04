@@ -10,7 +10,6 @@ export default defineConfig({
       allow: [
         ".",
         path.resolve(__dirname, "../../pkg"),
-        // path.resolve(__dirname, "../../../../../rust/cesrox-bindings/cesr/wasm/pkg_web"),
       ],
     },
   },
