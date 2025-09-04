@@ -2,7 +2,7 @@
 name = "dkms-wasm"
 description = "Decentralised Key Management System WebAssembly bindings"
 repository = "https://github.com/THCLab/dkms-bindings/tree/master/bindings/wasm"
-version = "0.1.0"
+version = "0.1.1"
 license = "EUPL-1.2"
 edition = "2021"
 
