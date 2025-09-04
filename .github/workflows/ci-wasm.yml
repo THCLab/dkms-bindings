@@ -1,4 +1,4 @@
-name: CI wasm
+name: WASM CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - "bindings/wasm/**"
       - ".github/workflows/**"
     tags:
-      - "node*"
+      - "wasm*"
   pull_request:
     branches: ["master"]
     paths:
@@ -45,16 +45,16 @@ jobs:
           target: wasm32-unknown-unknown
       - name: Install wasm-bindgen-cli
         run: cargo install wasm-bindgen-cli --version 0.2.92
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
       - name: Build wasm
-        working-directory: js/wasm
+        working-directory: ./bindings/wasm
         run: wasm-pack build --target web --release --out-dir pkg
       - uses: actions/setup-node@v2
         with:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
-      - working-directory: bindings/wasm/pkg
-        run: npm install
-      - working-directory: bindings/wasm/pkg
+      - working-directory: ./bindings/wasm/pkg
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
