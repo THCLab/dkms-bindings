@@ -364,21 +364,7 @@ impl JsController {
 
         let vc_said = att.digest.unwrap();
         let vc_state = self.get_vc_state(vc_said.to_string())?;
-        let result = match vc_state {
-            VcState::Issued => VerificationResult {
-                verified: true,
-                status: "issued".to_string(),
-            },
-            VcState::Revoked => VerificationResult {
-                verified: false,
-                status: "revoked".to_string(),
-            },
-            VcState::NotIssued => VerificationResult {
-                verified: false,
-                status: "not issued".to_string(),
-            },
-        };
-
+        let result: VerificationResult = vc_state.into();
         Ok(result.into())
     }
 }
@@ -570,5 +556,24 @@ impl From<VerificationResult> for JsValue {
             .expect("setting status failed");
 
         obj.into()
+    }
+}
+
+impl From<VcState> for VerificationResult {
+    fn from(val: VcState) -> Self {
+        match val {
+            VcState::Issued => VerificationResult {
+                verified: true,
+                status: "issued".to_string(),
+            },
+            VcState::Revoked => VerificationResult {
+                verified: false,
+                status: "revoked".to_string(),
+            },
+            VcState::NotIssued => VerificationResult {
+                verified: false,
+                status: "not issued".to_string(),
+            },
+        }
     }
 }
