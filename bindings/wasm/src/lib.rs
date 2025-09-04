@@ -321,19 +321,6 @@ impl JsController {
         oobi_array: JsValue,
         message: String,
     ) -> Result<JsValue, JsValue> {
-        let oobis: Vec<Oobi> =
-            serde_wasm_bindgen::from_value(oobi_array).unwrap_or(vec![]);
-        let watcher_url = identifier
-            .watcher_oobi
-            .clone()
-            .ok_or_else(|| JsValue::from_str("Watcher for identifier not set"))?
-            .url;
-        self.resolve_oobis(&watcher_url.to_string(), oobis.clone())
-            .await
-            .map_err(|e| {
-                JsValue::from_str(&format!("Failed to resolve OOBIs: {:?}", e))
-            })?;
-
         let (_rest, cesr) = cesrox::parse(message.as_bytes()).map_err(|e| {
             JsValue::from_str(&format!("Failed to parse CESR: {}", e))
         })?;
@@ -351,15 +338,39 @@ impl JsController {
             cesrox::payload::Payload::MGPK(_items) => todo!(),
         };
 
+        let vc_said = att.clone().digest.unwrap();
+        let current_vc_state = self.get_vc_state(vc_said.to_string())?;
+        if let VcState::Revoked = current_vc_state {
+            let result: VerificationResult = VcState::Revoked.into();
+            return Ok(result.into());
+        }
+
+        let oobis: Vec<Oobi> =
+            serde_wasm_bindgen::from_value(oobi_array).unwrap_or(vec![]);
+        let watcher_url = identifier
+            .watcher_oobi
+            .clone()
+            .ok_or_else(|| JsValue::from_str("Watcher for identifier not set"))?
+            .url;
+        self.resolve_oobis(&watcher_url.to_string(), oobis.clone())
+            .await
+            .map_err(|e| {
+                JsValue::from_str(&format!("Failed to resolve OOBIs: {:?}", e))
+            })?;
+
         let issuer_id: IdentifierPrefix = att.issuer.parse().map_err(|e| {
             JsValue::from_str(&format!("Failed to parse issuer ID: {}", e))
         })?;
-
+        let current_state = self
+            .inner
+            .get_state(&issuer_id);
+        let current_sn = current_state.clone().map(|s| s.sn);
         let kel =
-            self.query_kel(identifier, issuer_id).await.map_err(|e| {
+            self.query_kel(identifier, issuer_id, current_sn).await.map_err(|e| {
                 JsValue::from_str(&format!("Failed to query KEL: {:?}", e))
             })?;
-        self.process_kel(kel, None, None).map_err(|e| {
+        let skip_first = current_state.as_ref().map(|_| 1);
+        self.process_kel(kel, skip_first, None).map_err(|e| {
             JsValue::from_str(&format!("Failed to process KEL: {:?}", e))
         })?;
 
@@ -373,7 +384,6 @@ impl JsController {
             JsValue::from_str(&format!("Failed to process TEL: {:?}", e))
         })?;
 
-        let vc_said = att.digest.unwrap();
         let vc_state = self.get_vc_state(vc_said.to_string())?;
         let result: VerificationResult = vc_state.into();
         Ok(result.into())
@@ -402,10 +412,11 @@ impl JsController {
         &self,
         signing_id: &JsIdentifier,
         id: IdentifierPrefix,
+        from_sn: Option<u64>,
     ) -> Result<String, JsValue> {
         let watcher_url = signing_id.watcher_oobi.clone().unwrap().url;
         let watcher_id = signing_id.watcher_oobi.clone().unwrap().eid;
-        let qry = signing_id.inner.get_log_query(id, watcher_id);
+        let qry = signing_id.inner.get_log_query(id, watcher_id, from_sn, None);
         let signer = signing_id.signer.clone();
 
         let sig = SelfSigningPrefix::new(

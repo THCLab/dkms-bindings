@@ -921,9 +921,9 @@ dependencies = [
 
 [[package]]
 name = "keri-core"
-version = "0.17.8"
+version = "0.17.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "391e20ca479be2345f8ac9fbe3b2e427c954a7bc0e5bef4555787f24c0d1f502"
+checksum = "d2c26631476277f65e9598b0c14f64670af9c5ab1c4c6b604f6e782785e4c632"
 dependencies = [
  "arrayref",
  "base64",
@@ -957,9 +957,9 @@ dependencies = [
 
 [[package]]
 name = "keri-sdk"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d338e56032f5146d4e8d86ffe46fe789adb1ec4439059c4b8d71da1a9ed003fe"
+checksum = "22cd18d4addb45e9114711b5f12f390693bcad81a639810ccceaa23eba9ccf9d"
 dependencies = [
  "cesrox",
  "keri-core",
@@ -1706,9 +1706,9 @@ dependencies = [
 
 [[package]]
 name = "teliox"
-version = "0.17.8"
+version = "0.17.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69337ea1a61bd414a26c80b29c68722405af38104945ec1c2cb5083e0da50987"
+checksum = "2fa4aa63979619956509639568f3653002ee9e2930731bf296059fe13251af85"
 dependencies = [
  "arrayref",
  "base64",
