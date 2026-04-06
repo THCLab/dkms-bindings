@@ -3,3 +3,7 @@ index.node
 **/node_modules
 **/.DS_Store
 npm-debug.log*
+
+# Go native library build artifacts
+bindings/go/libdkms_go.*
+bindings/go/dkms_go.*

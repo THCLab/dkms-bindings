@@ -18,6 +18,7 @@ With such a client one is able to:
 
 * [Node.JS](./bindings/node.js)
 * [Dart](./bindings/dart)
+* [Go](./bindings/go)
 
 # Development overview
 
