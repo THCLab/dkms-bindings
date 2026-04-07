@@ -21,9 +21,9 @@ tempfile = "3.1"
 serde_json = "1.0.81"
 said = "0.4.1"
 acdc = { git = "https://github.com/THCLab/acdc-rust" }
-keri-core = { git = "https://github.com/THCLab/keriox", branch = "feat_db_abstraction", features = ["oobi", "mailbox"] }
-keri-controller = { git = "https://github.com/THCLab/keriox", branch = "feat_db_abstraction", features = ["storage-postgres"] }
-teliox = { git = "https://github.com/THCLab/keriox", branch = "feat_db_abstraction" }
+keri-core = { git = "https://github.com/THCLab/keriox", branch = "master", features = ["oobi", "mailbox"] }
+keri-controller = { git = "https://github.com/THCLab/keriox", branch = "master", features = ["storage-postgres"] }
+teliox = { git = "https://github.com/THCLab/keriox", branch = "master" }
 libc = "0.2"
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
 
