@@ -494,7 +494,7 @@ impl JsIdentifier {
     #[napi]
     pub async fn verify(&self, stream: String) -> napi::Result<bool> {
         let locked_id = self.inner.lock().await;
-        let verification_result = locked_id.verify_from_cesr(&stream);
+        let verification_result = locked_id.verify_from_cesr(stream.as_bytes());
         match verification_result {
             Ok(_) => Ok(true),
             Err(ControllerError::FaultySignature) => Ok(false),

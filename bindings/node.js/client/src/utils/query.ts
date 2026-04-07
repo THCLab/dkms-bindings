@@ -19,8 +19,6 @@ export async function queryKel(
       if (resp) {
         break
       }
-      const delay = Math.min(2000 ** retryCount, 16000);
-      await sleep(delay);
     }
   }
 }
@@ -46,9 +44,7 @@ export async function queryKelWithSeal(
       if (resp) {
         break
       }
-      const delay = Math.min(2000 ** retryCount, 16000);
-      await sleep(delay);
-      
+
     }
   }
 }
@@ -65,17 +61,19 @@ export async function queryTel(
   }
 
   let cached_state = await identifier.vcState(vcHash);
-  for (let retryCount = 1; retryCount <= 10; retryCount++) {
+  console.log("cached state", cached_state);
+  for (let retryCount = 1; retryCount <= 2; retryCount++) {
+      console.log("query tel attempt", retryCount);
       let telQry = await identifier.queryTel(registryId, vcHash);
+      console.log("tel query", telQry);
       let telQrySigPrefix = signingOperation(telQry);
       await identifier.finalizeQueryTel(telQry, telQrySigPrefix);
       let st = await identifier.vcState(vcHash);
+      console.log("queried state", st);
       if (st != cached_state) {
         break
+      } else {
       }
-      const delay = Math.min(2000 ** retryCount, 16000);
-      await sleep(delay);
-      
     }
 }
 

@@ -49,8 +49,11 @@ export async function verify(
   registryOobi: string[],
   signingOperation: (payload: any) => any
 ) {
+  console.log("starting verify KEL");
   await queryKel(identifier, signerId, oobi, signingOperation);
+  console.log("queried KEL");
 
+  console.log("start query TEL");
   // Query TEL
   await queryTel(
     identifier,
@@ -59,6 +62,7 @@ export async function verify(
     registryOobi,
     signingOperation
   );
+  console.log("queried TEL");
 
   let tst = await identifier.vcState(vcHash);
   switch (tst) {
