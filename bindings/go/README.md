@@ -90,6 +90,27 @@ Five complete examples are provided:
    cd examples/credentials && go run main.go
    ```
 
+   > **Docker note:** The credentials example requires a witness and watcher.
+   > The provided `docker-compose.yml` advertises these services at `host.docker.internal`
+   > so both the host Go app and containers can reach them.
+   >
+   > - **macOS / Windows**: Docker Desktop usually adds this entry automatically, but if
+   >   you see a DNS lookup error, add it manually:
+   >   ```bash
+   >   echo "127.0.0.1 host.docker.internal" | sudo tee -a /etc/hosts
+   >   ```
+   > - **Linux**: Docker does not add `host.docker.internal` at all — always add it:
+   >   ```bash
+   >   echo "127.0.0.1 host.docker.internal" | sudo tee -a /etc/hosts
+   >   ```
+   >
+   > Then start the services with:
+   > ```bash
+   > WITNESS_PUBLIC_URL=http://host.docker.internal:3232/ \
+   > WATCHER_PUBLIC_URL=http://host.docker.internal:3236/ \
+   > docker compose up -d
+   > ```
+
 See [examples/README.md](./examples/README.md) for detailed examples documentation.
 
 See [MULTISIG.md](./MULTISIG.md) for detailed multisig documentation.

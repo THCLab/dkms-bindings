@@ -1,0 +1,105 @@
+networks:
+  keri:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:16
+    networks:
+      - keri
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: keri_go
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  witness:
+    build:
+      context: ../../../keriox
+      dockerfile: witness.Dockerfile
+    networks:
+      - keri
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3232:3232"
+    command:
+      - --seed=ArwXoACJgOleVZ2PY7kXn7rA0II0mHYDhc6WrBH8fDAc
+      - --http-port=3232
+      - --public-url=${WITNESS_PUBLIC_URL:-http://witness:3232/}
+      - --db-path=/db
+    volumes:
+      - witness_db:/db
+
+  watcher:
+    build:
+      context: ../../../keriox
+      dockerfile: watcher.Dockerfile
+    networks:
+      - keri
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3236:3236"
+    command:
+      - --seed=Alntkt3u6dDgiQxTATr01dy8M72uuaZEf9eTdM-70Gk8
+      - --http-port=3236
+      - --public-url=${WATCHER_PUBLIC_URL:-http://watcher:3236/}
+      - --db-path=/db
+      - --tel-storage-path=/tel_storage
+    volumes:
+      - watcher_db:/db
+      - watcher_tel:/tel_storage
+
+  vault:
+    image: hashicorp/vault:latest
+    networks:
+      - keri
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://localhost:8200"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  vault-init:
+    image: hashicorp/vault:latest
+    networks:
+      - keri
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until vault status > /dev/null 2>&1; do sleep 1; done
+        vault secrets enable transit || true
+        vault write transit/keys/keri-issuer        type=ed25519 || true
+        vault write transit/keys/keri-issuer-next   type=ed25519 || true
+        vault write transit/keys/keri-verifier      type=ed25519 || true
+        vault write transit/keys/keri-verifier-next type=ed25519 || true
+        echo "Vault transit keys ready"
+    depends_on:
+      vault:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:
+  witness_db:
+  watcher_db:
+  watcher_tel:

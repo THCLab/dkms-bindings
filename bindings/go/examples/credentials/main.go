@@ -12,9 +12,8 @@ import (
 	dkms "github.com/THCLab/dkms-bindings/bindings/go"
 )
 
-// Witness and watcher infrastructure (local)
-const witnessOobiJSON = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://localhost:3232/"}`
-const watcherOobiJSON = `{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://localhost:3236/"}`
+const defaultWitnessOobiJSON = `{"eid":"BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC","scheme":"http","url":"http://localhost:3232/"}`
+const defaultWatcherOobiJSON = `{"eid":"BF2t2NPc1bwptY1hYV0YCib1JjQ11k9jtuaZemecPF5b","scheme":"http","url":"http://localhost:3236/"}`
 
 // schemaSAID is a placeholder. In production, register your schema and use its real SAID.
 const schemaSAID = "EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao"
@@ -25,6 +24,24 @@ func mustGenKey() (ed25519.PublicKey, ed25519.PrivateKey) {
 		log.Fatalf("generate key: %v", err)
 	}
 	return pub, priv
+}
+
+// buildSigner returns a Signer and its public key.
+// When VAULT_ADDR and VAULT_TOKEN are set it uses Vault transit (keyName must
+// exist as an ed25519 transit key). Otherwise it generates an ephemeral
+// in-memory key.
+func buildSigner(keyName string) (dkms.Signer, ed25519.PublicKey) {
+	if addr := os.Getenv("VAULT_ADDR"); addr != "" {
+		token := os.Getenv("VAULT_TOKEN")
+		vs, err := NewVaultSigner(addr, token, keyName)
+		if err != nil {
+			log.Fatalf("VaultSigner(%s): %v", keyName, err)
+		}
+		fmt.Printf("  [vault] using transit key %q\n", keyName)
+		return vs, vs.PublicKey()
+	}
+	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
+	return dkms.NewEd25519Signer(priv), pub
 }
 
 func inceptIdentifier(controller *dkms.Controller, signer dkms.Signer, pub, nextPub ed25519.PublicKey, witnessOobi string) *dkms.Identifier {
@@ -107,6 +124,15 @@ func main() {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
+	witnessOobiJSON := os.Getenv("WITNESS_OOBI")
+	if witnessOobiJSON == "" {
+		witnessOobiJSON = defaultWitnessOobiJSON
+	}
+	watcherOobiJSON := os.Getenv("WATCHER_OOBI")
+	if watcherOobiJSON == "" {
+		watcherOobiJSON = defaultWatcherOobiJSON
+	}
+
 	// -----------------------------------------------------------------------
 	fmt.Println("=== Step 1: Create Issuer (with witness) ===")
 
@@ -115,9 +141,8 @@ func main() {
 		log.Fatalf("issuer controller: %v", err)
 	}
 
-	issuerPub, issuerPriv := mustGenKey()
-	issuerNextPub, _ := mustGenKey()
-	issuerSigner := dkms.NewEd25519Signer(issuerPriv)
+	issuerSigner, issuerPub := buildSigner("keri-issuer")
+	_, issuerNextPub := buildSigner("keri-issuer-next")
 
 	issuer := inceptIdentifier(issuerController, issuerSigner, issuerPub, issuerNextPub, witnessOobiJSON)
 
@@ -164,9 +189,8 @@ func main() {
 		log.Fatalf("verifier controller: %v", err)
 	}
 
-	verifierPub, verifierPriv := mustGenKey()
-	verifierNextPub, _ := mustGenKey()
-	verifierSigner := dkms.NewEd25519Signer(verifierPriv)
+	verifierSigner, verifierPub := buildSigner("keri-verifier")
+	_, verifierNextPub := buildSigner("keri-verifier-next")
 
 	verifier := inceptIdentifier(verifierController, verifierSigner, verifierPub, verifierNextPub, "")
 
