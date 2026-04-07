@@ -104,11 +104,14 @@ Five complete examples are provided:
    >   echo "127.0.0.1 host.docker.internal" | sudo tee -a /etc/hosts
    >   ```
    >
-   > Then start the services with:
+   > These env vars must be set every time you start or restart the witness/watcher
+   > containers. Without them the services advertise `http://witness:3232/` in their
+   > OOBIs, which is only resolvable inside Docker — your host Go app will get a DNS
+   > error. Always start with:
    > ```bash
    > WITNESS_PUBLIC_URL=http://host.docker.internal:3232/ \
    > WATCHER_PUBLIC_URL=http://host.docker.internal:3236/ \
-   > docker compose up -d
+   > docker compose up -d --force-recreate witness watcher
    > ```
 
 See [examples/README.md](./examples/README.md) for detailed examples documentation.

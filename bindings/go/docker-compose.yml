@@ -22,9 +22,7 @@ services:
       retries: 5
 
   witness:
-    build:
-      context: ../../../keriox
-      dockerfile: witness.Dockerfile
+    image: ghcr.io/thclab/keriox-witness:0.17.13
     networks:
       - keri
     extra_hosts:
@@ -40,9 +38,7 @@ services:
       - witness_db:/db
 
   watcher:
-    build:
-      context: ../../../keriox
-      dockerfile: watcher.Dockerfile
+    image: ghcr.io/thclab/keriox-watcher:0.17.13
     networks:
       - keri
     extra_hosts:
