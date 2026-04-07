@@ -1,31 +1,26 @@
 [package]
 name = "keri-dart"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Flutter/Dart FFI bindings for keriox-sdk via flutter_rust_bridge v2"
 
 [lib]
 name = "dartkeriox"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-flutter_rust_bridge = "=1.82.3"
-keri = { git = "https://github.com/THCLab/keriox.git", features = ["oobi", "mailbox"]}
-controller = { git = "https://github.com/THCLab/keriox.git"}
-said = { git = "https://github.com/THCLab/cesrox", tag = "v0.1.4" } 
-cesrox = { git = "https://github.com/THCLab/cesrox", features = ["cesr-proof"], tag = "v0.1.4" }
-anyhow = { version = "1.0" }
-thiserror = "1.0"
-base64 = "0.13.0"
-hex = "0.4"
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-futures = "0.3"
-tokio = { version = "1.14.0", features = ["rt", "macros", "rt-multi-thread"] }
-openssl = { version = "0.10", features = ["vendored"] }
-sled = "0.34.7"
+flutter_rust_bridge = "2.12"
+keri-sdk = { path = "../../../keriox/keriox_sdk", features = ["keyprovider"] }
+keri-keyprovider = { path = "../../../keriox/keri_keyprovider", features = ["host", "software"] }
+keri-core = { path = "../../../keriox/keriox_core" }
+keri-controller = { path = "../../../keriox/components/controller" }
+tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+base64 = "0.22"
+log = "0.4"
 
 [dev-dependencies]
-tempfile = "3.1"
-async-std = { version = "1", features = ["attributes", "tokio1"] }
+tempfile = "3"
