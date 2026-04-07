@@ -92,7 +92,7 @@ func queryTELUntilChanged(id *dkms.Identifier, signer dkms.Signer, registryID, v
 		if st != cachedState {
 			return st
 		}
-		fmt.Printf("  [retry %d/%d] state=%s, waiting %s...\n", i+1, maxRetries, stateName(st), delay)
+		fmt.Printf("  [retry %d/%d] waiting %s...\n", i+1, maxRetries, delay)
 		time.Sleep(delay)
 		if delay < 8*time.Second {
 			delay *= 2
@@ -114,10 +114,6 @@ func stateName(s dkms.VcState) string {
 }
 
 func main() {
-	fmt.Println("DKMS Go Bindings - Verifiable Credentials Example")
-	fmt.Println("===================================================")
-	fmt.Println("End-to-end: issuer creates ACDC → verifier independently verifies it")
-	fmt.Println()
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -133,9 +129,6 @@ func main() {
 		watcherOobiJSON = defaultWatcherOobiJSON
 	}
 
-	// -----------------------------------------------------------------------
-	fmt.Println("=== Step 1: Create Issuer (with witness) ===")
-
 	issuerController, err := dkms.NewController(dbURL, witnessOobiJSON)
 	if err != nil {
 		log.Fatalf("issuer controller: %v", err)
@@ -147,42 +140,28 @@ func main() {
 	issuer := inceptIdentifier(issuerController, issuerSigner, issuerPub, issuerNextPub, witnessOobiJSON)
 
 	issuerID, _ := issuer.GetID()
-	fmt.Printf("✓ Issuer: %s (inception published + receipts collected)\n", issuerID)
-
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 2: Create Credential Registry ===")
+	fmt.Printf("issuer:   %s\n", issuerID)
 
 	registryID, err := issuer.InceptRegistryAndPublish(issuerSigner)
 	if err != nil {
 		log.Fatalf("InceptRegistryAndPublish: %v", err)
 	}
-	fmt.Printf("✓ Registry: %s (witnesses notified + backers notified)\n", registryID)
-
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 3: Issue ACDC Credential ===")
+	fmt.Printf("registry: %s\n", registryID)
 
 	attrsJSON := fmt.Sprintf(`{"dt":"%s","name":"Alice","role":"Member"}`, time.Now().UTC().Format(time.RFC3339))
 	acdcJSON, acdcSAID, err := dkms.BuildACDCFromJSON(issuerID, issuerID, registryID, schemaSAID, attrsJSON)
 	if err != nil {
 		log.Fatalf("BuildACDCFromJSON: %v", err)
 	}
-
-	var pretty map[string]interface{}
-	json.Unmarshal([]byte(acdcJSON), &pretty)
-	prettyBytes, _ := json.MarshalIndent(pretty, "  ", "  ")
-	fmt.Printf("ACDC:\n  %s\n", string(prettyBytes))
 	fmt.Printf("ACDC SAID: %s\n", acdcSAID)
 
 	vcHash, err := issuer.IssueAndPublish([]byte(acdcJSON), issuerSigner)
 	if err != nil {
 		log.Fatalf("IssueAndPublish: %v", err)
 	}
-	fmt.Printf("✓ Credential issued (TEL hash: %s, witnesses notified + backers notified)\n", vcHash)
+	fmt.Printf("vc hash:  %s\n", vcHash)
 
 	time.Sleep(2 * time.Second)
-
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 4: Create Verifier (with watcher) ===")
 
 	verifierController, err := dkms.NewController(dbURL, "")
 	if err != nil {
@@ -195,15 +174,11 @@ func main() {
 	verifier := inceptIdentifier(verifierController, verifierSigner, verifierPub, verifierNextPub, "")
 
 	verifierID, _ := verifier.GetID()
-	fmt.Printf("✓ Verifier: %s\n", verifierID)
+	fmt.Printf("verifier: %s\n", verifierID)
 
 	if err := verifier.AddWatcherAndFinalize(watcherOobiJSON, verifierSigner); err != nil {
 		log.Fatalf("AddWatcherAndFinalize: %v", err)
 	}
-	fmt.Println("✓ Watcher added to verifier")
-
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 5: Share Issuer OOBIs with Verifier's Watcher ===")
 
 	issuerOobis, err := issuer.Oobi()
 	if err != nil {
@@ -214,7 +189,6 @@ func main() {
 			log.Fatalf("SendOobiToWatcher (issuer): %v", err)
 		}
 	}
-	fmt.Printf("✓ Sent %d issuer OOBIs to watcher\n", len(issuerOobis))
 
 	registryOobis, err := issuer.RegistryIdOobi()
 	if err != nil {
@@ -225,51 +199,28 @@ func main() {
 			log.Fatalf("SendOobiToWatcher (registry): %v", err)
 		}
 	}
-	fmt.Printf("✓ Sent %d registry OOBIs to watcher\n", len(registryOobis))
 
 	time.Sleep(1 * time.Second)
 
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 6: Verifier Queries Issuer's KEL ===")
-
-	updated, err := verifier.QueryKELAndFinalize(issuerID, verifierSigner)
-	if err != nil {
+	if _, err := verifier.QueryKELAndFinalize(issuerID, verifierSigner); err != nil {
 		log.Fatalf("QueryKELAndFinalize: %v", err)
 	}
-	fmt.Printf("✓ KEL query complete (got updates: %v)\n", updated)
 
 	time.Sleep(1 * time.Second)
 
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 7: Verifier Queries TEL Until Credential Appears as ISSUED ===")
-
 	state := queryTELUntilChanged(verifier, verifierSigner, registryID, vcHash, dkms.VcState(-1), 10)
-	fmt.Printf("  Status: %s\n", stateName(state))
-	if state == dkms.VcStateIssued {
-		fmt.Println("✅ Credential is VALID — independently verified by verifier")
-	} else {
+	if state != dkms.VcStateIssued {
 		log.Fatalf("unexpected state: %s", stateName(state))
 	}
-
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 8: Issuer Revokes Credential ===")
+	fmt.Printf("status:   %s\n", stateName(state))
 
 	if err := issuer.RevokeAndPublish(vcHash, issuerSigner); err != nil {
 		log.Fatalf("RevokeAndPublish: %v", err)
 	}
-	fmt.Println("✓ Credential revoked and backers notified")
-
-	// -----------------------------------------------------------------------
-	fmt.Println("\n=== Step 9: Verifier Re-queries TEL Until REVOKED ===")
 
 	state2 := queryTELUntilChanged(verifier, verifierSigner, registryID, vcHash, state, 10)
-	fmt.Printf("  Status: %s\n", stateName(state2))
-	if state2 == dkms.VcStateRevoked {
-		fmt.Println("✅ Revocation confirmed — verifier sees credential as REVOKED")
-	} else {
+	if state2 != dkms.VcStateRevoked {
 		log.Fatalf("expected REVOKED, got: %s", stateName(state2))
 	}
-
-	fmt.Println("\n===================================================")
-	fmt.Println("End-to-end credential verification complete!")
+	fmt.Printf("status:   %s\n", stateName(state2))
 }
