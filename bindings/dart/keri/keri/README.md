@@ -1,45 +1,129 @@
+# keri
 
-# Overview
+Flutter package exposing the KERI mobile SDK to Dart. Wraps a Rust
+[keri-sdk](https://github.com/THCLab/keriox) controller via
+[`flutter_rust_bridge`](https://cjycode.com/flutter_rust_bridge/) v2, with a
+host-side key provider so the private signing keys live in
+hardware-backed storage (AndroidKeyStore today; Secure Enclave on iOS soon).
 
-Dart client for managing KERI based Identifiers. See top level [README](https://github.com/THCLab/keri-bindings) to get acquainted with more generic overview and clients features.  For more information about infrastructure see [KERI](https://keri.one/) or its [whitepaper](https://github.com/SmithSamuelM/Papers/blob/master/whitepapers/KERI_WP_2.x.web.pdf).
+The on-device flow is:
 
-## Important
-This plugin requires a third party key provider that derives public private key pairs and is able to sign a String using Ed25519 algorithm. For such a usecase, [Asymmetric crypto primitives](https://pub.dev/packages/asymmetric_crypto_primitives) plugin has been designed. The usage of its `signer` object along with KERI plugin has been provided as an example for this plugin. Moreover, it is important that the key is in **URL safe** variant of Base64.
+```
+Dart UI  ⇄  Rust controller (keri-sdk)  ⇄  Host key provider (Kotlin / Swift)
+                                                  ↑
+                                       biometric prompts, hardware-bound keys
+```
+
+## Adding to your app
+
+```yaml
+dependencies:
+  keri: <version>
+```
+
+You also need a platform implementation:
+
+```yaml
+dependencies:
+  keri_android: <version>      # bundles libdartkeriox.so + Kotlin key provider
+```
 
 ## Usage
-Currently supported functions are:
-* `initKel` - Initializes database for storing events.
-* `incept` - Creates inception event that needs to be signed externally.
-* `finalizeInception` - Finalizes inception (bootstrapping an Identifier and its Key Event Log).
-* `rotate` - Creates rotation event that needs to be signed externally.
-* `addWatcher` - Creates new reply message with identifier's watcher. It needs to be signed externally and finalized with finalizeEvent.
-* `finalizeEvent` - Verifies provided signatures against event and saves it.
-* `resolveOobi` - Checks and saves provided identifier's endpoint information.
-* `getKel` - Returns Key Event Log in the CESR representation for current Identifier when given a controller.
-* `anchor` - Creates new Interaction Event along with arbitrary data.
-* `anchorDigest` - Creates new Interaction Event along with provided Self Addressing Identifiers.
-* `newIdentifier` - Creates an `Identifier` object from the id string.
-* `queryMailbox` - Queries own or different mailbox about an identifier.
-* `finalizeQuery` - Verifies provided signatures against mailbox query and saves it.
-* `signatureFromHex` - Creates a `Signature` object from given type and hex string.
-* `inceptGroup` - Creates group inception event that needs to be signed externally.
-* `finalizeGroupIncept` - Finalizes group inception
-* `newPublicKey` - Creates a `PublicKey` object from given key type and Base64 string.
-* `newDataAndSignature` - Creates a `DataAndSignature` object from given data and its hex string signature.
-* `queryWatchers` - Queries the watchers about an identifier.
-* `sendOobiToWatcher` - Sends given oobi to a connected watcher 
-* `notifyWitnesses` - Publishes events to the witnesses
-* `broadcastReceipts` - Sends witnesses receipts between them
-* `signToCesr` - Joins provided payload and signature into cesr stream.
-* `verifyFromCesr` - Verifies signatures from provided cesr stream.
-* `splitOobisAndData` - Splits provided stream into oobis and rest of cesr stream.
-* `getMailboxLocation` - Returns the address where mailbox can be found.
-* `anchorPayload` - Generates interaction event that anchors provided payload in the Key Event Log.
 
-## Glossary
+```dart
+import 'package:keri/keri.dart';
+import 'package:path_provider/path_provider.dart';
 
-* **Controller** -- manages Identifiers;
-* **KERI** -- see https://keri.one/ page;
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RustLib.init();         // boots the Rust runtime
+  runApp(const MyApp());
+}
 
-## See also
-* Test coverage provided in `functions_test.dart`: [link](https://github.com/THCLab/keri-bindings/blob/master/bindings/dart/keri/keri/test/functions_test.dart) 
+Future<KeriMobileSdk> bootSdk() async {
+  final docs = await getApplicationDocumentsDirectory();
+  final sdk = await KeriMobileSdk.newInstance(dbPath: '${docs.path}/keri');
+
+  // Wire the five host-side callbacks. On Android, keri_android exposes a
+  // MethodChannel ('com.thclab.keri_android/keystore') that talks to the
+  // built-in key provider. iOS will follow the same pattern.
+  await sdk.registerKeyProvider(
+    createKey: (label, algo) async { ... },
+    openKey:   (label)       async { ... },
+    sign:      (label, msg)  async { ... },
+    deleteKey: (label)       async { ... },
+    listKeys: ()             async { ... },
+  );
+  return sdk;
+}
+```
+
+For a fully wired example including the MethodChannel implementation,
+biometric prompts, witness URL input, and rotation, see
+[`example/`](example) and its [README](example/README.md).
+
+## API surface (`KeriMobileSdk`)
+
+Identifiers and signing:
+
+| Method                    | Purpose                                                |
+|---------------------------|--------------------------------------------------------|
+| `newInstance(dbPath)`     | Create the SDK rooted at `dbPath`.                     |
+| `registerKeyProvider(...)`| Install the host-side `createKey`/`openKey`/`sign`/`deleteKey`/`listKeys` callbacks. Required before any inception or rotation. |
+| `createIdentifier(alias, config)` | Mint both current and next signing keys via the host callback, build and sign the inception event, persist `KeyState{current_label, next_label, version, algorithm}`. Returns the AID. |
+| `rotateKeys(alias, config)` | Open the previously-committed next-key as the new current, mint a fresh next-next, sign + persist the rotation. The algorithm is reused from the alias's `KeyState`. |
+| `loadIdentifier(alias)`   | Look up the saved AID for an alias.                    |
+| `listAliases()`           | Enumerate aliases known to the local controller DB.    |
+| `sign(alias, data)`       | Sign arbitrary bytes with the alias's current key. Returns `FfiSignedEnvelope { payload, cesr }`. |
+| `verify(alias, cesr)`     | Parse a CESR stream produced by `sign` and verify it.  |
+
+Transaction Event Log (TEL) — ACDC credentials:
+
+| Method                                  | Purpose                                       |
+|-----------------------------------------|-----------------------------------------------|
+| `inceptRegistry(alias)`                 | Create a credential registry for the AID.     |
+| `issueCredential(alias, credentialSaid)`| Anchor an issuance event.                     |
+| `revokeCredential(alias, credentialSaid)`| Anchor a revocation event.                   |
+| `checkCredential(alias, registryId, credentialSaid)` | Resolve current status (Issued / Revoked / Unknown) by querying watchers. |
+| `getCredentialStatus(alias, credentialSaid)` | Read the locally-cached status without a network roundtrip. |
+
+Diagnostics (intended for the smoke-test, not production code):
+
+| Method                          | Purpose                                                 |
+|---------------------------------|---------------------------------------------------------|
+| `showKel(alias)`                | Return AID, state-present flag, event count, `key_state.json` contents, and the resolved algorithm for `<alias>_v1` / `<alias>_v2` labels. |
+| `verifyNextBinding(alias)`      | Recompute the Blake3 digest of the current next-key's `BasicPrefix` string and compare against the digest committed in the KEL. Surface for catching algorithm/encoding regressions. |
+| `wipe()`                        | Drop the cached `KeriStore` (release redb's `flock`) and `rm -rf` the db path. Idempotent. |
+
+## `FfiIdentifierConfig`
+
+```dart
+FfiIdentifierConfig(
+  witnessUrls: ['https://witness1.dkms.colossi.network'],
+  witnessThreshold: BigInt.from(1),
+  watcherUrls: const [],
+  algorithm: 'Ed25519',          // or 'EcdsaSecp256r1'
+)
+```
+
+`witnessUrls` are plain base URLs; Rust fetches each URL's `/introduce`
+endpoint to obtain its `LocationScheme`. `algorithm` is persisted in
+`KeyState` so rotations don't need to re-specify it.
+
+## Supported algorithms
+
+| Algorithm       | CESR transferable code | Notes                                          |
+|-----------------|------------------------|------------------------------------------------|
+| `Ed25519`       | `D`                    | software path (BouncyCastle on Android)        |
+| `EcdsaSecp256r1`| `1AAJ`                 | hardware-backed (AndroidKeyStore P-256, iOS Secure Enclave) |
+
+Next-key commitments use the corresponding **non-transferable** variant
+(`B`/`1AAI`) — KERI hashes the NT BasicPrefix string when committing, then
+reveals it as NT during rotation. The SDK handles this transparently; you
+just pass `algorithm` once.
+
+## Documentation
+
+- [Smoke-test app walk-through](example/README.md)
+- [Top-level bindings README](../../README.md) — toolchain, FRB codegen, Android `.so` build
+- [KERI spec / whitepaper](https://github.com/SmithSamuelM/Papers/blob/master/whitepapers/KERI_WP_2.x.web.pdf)

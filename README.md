@@ -42,82 +42,136 @@ Flutter App
     → KeriMobileSdk (FRB v2 generated Dart class)
       → libdartkeriox.so / .a (Rust cdylib)
         → keriox-sdk → keriox-core + keri-controller + keri-keyprovider
+                                ↑
+        Host key provider (Kotlin / Swift) wired via 5 Dart→host callbacks
 ```
 
 ### Key management flow
 
 ```
 App calls sdk.sign(alias, data)
-  → Rust: calls host_sign callback
-    → Dart: AndroidKeystoreProvider.sign() or IOSKeychainProvider.sign()
-      → Platform keystore signs (biometric prompt if configured)
-    → Returns signature bytes to Rust
-  → Rust: builds CESR envelope
-→ Returns FfiSignedEnvelope to Dart
+  → Rust: KeriSigner wraps a HostCallbackKeyProvider
+    → Dart sign closure (registered via sdk.registerKeyProvider)
+      → MethodChannel → Kotlin KeriKeyProvider → algorithm-specific backend
+        → AndroidKeyStore signs (biometric prompt if cache/window expired)
+      → returns signature bytes
+    → returns to Rust
+  → Rust builds CESR envelope, returns FfiSignedEnvelope to Dart
 ```
 
-Private keys **never** enter the Rust address space. All signing is delegated to the host platform's keystore.
+For Ed25519, the seed lives briefly in app memory during a sign call (kept in
+a 10-second cache to coalesce inception/rotation bursts), then is zeroized.
+For P-256, the private key never leaves the secure element.
 
 ## Supported key providers
 
-| Platform | Provider | Key Storage | Biometric |
-|----------|----------|-------------|-----------|
-| Android (API 30+) | `AndroidKeystoreProvider` | Android Keystore (Ed25519, hardware-backed) | BiometricPrompt |
-| iOS | `IOSKeychainProvider` | Keychain (Ed25519 seed, encrypted, biometric-gated) | Face ID / Touch ID |
-| macOS / Windows | `SoftwareKeyProvider` | In-memory Ed25519 (testing only) | No |
+| Platform          | Backend                       | Algorithm        | Key storage                                       | Per-burst auth                                |
+|-------------------|-------------------------------|------------------|---------------------------------------------------|------------------------------------------------|
+| Android (API 30+) | `BouncyCastleEd25519Backend`  | `Ed25519`        | seed AES-GCM wrapped under an AndroidKeyStore master key (biometric-gated) | 10-second in-memory seed cache                 |
+| Android (API 30+) | `NativeP256Backend`           | `EcdsaSecp256r1` | EC key in TEE/StrongBox; never exits              | 10-second time-bound BiometricPrompt (KeyMint) |
+| iOS               | (planned) Keychain + Secure Enclave | both       | TBD                                               | TBD                                            |
+| macOS / Windows   | not implemented yet           | —                | —                                                 | —                                              |
 
 ## Setup
 
 ### Prerequisites
 
-- Flutter SDK >= 3.24
-- Rust stable toolchain
-- Android NDK r26+ (for Android builds)
-- Xcode 15+ (for iOS builds)
+- Flutter SDK with Dart 3.x
+- Rust stable toolchain (edition 2021)
+- Android NDK `30.0.14904198` (or compatible r25/r26)
+- Android SDK platform 36
 - `cargo-ndk` (`cargo install cargo-ndk`)
-- `cargo-lipo` (`cargo install cargo-lipo`)
-- `flutter_rust_bridge_codegen` v2 (`cargo install flutter_rust_bridge_codegen`)
+- `flutter_rust_bridge_codegen` v2.12 (`cargo install flutter_rust_bridge_codegen --version 2.12.0`)
 
 ### Build
 
 ```bash
-# Android
-cargo ndk -t arm64-v8a -t x86_64 \
-  -o bindings/dart/keri/keri_android/android/src/main/jniLibs \
-  build --release --manifest-path bindings/dart/Cargo.toml
-
-# iOS
-cargo lipo --release --manifest-path bindings/dart/Cargo.toml
-
-# Generate FRB v2 bindings
+# Regenerate the FRB v2 bindings (after editing src/api.rs)
 cd bindings/dart
 flutter_rust_bridge_codegen generate
+
+# Android .so (arm64-v8a + x86_64)
+export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/30.0.14904198
+cargo ndk -t arm64-v8a -t x86_64 \
+  -o keri/keri_android/android/src/main/jniLibs \
+  build --release
+
+# Example APK
+cd keri/keri/example
+flutter build apk --debug
 ```
+
+Pre-built `libdartkeriox.so` for both Android ABIs is checked into the
+repo, so an example APK build does not require Rust.
 
 ### Dart usage
 
 ```dart
+import 'package:flutter/services.dart';
 import 'package:keri/keri.dart';
+import 'package:path_provider/path_provider.dart';
 
-final sdk = await KeriMobileSdk.init(
-  dbPath: appDocumentsPath,
-  keyProvider: Platform.isAndroid
-    ? AndroidKeystoreProvider()
-    : IOSKeychainProvider(),
-);
+const _ks = MethodChannel('com.thclab.keri_android/keystore');
 
-final prefix = await sdk.createIdentifier(
-  'my-id',
-  IdentifierConfig(witnessUrls: [...], witnessThreshold: 1),
-);
+Future<KeriMobileSdk> bootSdk() async {
+  await RustLib.init();
 
-final envelope = await sdk.sign('my-id', utf8.encode('hello world'));
-final verified = await sdk.verify('my-id', envelope.cesr.codeUnits);
+  final docs = await getApplicationDocumentsDirectory();
+  final sdk = await KeriMobileSdk.newInstance(dbPath: '${docs.path}/keri');
 
-await sdk.rotateKeys('my-id', RotationConfig(newNextPkB64: '...'));
-await sdk.inceptRegistry('my-id');
-await sdk.issueCredential('my-id', credentialSaid);
+  await sdk.registerKeyProvider(
+    createKey: (label, algo) async =>
+        (await _ks.invokeMethod<Uint8List>('createKey',
+            {'label': label, 'algo': algo}))!,
+    openKey: (label) async =>
+        (await _ks.invokeMethod<Uint8List>('getPublicKey',
+            {'label': label}))!,
+    sign: (label, msg) async =>
+        (await _ks.invokeMethod<Uint8List>('sign',
+            {'label': label, 'message': msg}))!,
+    deleteKey: (label) async =>
+        _ks.invokeMethod('deleteKey', {'label': label}),
+    listKeys: () async =>
+        (await _ks.invokeMethod<List<dynamic>>('listKeys') ?? [])
+            .cast<String>(),
+  );
+  return sdk;
+}
+
+Future<void> demo(KeriMobileSdk sdk) async {
+  // Rust mints alias_v1 (current) and alias_v2 (next) via the callbacks.
+  final aid = await sdk.createIdentifier(
+    alias: 'my-id',
+    config: FfiIdentifierConfig(
+      witnessUrls: const ['https://witness1.dkms.colossi.network'],
+      witnessThreshold: BigInt.from(1),
+      watcherUrls: const [],
+      algorithm: 'EcdsaSecp256r1',     // or 'Ed25519'
+    ),
+  );
+
+  final envelope = await sdk.sign(alias: 'my-id', data: utf8.encode('hello'));
+  final verified = await sdk.verify(alias: 'my-id', cesr: envelope.cesr.codeUnits);
+
+  // Rust reads the algorithm from the alias's KeyState; no need to repeat it.
+  await sdk.rotateKeys(
+    alias: 'my-id',
+    config: FfiRotationConfig(
+      witnessToAdd: const [],
+      witnessToRemove: const [],
+      witnessThreshold: BigInt.from(1),
+    ),
+  );
+
+  await sdk.inceptRegistry(alias: 'my-id');
+  await sdk.issueCredential(alias: 'my-id', credentialSaid: '...');
+}
 ```
+
+For a fully wired example app (algorithm picker, witness URL inputs,
+biometric flows, rotation, KEL inspector, wipe-and-retry button), see
+[`bindings/dart/keri/keri/example`](./bindings/dart/keri/keri/example) and
+its [README](./bindings/dart/keri/keri/example/README.md).
 
 ---
 
