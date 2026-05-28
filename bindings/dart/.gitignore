@@ -1,3 +1,4 @@
+src/frb_generated.rs
 /target
 /Cargo.lock
 /jniLibs

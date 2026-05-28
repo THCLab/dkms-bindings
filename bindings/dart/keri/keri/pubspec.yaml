@@ -1,46 +1,28 @@
 name: keri
 description: Dart client for managing KERI based Identifiers on various platforms.
-version: 2.1.4
+version: 3.0.0
 homepage: https://github.com/THCLab/keri-bindings/tree/master/bindings/dart/keri/keri
 
 environment:
-  sdk: ">=3.0.6 <4.0.0"
-  flutter: ">=3.0.0"
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.24.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_rust_bridge: ^1.82.3
-  keri_android: ^1.0.3
-  keri_ios: ^0.2.3
-  keri_macos: ^0.2.3
-  keri_platform_interface: ^1.1.3
-  keri_windows: ^0.2.3
-  plugin_platform_interface: ^2.1.3
-  ffi: ^2.0.1
-  freezed: ^2.3.2
-  freezed_annotation: ^2.2.0
-  meta: ^1.8.0
-  file: ^7.0.0
-  uuid: ^4.0.1
+  keri_platform_interface:
+    path: ../keri_platform_interface
+  keri_android:
+    path: ../keri_android
+  uuid: ^4.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  ffigen: ^9.0.1
-  build_runner: ^2.2.1
-  cryptography: ^2.7.0
-  path: ^1.8.3 
-  convert: ^3.1.1
-
+  flutter_lints: ^4.0.0
 
 flutter:
   plugin:
     platforms:
       android:
         default_package: keri_android
-      ios:
-        default_package: keri_ios
-      macos:
-        default_package: keri_macos

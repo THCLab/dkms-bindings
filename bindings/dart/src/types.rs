@@ -5,12 +5,17 @@ pub struct FfiIdentifierConfig {
     pub witness_urls: Vec<String>,
     pub witness_threshold: u64,
     pub watcher_urls: Vec<String>,
+    /// "Ed25519" or "EcdsaSecp256r1". Persisted in KeyState so rotation
+    /// keeps the same algorithm without the caller needing to specify it.
+    pub algorithm: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FfiRotationConfig {
-    pub new_next_pk_b64: String,
+    /// Plain witness base URLs to register (e.g. "https://witness1.example/").
+    /// The Rust side fetches `<url>/introduce` to obtain the LocationScheme.
     pub witness_to_add: Vec<String>,
+    /// Witness EIDs to remove (string-encoded BasicPrefix).
     pub witness_to_remove: Vec<String>,
     pub witness_threshold: u64,
 }
