@@ -4,13 +4,17 @@ This crate exposes the keri-sdk Rust API to Flutter via
 [`flutter_rust_bridge`](https://cjycode.com/flutter_rust_bridge/) v2. The Dart
 side is a federated plugin under `keri/`:
 
-| Package                                  | Role                                                       |
-|------------------------------------------|------------------------------------------------------------|
-| `keri/keri`                              | App-facing Flutter package. End users add this to their `pubspec.yaml`. |
-| `keri/keri_platform_interface`           | Pure-Dart interface re-exporting the FRB-generated bindings. |
-| `keri/keri_android`                      | Android implementation: bundles `libdartkeriox.so` and a Kotlin host key provider (BouncyCastle Ed25519 + native AndroidKeyStore P-256). |
-| `keri/keri_ios` / `keri_macos` / `keri_windows` | Stubs — not yet implemented.                     |
-| `keri/keri/example`                      | Working smoke-test app for Android. See its [README](keri/keri/example/README.md). |
+| Package                          | Role                                                       |
+|----------------------------------|------------------------------------------------------------|
+| `keri/keri`                      | App-facing Flutter package. End users add this to their `pubspec.yaml`. |
+| `keri/keri_platform_interface`   | Pure-Dart interface re-exporting the FRB-generated bindings. |
+| `keri/keri_android`              | Android implementation: bundles `libdartkeriox.so` and a Kotlin host key provider (BouncyCastle Ed25519 + native AndroidKeyStore P-256). |
+| `keri/keri_ios`                  | iOS stub — Swift host key provider (Keychain + Secure Enclave) planned. |
+| `keri/keri/example`              | Working smoke-test app for Android. See its [README](keri/keri/example/README.md). |
+
+Desktop platforms (macOS, Windows, Linux) are intentionally out of scope —
+they should consume keriox directly via the native Rust crates or the
+Node.js binding rather than going through Flutter.
 
 ## Repository layout
 
@@ -24,10 +28,10 @@ bindings/dart/
 │   ├── frb_generated.rs   # FRB output (regenerated, do not edit)
 │   └── lib.rs
 └── keri/                  # Flutter federated plugin
-    ├── keri/              # app-facing
+    ├── keri/              # app-facing (+ example/ smoke test)
     ├── keri_platform_interface/
     ├── keri_android/
-    └── ...
+    └── keri_ios/          # stub
 ```
 
 ## Toolchain
@@ -115,10 +119,10 @@ Drop the patch block once beta.7 is published.
 
 ## Other platforms
 
-- **Windows / Linux desktop**: cross-compile via `cargo install cross --git
-  https://github.com/cross-rs/cross` then `cross build --target
-  aarch64-unknown-linux-gnu` / `x86_64-pc-windows-gnu`. The Flutter
-  packages for these targets are not implemented yet.
-- **iOS / macOS**: `keri_ios` and `keri_macos` are stubs. A Swift host key
-  provider mirroring the Kotlin one (Secure Enclave for P-256, Keychain
-  for the wrapped Ed25519 seed) is the natural next step.
+- **iOS**: `keri_ios` is a stub. A Swift host key provider mirroring the
+  Kotlin one (Secure Enclave for P-256, Keychain for the wrapped Ed25519
+  seed) is the natural next step.
+- **macOS / Windows / Linux**: not provided. Desktop apps should consume
+  the native [keriox crates](https://github.com/THCLab/keriox) or the
+  [Node.js binding](../node.js) directly — going through Flutter buys
+  nothing on those platforms.

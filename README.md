@@ -19,7 +19,7 @@ With these bindings you can:
 
 | Binding | Status | Platform |
 |---------|--------|----------|
-| [Dart/Flutter](./bindings/dart) | Active (mobile rewrite) | Android, iOS, macOS, Windows |
+| [Dart/Flutter](./bindings/dart) | Active (mobile rewrite) | Android, iOS (planned) |
 | [Node.js](./bindings/node.js) | Active | Linux, macOS, Windows |
 | [WASM](./bindings/wasm) | Active | Web browsers |
 
@@ -70,7 +70,10 @@ For P-256, the private key never leaves the secure element.
 | Android (API 30+) | `BouncyCastleEd25519Backend`  | `Ed25519`        | seed AES-GCM wrapped under an AndroidKeyStore master key (biometric-gated) | 10-second in-memory seed cache                 |
 | Android (API 30+) | `NativeP256Backend`           | `EcdsaSecp256r1` | EC key in TEE/StrongBox; never exits              | 10-second time-bound BiometricPrompt (KeyMint) |
 | iOS               | (planned) Keychain + Secure Enclave | both       | TBD                                               | TBD                                            |
-| macOS / Windows   | not implemented yet           | —                | —                                                 | —                                              |
+
+Desktop platforms (macOS, Windows, Linux) are intentionally **out of scope**
+for the Flutter binding — use the native [keriox SDK](https://github.com/THCLab/keriox)
+or the [Node.js binding](./bindings/node.js) directly.
 
 ## Setup
 
@@ -191,9 +194,7 @@ dkms-bindings/
 │   │       ├── keri/                  # App-facing package
 │   │       ├── keri_platform_interface/ # Abstract interface
 │   │       ├── keri_android/          # Android (Keystore + FFI)
-│   │       ├── keri_ios/              # iOS (Keychain + FFI)
-│   │       ├── keri_macos/            # macOS (software keys)
-│   │       └── keri_windows/          # Windows (software keys)
+│   │       └── keri_ios/              # iOS stub (Keychain + Secure Enclave planned)
 │   ├── node.js/        # Node.js binding (NAPI-RS)
 │   └── wasm/           # WASM binding (wasm-bindgen)
 ├── .github/workflows/
