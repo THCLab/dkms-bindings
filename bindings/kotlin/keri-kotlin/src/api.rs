@@ -364,6 +364,139 @@ impl KeriMobileSdk {
         Ok(map_status(status))
     }
 
+    /// Ingest a delegator's KEL CESR stream into `alias`'s local
+    /// store. The mobile join-by-QR flow calls this with the primary
+    /// device's KEL bytes carried inside the invite payload, so the
+    /// delegator's seal can be validated locally without a witness
+    /// or watcher round-trip.
+    ///
+    /// Idempotent — calling twice with the same stream is a no-op.
+    pub async fn import_delegator_kel(
+        &self,
+        alias: String,
+        kel_cesr: String,
+    ) -> Result<(), KeriError> {
+        use keri_core::actor::parse_notice_stream;
+        let store = self.open_store()?;
+        let id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let notices = parse_notice_stream(kel_cesr.as_bytes())
+            .map_err(|e| KeriError::Internal(format!("parse delegator KEL: {e}")))?;
+        for notice in &notices {
+            id.save_notice(notice)
+                .map_err(|e| KeriError::Controller(e.to_string()))?;
+        }
+        Ok(())
+    }
+
+    /// Build a delegated-AID inception event ('dip') under `alias`
+    /// delegated by `config.delegator_aid`. Persists the alias →
+    /// delegated_prefix and alias → delegator mapping. Returns the
+    /// delegated AID and the dip CESR ready for out-of-band transport
+    /// to the delegator.
+    ///
+    /// After the delegator returns the signed delegating `ixn`, call
+    /// `finalize_delegation` to attach the seal to the local KEL.
+    pub async fn request_delegation(
+        &self,
+        alias: String,
+        config: FfiDelegationConfig,
+    ) -> Result<FfiDelegationRequest, KeriError> {
+        let factory = self.factory()?;
+        let algo = config.algorithm;
+        let current_label = format!("{alias}_v1");
+        let next_label = format!("{alias}_v2");
+
+        let current_provider = factory
+            .create(&current_label, algo.to_keri())
+            .await
+            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
+        let next_provider = factory
+            .create(&next_label, algo.to_keri())
+            .await
+            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
+
+        let next_pk =
+            basic_prefix_for(algo, next_provider.public_key().bytes.clone(), false);
+
+        let witnesses = futures::future::try_join_all(
+            config.witness_urls.iter().map(|u| resolve_location_scheme(u)),
+        )
+        .await?;
+
+        let delegator: keri_controller::IdentifierPrefix = config
+            .delegator_aid
+            .parse()
+            .map_err(|e| KeriError::Internal(format!("invalid delegator AID: {e}")))?;
+
+        let delegation_config = keri_sdk::types::DelegationConfig {
+            delegator: delegator.clone(),
+            witnesses,
+            witness_threshold: config.witness_threshold,
+            watchers: vec![],
+            algorithm: signer_algorithm(algo),
+        };
+
+        // build_delegation_request opens its own Controller against
+        // this path. After it returns, that Controller drops and
+        // KeriStore::load can reopen the same redb on subsequent
+        // calls under the same alias.
+        let alias_dir = self.db_path.join(&alias);
+        std::fs::create_dir_all(&alias_dir)?;
+        let alias_db = alias_dir.join("db");
+
+        let signer: Arc<dyn KeriKp> = current_provider.clone();
+        let (temp_id, delegated_prefix, dip_cesr) =
+            keri_sdk::operations::build_delegation_request(
+                alias_db,
+                signer,
+                next_pk,
+                delegation_config,
+            )
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+
+        let store = self.open_store()?;
+        store
+            .save_id(&alias, temp_id.id())
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        store
+            .save_delegator(&alias, &delegator)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        self.save_key_state(
+            &alias,
+            &KeyState {
+                current_label,
+                next_label,
+                version: 1,
+            },
+        )?;
+
+        Ok(FfiDelegationRequest {
+            delegated_aid: delegated_prefix.to_str(),
+            dip_cesr,
+        })
+    }
+
+    /// Apply the delegator's signed `ixn` (CESR) to `alias`'s
+    /// previously-escrowed `dip`, completing the delegated AID's
+    /// KEL. The delegator's own KEL must already be present in the
+    /// local store (call `import_delegator_kel` first).
+    pub async fn finalize_delegation(
+        &self,
+        alias: String,
+        delegator_seal_cesr: String,
+    ) -> Result<(), KeriError> {
+        let store = self.open_store()?;
+        let id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        keri_sdk::operations::finalize_delegation_with_seal(&id, &delegator_seal_cesr)
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))
+    }
+
     pub fn show_kel(&self, alias: String) -> Result<String, KeriError> {
         let store = self.open_store()?;
         let id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;

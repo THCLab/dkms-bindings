@@ -1,6 +1,8 @@
 package com.thclab.keri
 
 import com.thclab.keri.uniffi.FfiCredentialStatus
+import com.thclab.keri.uniffi.FfiDelegationConfig
+import com.thclab.keri.uniffi.FfiDelegationRequest
 import com.thclab.keri.uniffi.FfiIdentifierConfig
 import com.thclab.keri.uniffi.FfiRotationConfig
 import com.thclab.keri.uniffi.FfiSignedEnvelope
@@ -82,6 +84,47 @@ class KeriSdk private constructor(
 
     fun getCredentialStatus(alias: String, credentialSaid: String): FfiCredentialStatus =
         inner.getCredentialStatus(alias, credentialSaid)
+
+    /**
+     * Joiner side of an out-of-band delegated-AID pairing.
+     *
+     * Step 1 — ingest the delegator's KEL bytes (the QR invite carries
+     * them inline) so the delegator's seal can be validated locally
+     * later. Must be preceded by [requestDelegation] which mints the
+     * alias.
+     */
+    suspend fun importDelegatorKel(alias: String, kelCesr: String) =
+        withContext(Dispatchers.IO) { inner.importDelegatorKel(alias, kelCesr) }
+
+    /**
+     * Step 2 — mint a delegated AID under [alias] delegated by
+     * [delegatorAid]. Returns the delegated prefix and the CESR `dip`
+     * event for out-of-band transport to the delegator.
+     *
+     * Witness lists are typically empty for QR-based pairings — the
+     * primary device carries the full KEL inside the invite, so no
+     * witness round-trip is needed during the exchange.
+     */
+    suspend fun requestDelegation(
+        alias: String,
+        delegatorAid: String,
+        witnessUrls: List<String> = emptyList(),
+        witnessThreshold: ULong = 0u,
+        algorithm: SignatureAlgo,
+    ): FfiDelegationRequest = withContext(Dispatchers.IO) {
+        inner.requestDelegation(
+            alias,
+            FfiDelegationConfig(delegatorAid, witnessUrls, witnessThreshold, algorithm),
+        )
+    }
+
+    /**
+     * Step 3 — apply the delegator's signed `ixn` (CESR) returned by
+     * the primary to the alias's escrowed `dip`, finalising the
+     * delegated AID.
+     */
+    suspend fun finalizeDelegation(alias: String, delegatorSealCesr: String) =
+        withContext(Dispatchers.IO) { inner.finalizeDelegation(alias, delegatorSealCesr) }
 
     fun showKel(alias: String): String = inner.showKel(alias)
 
