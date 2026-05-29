@@ -1,0 +1,36 @@
+[package]
+name = "keri-kotlin"
+version = "0.1.0"
+edition = "2021"
+description = "Kotlin/Android FFI bindings for keriox-sdk via UniFFI"
+
+[lib]
+name = "uniffi_keri"
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+
+[dependencies]
+uniffi = { version = "0.31.1", features = ["tokio", "cli"] }
+async-trait = "0.1"
+keri-sdk = { path = "../../../../keriox/keriox_sdk", features = ["keyprovider"] }
+keri-keyprovider = { path = "../../../../keriox/keri_keyprovider", features = ["host", "software"] }
+keri-core = { path = "../../../../keriox/keriox_core" }
+keri-controller = { path = "../../../../keriox/components/controller" }
+tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+log = "0.4"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+futures = "0.3"
+url = "2"
+said = "0.5.3-beta"
+cesrox = "2.0.0-beta"
+
+[patch.crates-io]
+cesrox = { path = "../../../../cesrox/cesr" }
+said = { path = "../../../../cesrox/said" }

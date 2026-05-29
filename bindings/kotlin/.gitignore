@@ -1,0 +1,8 @@
+target/
+build/
+.gradle/
+.idea/
+*.iml
+local.properties
+keri-android-sdk/src/main/jniLibs/
+keri-android-sdk/src/main/java/com/thclab/keri/uniffi/

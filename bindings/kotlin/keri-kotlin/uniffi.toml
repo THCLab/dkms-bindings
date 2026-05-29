@@ -1,0 +1,4 @@
+[bindings.kotlin]
+package_name = "com.thclab.keri.uniffi"
+cdylib_name = "uniffi_keri"
+generate_immutable_records = true
