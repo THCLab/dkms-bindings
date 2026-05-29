@@ -126,6 +126,28 @@ class KeriSdk private constructor(
     suspend fun finalizeDelegation(alias: String, delegatorSealCesr: String) =
         withContext(Dispatchers.IO) { inner.finalizeDelegation(alias, delegatorSealCesr) }
 
+    /**
+     * Atomic combo of [requestDelegation] + [importDelegatorKel] so
+     * the redb on `<alias>/db` stays open under one Controller for
+     * both phases. Use this in QR-pairing flows where the two
+     * operations would otherwise happen across separate FFI calls
+     * and race on the redb in-process lock registry.
+     */
+    suspend fun requestDelegationWithKel(
+        alias: String,
+        delegatorAid: String,
+        delegatorKelCesr: String,
+        witnessUrls: List<String> = emptyList(),
+        witnessThreshold: ULong = 0u,
+        algorithm: SignatureAlgo,
+    ): FfiDelegationRequest = withContext(Dispatchers.IO) {
+        inner.requestDelegationWithKel(
+            alias,
+            FfiDelegationConfig(delegatorAid, witnessUrls, witnessThreshold, algorithm),
+            delegatorKelCesr,
+        )
+    }
+
     fun showKel(alias: String): String = inner.showKel(alias)
 
     fun wipe() = inner.wipe()

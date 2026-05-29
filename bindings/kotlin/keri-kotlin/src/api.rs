@@ -479,6 +479,114 @@ impl KeriMobileSdk {
         })
     }
 
+    /// Atomic version of `request_delegation` + `import_delegator_kel`.
+    ///
+    /// In the mobile QR-pairing flow these two calls happen
+    /// back-to-back, and routing them through two separate FFI
+    /// invocations races on the redb lock: `request_delegation`'s
+    /// temporary Identifier owns the redb at `<alias>/db`, returns
+    /// across the FFI boundary, and the very next call
+    /// (`import_delegator_kel`) goes back through KeriStore::load
+    /// which constructs a fresh Controller for the same path —
+    /// before redb's in-process registry has registered the previous
+    /// Database as closed.
+    ///
+    /// This combined entry-point keeps a single live Identifier
+    /// across both operations: build the delegation request, save
+    /// the delegator KEL notices through the same `temp_id`, then
+    /// persist the alias mapping. One Controller, no reopen.
+    pub async fn request_delegation_with_kel(
+        &self,
+        alias: String,
+        config: FfiDelegationConfig,
+        delegator_kel_cesr: String,
+    ) -> Result<FfiDelegationRequest, KeriError> {
+        let factory = self.factory()?;
+        let algo = config.algorithm;
+        let current_label = format!("{alias}_v1");
+        let next_label = format!("{alias}_v2");
+
+        let current_provider = factory
+            .create(&current_label, algo.to_keri())
+            .await
+            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
+        let next_provider = factory
+            .create(&next_label, algo.to_keri())
+            .await
+            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
+
+        let next_pk =
+            basic_prefix_for(algo, next_provider.public_key().bytes.clone(), false);
+
+        let witnesses = futures::future::try_join_all(
+            config.witness_urls.iter().map(|u| resolve_location_scheme(u)),
+        )
+        .await?;
+
+        let delegator: keri_controller::IdentifierPrefix = config
+            .delegator_aid
+            .parse()
+            .map_err(|e| KeriError::Internal(format!("invalid delegator AID: {e}")))?;
+
+        let delegation_config = keri_sdk::types::DelegationConfig {
+            delegator: delegator.clone(),
+            witnesses,
+            witness_threshold: config.witness_threshold,
+            watchers: vec![],
+            algorithm: signer_algorithm(algo),
+        };
+
+        let alias_dir = self.db_path.join(&alias);
+        std::fs::create_dir_all(&alias_dir)?;
+        let alias_db = alias_dir.join("db");
+
+        let signer: Arc<dyn KeriKp> = current_provider.clone();
+        let (temp_id, delegated_prefix, dip_cesr) =
+            keri_sdk::operations::build_delegation_request(
+                alias_db,
+                signer,
+                next_pk,
+                delegation_config,
+            )
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+
+        // Save the delegator KEL through the still-alive temp_id so
+        // the redb stays open under one controller for both phases.
+        if !delegator_kel_cesr.is_empty() {
+            use keri_core::actor::parse_notice_stream;
+            let notices = parse_notice_stream(delegator_kel_cesr.as_bytes())
+                .map_err(|e| KeriError::Internal(format!("parse delegator KEL: {e}")))?;
+            for notice in &notices {
+                temp_id
+                    .save_notice(notice)
+                    .map_err(|e| KeriError::Controller(e.to_string()))?;
+            }
+        }
+
+        // Flat-file alias persistence — no redb touch on the same path.
+        let store = self.open_store()?;
+        store
+            .save_id(&alias, temp_id.id())
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        store
+            .save_delegator(&alias, &delegator)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        self.save_key_state(
+            &alias,
+            &KeyState {
+                current_label,
+                next_label,
+                version: 1,
+            },
+        )?;
+
+        Ok(FfiDelegationRequest {
+            delegated_aid: delegated_prefix.to_str(),
+            dip_cesr,
+        })
+    }
+
     /// Apply the delegator's signed `ixn` (CESR) to `alias`'s
     /// previously-escrowed `dip`, completing the delegated AID's
     /// KEL. The delegator's own KEL must already be present in the
