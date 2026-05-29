@@ -274,6 +274,67 @@ impl KeriMobileSdk {
         Ok(())
     }
 
+    /// Produce a KEL rotation event on a multi-sig group AID this
+    /// alias is a signing member of. Same primitive cyfron-core uses
+    /// to remove a device from the group (drop its key from
+    /// `new_participants`).
+    ///
+    /// For a 1-of-N group the acting member's signature alone is
+    /// sufficient and the rotation completes in this call. For k-of-N
+    /// the surviving co-signers must trigger the same rotation
+    /// independently (or call `accept_multisig` on the mailbox entry
+    /// produced here); witnesses collect the signatures.
+    pub async fn rotate_group(
+        &self,
+        alias: String,
+        group_aid: String,
+        config: FfiGroupRotationConfig,
+    ) -> Result<(), KeriError> {
+        let store = self.open_store()?;
+        let mut id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let signer = self.get_signer(&alias).await?;
+
+        let group_id: keri_controller::IdentifierPrefix = group_aid
+            .parse()
+            .map_err(|e| KeriError::Internal(format!("invalid group AID: {e}")))?;
+
+        let new_participants: Vec<keri_controller::IdentifierPrefix> = config
+            .new_participants
+            .iter()
+            .map(|s| s.parse())
+            .collect::<std::result::Result<_, _>>()
+            .map_err(|e| KeriError::Internal(format!("invalid participant AID: {e}")))?;
+
+        let witness_to_add = futures::future::try_join_all(
+            config
+                .witness_to_add
+                .iter()
+                .map(|u| resolve_location_scheme(u)),
+        )
+        .await?;
+
+        let witness_to_remove: Vec<keri_controller::BasicPrefix> = config
+            .witness_to_remove
+            .iter()
+            .filter_map(|w| w.parse().ok())
+            .collect();
+
+        let rot_config = keri_sdk::types::GroupRotationConfig {
+            new_participants,
+            new_signature_threshold: config.new_signature_threshold,
+            new_next_threshold: config.new_next_threshold,
+            witness_to_add,
+            witness_to_remove,
+            witness_threshold: config.witness_threshold,
+        };
+
+        keri_sdk::operations::rotate_group(&mut id, &signer, &group_id, rot_config)
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))
+    }
+
     pub async fn incept_registry(&self, alias: String) -> Result<String, KeriError> {
         let store = self.open_store()?;
         let mut id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;

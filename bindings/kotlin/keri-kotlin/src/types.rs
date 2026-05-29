@@ -13,6 +13,26 @@ pub struct FfiRotationConfig {
     pub witness_threshold: u64,
 }
 
+/// Inputs for `KeriMobileSdk::rotate_group`. Drives a KEL rotation
+/// event on a multi-sig group AID — the same primitive multi-device
+/// removal builds on top of. `new_participants` is the post-rotation
+/// member set; passing it minus the device being removed produces a
+/// rotation that drops that key.
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiGroupRotationConfig {
+    /// Full post-rotation member set, as AID prefix strings. Caller
+    /// must include themselves if they remain a signer.
+    pub new_participants: Vec<String>,
+    /// Number of signatures required to authorise group events after rotation.
+    pub new_signature_threshold: u64,
+    /// New pre-rotation threshold. When None, defaults to `new_signature_threshold`.
+    pub new_next_threshold: Option<u64>,
+    pub witness_to_add: Vec<String>,
+    pub witness_to_remove: Vec<String>,
+    /// New witness signing threshold. None preserves the group's current threshold.
+    pub witness_threshold: Option<u64>,
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiSignedEnvelope {
     pub payload: Vec<u8>,

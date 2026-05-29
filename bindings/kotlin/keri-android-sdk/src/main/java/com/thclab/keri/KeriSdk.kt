@@ -3,6 +3,7 @@ package com.thclab.keri
 import com.thclab.keri.uniffi.FfiCredentialStatus
 import com.thclab.keri.uniffi.FfiDelegationConfig
 import com.thclab.keri.uniffi.FfiDelegationRequest
+import com.thclab.keri.uniffi.FfiGroupRotationConfig
 import com.thclab.keri.uniffi.FfiIdentifierConfig
 import com.thclab.keri.uniffi.FfiRotationConfig
 import com.thclab.keri.uniffi.FfiSignedEnvelope
@@ -62,6 +63,40 @@ class KeriSdk private constructor(
         inner.rotateKeys(
             alias,
             FfiRotationConfig(witnessToAdd, witnessToRemove, witnessThreshold),
+        )
+    }
+
+    /**
+     * Drive a KEL rotation event on a multi-sig group AID this alias
+     * is a signing member of. Used by the device-removal flow to drop
+     * a device's key from the group's signers.
+     *
+     * For a 1-of-N group this completes on the acting member's
+     * signature alone. For k-of-N (k >= 2) the surviving co-signers
+     * must independently trigger the same rotation; witnesses collect
+     * the signatures.
+     */
+    suspend fun rotateGroup(
+        alias: String,
+        groupAid: String,
+        newParticipants: List<String>,
+        newSignatureThreshold: ULong,
+        newNextThreshold: ULong? = null,
+        witnessToAdd: List<String> = emptyList(),
+        witnessToRemove: List<String> = emptyList(),
+        witnessThreshold: ULong? = null,
+    ) = withContext(Dispatchers.IO) {
+        inner.rotateGroup(
+            alias,
+            groupAid,
+            FfiGroupRotationConfig(
+                newParticipants,
+                newSignatureThreshold,
+                newNextThreshold,
+                witnessToAdd,
+                witnessToRemove,
+                witnessThreshold,
+            ),
         )
     }
 
