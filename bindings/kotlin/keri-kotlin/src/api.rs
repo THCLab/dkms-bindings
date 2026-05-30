@@ -666,6 +666,144 @@ impl KeriMobileSdk {
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
 
+    /// AID prefixes of the watchers currently authorised for `alias`.
+    /// Same semantics as `cyfron_core::keri::KeriController::list_watchers`
+    /// so callers comparing across desktop / mobile get the same set.
+    pub fn list_watchers(&self, alias: String) -> Result<Vec<String>, KeriError> {
+        let store = self.open_store()?;
+        let id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let watchers = id
+            .watchers()
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+        Ok(watchers.into_iter().map(|p| p.to_str()).collect())
+    }
+
+    /// Whether `alias` has at least one authorised watcher. Used as a
+    /// precondition before processing inbound traffic — without a
+    /// watcher the controller has no path to fetch and verify remote
+    /// KELs. Pure derivation of [`Self::list_watchers`]; surfaced as a
+    /// dedicated method so callers don't pay the Vec allocation just to
+    /// check non-emptiness.
+    pub fn has_watcher(&self, alias: String) -> Result<bool, KeriError> {
+        Ok(!self.list_watchers(alias)?.is_empty())
+    }
+
+    /// Head (sn, SAID) of the locally-stored KEL for `aid`, looked up
+    /// through `via_alias`'s redb. `None` when no KEL is stored yet
+    /// (e.g. the AID was never resolved by this alias's watcher).
+    ///
+    /// Mirrors `cyfron_core::keri::KeriController::kel_head`.
+    pub fn kel_head(
+        &self,
+        via_alias: String,
+        aid: String,
+    ) -> Result<Option<FfiKelHead>, KeriError> {
+        use keri_core::prefix::IdentifierPrefix;
+        use std::str::FromStr;
+        let store = self.open_store()?;
+        let id = store
+            .load(&via_alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let target = IdentifierPrefix::from_str(&aid).map_err(|e| {
+            KeriError::Controller(format!("invalid aid {aid}: {e}"))
+        })?;
+        match id.find_state(&target) {
+            Ok(s) => Ok(Some(FfiKelHead {
+                sn: s.sn,
+                said: s.last_event_digest.said.to_str(),
+            })),
+            Err(_) => Ok(None),
+        }
+    }
+
+    /// Pull `target_aid`'s full KEL via every watcher authorised for
+    /// `via_alias`. Returns `Ok(())` only after at least one watcher
+    /// has responded AND the resulting state was persisted locally —
+    /// matches `cyfron_core::keri::KeriController::query_kel_for`'s
+    /// "no false-positive sync" guarantee so the UI's "KEL synced"
+    /// toast on desktop and mobile mean the same thing.
+    pub async fn query_kel_for(
+        &self,
+        via_alias: String,
+        target_aid: String,
+    ) -> Result<(), KeriError> {
+        use keri_controller::SelfSigningPrefix;
+        use keri_core::prefix::IdentifierPrefix;
+        use keri_sdk::operations::SigningBackend;
+        use std::str::FromStr;
+
+        let store = self.open_store()?;
+        let id = store
+            .load(&via_alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let signer = self.get_signer(&via_alias).await?;
+        let target = IdentifierPrefix::from_str(&target_aid).map_err(|e| {
+            KeriError::Controller(format!("invalid target aid {target_aid}: {e}"))
+        })?;
+
+        let watchers = id
+            .watchers()
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+        if watchers.is_empty() {
+            return Err(KeriError::Controller(format!(
+                "alias {via_alias} has no watcher configured; cannot fetch KEL for {target_aid}"
+            )));
+        }
+
+        let mut queries = Vec::with_capacity(watchers.len());
+        for watcher in watchers {
+            let qry = id.query_full_log(&target, watcher).map_err(|e| {
+                KeriError::Controller(format!("query_full_log failed: {e}"))
+            })?;
+            let encoded = qry
+                .encode()
+                .map_err(|e| KeriError::Controller(e.to_string()))?;
+            let sig_bytes = signer
+                .sign_data(&encoded)
+                .map_err(|e| KeriError::Controller(format!("sign_data: {e}")))?;
+            queries.push((qry, SelfSigningPrefix::Ed25519Sha512(sig_bytes)));
+        }
+
+        let total = queries.len();
+        let (_resp, errs) = id.finalize_query(queries).await;
+        if errs.len() >= total {
+            return Err(KeriError::Controller(format!(
+                "no watcher returned a KEL for {target_aid}: {errs:?}"
+            )));
+        }
+        if id.inner().known_events.find_kel(&target).is_none() {
+            return Err(KeriError::Controller(format!(
+                "watcher accepted but no KEL stored for {target_aid}"
+            )));
+        }
+        Ok(())
+    }
+
+    /// Sign `json` and return the wire form mesagkesto expects:
+    /// `<JSON_payload><CESR_signatures>` concatenated. Unlike
+    /// [`Self::sign`], the payload is NOT wrapped in a `{"p":"…"}`
+    /// envelope — the bytes the caller passed in are the payload
+    /// half of the output.
+    ///
+    /// Mirrors `cyfron_core::keri::KeriController::sign_raw_cesr`
+    /// byte-for-byte so server-side challenge/response verification
+    /// handles desktop and mobile the same way.
+    pub async fn sign_to_cesr(
+        &self,
+        alias: String,
+        json: String,
+    ) -> Result<String, KeriError> {
+        let store = self.open_store()?;
+        let id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let signer = self.get_signer(&alias).await?;
+        keri_sdk::signing::sign_to_cesr(&id, &signer, &json)
+            .map_err(|e| KeriError::Controller(e.to_string()))
+    }
+
     pub fn show_kel(&self, alias: String) -> Result<String, KeriError> {
         let store = self.open_store()?;
         let id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;

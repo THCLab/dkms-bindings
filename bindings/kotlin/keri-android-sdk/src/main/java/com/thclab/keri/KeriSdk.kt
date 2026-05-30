@@ -5,6 +5,7 @@ import com.thclab.keri.uniffi.FfiDelegationConfig
 import com.thclab.keri.uniffi.FfiDelegationRequest
 import com.thclab.keri.uniffi.FfiGroupRotationConfig
 import com.thclab.keri.uniffi.FfiIdentifierConfig
+import com.thclab.keri.uniffi.FfiKelHead
 import com.thclab.keri.uniffi.FfiRotationConfig
 import com.thclab.keri.uniffi.FfiSignedEnvelope
 import com.thclab.keri.uniffi.FfiVerifiedPayload
@@ -184,6 +185,37 @@ class KeriSdk private constructor(
     }
 
     fun showKel(alias: String): String = inner.showKel(alias)
+
+    // ── Watcher / KEL discovery surface ─────────────────────────────
+    //
+    // These mirror cyfron_core::keri::KeriController's same-named methods
+    // so messaging code that runs in-process on the phone produces the
+    // same wire output as the desktop daemon.
+
+    /** AID prefixes of the watchers configured for `alias`. */
+    fun listWatchers(alias: String): List<String> = inner.listWatchers(alias)
+
+    /** Whether `alias` has at least one watcher. Auth gates on this. */
+    fun hasWatcher(alias: String): Boolean = inner.hasWatcher(alias)
+
+    /** (sn, said) of the latest KEL event known for `aid` under `viaAlias`. */
+    fun kelHead(viaAlias: String, aid: String): FfiKelHead? =
+        inner.kelHead(viaAlias, aid)
+
+    /**
+     * Ask `viaAlias`'s watcher(s) to refresh and import `targetAid`'s KEL.
+     * Returns only after a watcher responded and a KEL is stored locally.
+     */
+    suspend fun queryKelFor(viaAlias: String, targetAid: String) =
+        withContext(Dispatchers.IO) { inner.queryKelFor(viaAlias, targetAid) }
+
+    /**
+     * Sign `json` and return mesagkesto's expected wire form
+     * `<JSON_payload><CESR_signatures>` concatenated. Payload is the
+     * exact bytes the caller passed in — no `{"p":…}` envelope.
+     */
+    suspend fun signToCesr(alias: String, json: String): String =
+        withContext(Dispatchers.IO) { inner.signToCesr(alias, json) }
 
     fun wipe() = inner.wipe()
 

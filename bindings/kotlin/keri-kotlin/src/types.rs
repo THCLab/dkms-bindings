@@ -81,3 +81,17 @@ pub struct FfiDelegationRequest {
     /// `finalize_delegation`.
     pub dip_cesr: String,
 }
+
+/// Pair returned by [`KeriMobileSdk::kel_head`] — sequence number and
+/// SAID of the latest known KEL event for an AID, as observed under
+/// the looking-up alias's view.
+///
+/// Mirrors `cyfron_core::keri::KeriController::kel_head`'s
+/// `Option<(u64, String)>` return so callers that need to gate /
+/// compare against a pinned head see identical values across the
+/// desktop and mobile paths.
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct FfiKelHead {
+    pub sn: u64,
+    pub said: String,
+}
