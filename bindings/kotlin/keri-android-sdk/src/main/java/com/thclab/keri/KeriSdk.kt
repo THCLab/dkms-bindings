@@ -186,6 +186,16 @@ class KeriSdk private constructor(
 
     fun showKel(alias: String): String = inner.showKel(alias)
 
+    /**
+     * Export the CESR-encoded KEL for `aid`, read from `viaAlias`'s
+     * redb. Used by higher-level callers (cyfron-core / cyfron-mobile-ffi)
+     * that want to parse the byte stream into a human-readable event
+     * summary for a UI. Throws when no KEL is stored locally for `aid`
+     * under `viaAlias`.
+     */
+    fun exportKelCesrFor(viaAlias: String, aid: String): ByteArray =
+        inner.exportKelCesrFor(viaAlias, aid)
+
     // ── Watcher / KEL discovery surface ─────────────────────────────
     //
     // These mirror cyfron_core::keri::KeriController's same-named methods

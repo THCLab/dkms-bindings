@@ -931,6 +931,47 @@ impl KeriMobileSdk {
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
 
+    /// Export the locally-stored KEL for `aid` as CESR bytes, looked up
+    /// through `via_alias`'s redb. Returns the same byte stream that
+    /// `KnownEvents::find_kel` produces — the wire form callers like
+    /// `cyfron_core::keri::summarize_kel_for_cesr` parse into a
+    /// human-readable summary.
+    ///
+    /// `via_alias` is the alias whose store is consulted first. When
+    /// the target AID is the alias's own AID (or any AID a watcher
+    /// query has previously resolved into it) the bytes come back
+    /// immediately. For multi-sig group AIDs, the typical caller is the
+    /// *member* alias that participates in the group — the group's KEL
+    /// is fetched into the member's redb via prior watcher queries.
+    ///
+    /// Errors with a `PersistenceError` when no KEL is stored locally
+    /// for `aid` under `via_alias`. Callers that want to fall back
+    /// across every alias should iterate themselves; this method
+    /// intentionally does not, so the caller controls which alias's
+    /// signature trail it is reading.
+    pub fn export_kel_cesr_for(
+        &self,
+        via_alias: String,
+        aid: String,
+    ) -> Result<Vec<u8>, KeriError> {
+        use keri_core::prefix::IdentifierPrefix;
+        use std::str::FromStr;
+        let store = self.open_store()?;
+        let id = store
+            .load(&via_alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let target = IdentifierPrefix::from_str(&aid).map_err(|e| {
+            KeriError::Controller(format!("invalid aid {aid}: {e}"))
+        })?;
+        id.inner()
+            .known_events
+            .find_kel(&target)
+            .map(|k| k.into_bytes())
+            .ok_or_else(|| {
+                KeriError::Storage(format!("no KEL stored for {aid} under alias {via_alias}"))
+            })
+    }
+
     pub fn show_kel(&self, alias: String) -> Result<String, KeriError> {
         let store = self.open_store()?;
         let id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;
