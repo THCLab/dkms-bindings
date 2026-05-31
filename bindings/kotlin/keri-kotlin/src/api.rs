@@ -136,6 +136,14 @@ impl KeriMobileSdk {
         )
         .await?;
 
+        // Stash the resolved LocationScheme JSON for `list_witnesses`
+        // / OOBI assembly. The Identifier itself stores only the
+        // BasicPrefix in its witness set; downstream consumers (e.g.
+        // mesagkesto register) need the {eid, scheme, url} triple,
+        // and re-resolving from the URLs each time is both slow and
+        // network-flaky.
+        self.save_witness_locations(&alias, &witnesses)?;
+
         let sdk_config = keri_sdk::types::IdentifierConfig {
             witnesses,
             witness_threshold: config.witness_threshold,
@@ -666,6 +674,20 @@ impl KeriMobileSdk {
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
 
+    /// LocationScheme JSON strings for the witnesses `alias` was
+    /// configured against, in creation order. Each entry is a JSON
+    /// object with `{eid, scheme, url}` — the exact shape OOBI
+    /// challenge assembly (mesagkesto register/authenticate)
+    /// expects. Returns an empty list when the alias was created
+    /// without witnesses or pre-dates this persistence pass.
+    pub fn list_witnesses(&self, alias: String) -> Result<Vec<String>, KeriError> {
+        Ok(self
+            .load_witness_locations(&alias)?
+            .iter()
+            .map(|v| v.to_string())
+            .collect())
+    }
+
     /// AID prefixes of the watchers currently authorised for `alias`.
     /// Same semantics as `cyfron_core::keri::KeriController::list_watchers`
     /// so callers comparing across desktop / mobile get the same set.
@@ -853,6 +875,39 @@ impl KeriMobileSdk {
 
     fn key_state_path(&self, alias: &str) -> PathBuf {
         self.db_path.join(alias).join("key_state.json")
+    }
+
+    fn witnesses_path(&self, alias: &str) -> PathBuf {
+        self.db_path.join(alias).join("witnesses.json")
+    }
+
+    fn save_witness_locations(
+        &self,
+        alias: &str,
+        witnesses: &[keri_core::oobi::LocationScheme],
+    ) -> Result<(), KeriError> {
+        let path = self.witnesses_path(alias);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let json_values: Vec<serde_json::Value> = witnesses
+            .iter()
+            .map(|w| serde_json::to_value(w).unwrap_or(serde_json::Value::Null))
+            .filter(|v| !v.is_null())
+            .collect();
+        std::fs::write(&path, serde_json::to_vec_pretty(&json_values)?)?;
+        Ok(())
+    }
+
+    fn load_witness_locations(
+        &self,
+        alias: &str,
+    ) -> Result<Vec<serde_json::Value>, KeriError> {
+        let path = self.witnesses_path(alias);
+        match std::fs::read(&path) {
+            Ok(bytes) if !bytes.is_empty() => Ok(serde_json::from_slice(&bytes)?),
+            _ => Ok(Vec::new()),
+        }
     }
 
     fn save_key_state(&self, alias: &str, state: &KeyState) -> Result<(), KeriError> {

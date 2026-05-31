@@ -192,6 +192,14 @@ class KeriSdk private constructor(
     // so messaging code that runs in-process on the phone produces the
     // same wire output as the desktop daemon.
 
+    /**
+     * LocationScheme JSON strings for the witnesses configured for
+     * `alias`, in creation order. Each element is a JSON object
+     * `{eid, scheme, url}` — the OOBI-array element shape mesagkesto
+     * register/authenticate expect.
+     */
+    fun listWitnesses(alias: String): List<String> = inner.listWitnesses(alias)
+
     /** AID prefixes of the watchers configured for `alias`. */
     fun listWatchers(alias: String): List<String> = inner.listWatchers(alias)
 
