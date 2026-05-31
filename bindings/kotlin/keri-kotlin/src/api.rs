@@ -143,6 +143,9 @@ impl KeriMobileSdk {
         // and re-resolving from the URLs each time is both slow and
         // network-flaky.
         self.save_witness_locations(&alias, &witnesses)?;
+        // Same rationale for watchers — the UI needs the URL alongside
+        // the EID, and only the resolution step has it.
+        self.save_watcher_locations(&alias, &watchers)?;
 
         let sdk_config = keri_sdk::types::IdentifierConfig {
             witnesses,
@@ -712,6 +715,54 @@ impl KeriMobileSdk {
         Ok(!self.list_watchers(alias)?.is_empty())
     }
 
+    /// LocationScheme JSON strings for the watchers `alias` was
+    /// configured against. Mirrors `list_witnesses` so the UI can show
+    /// the watcher URL next to the EID without re-resolving the OOBI.
+    /// Returns an empty list for aliases that pre-date watcher
+    /// persistence or had no watchers at creation.
+    pub fn list_watcher_locations(
+        &self,
+        alias: String,
+    ) -> Result<Vec<String>, KeriError> {
+        Ok(self
+            .load_watcher_locations(&alias)?
+            .iter()
+            .map(|v| v.to_string())
+            .collect())
+    }
+
+    /// Authorise an additional watcher for an existing `alias`. The
+    /// `watcher_url` is resolved to its `LocationScheme`, the role
+    /// reply is signed with the alias's current signer, and the
+    /// LocationScheme is appended to the persisted list so
+    /// `list_watcher_locations` reflects it on the next call.
+    ///
+    /// Mirrors `cyfron_core::keri::KeriController::add_watcher`.
+    pub async fn add_watcher(
+        &self,
+        alias: String,
+        watcher_url: String,
+    ) -> Result<(), KeriError> {
+        let location = resolve_location_scheme(&watcher_url).await?;
+        let store = self.open_store()?;
+        let mut id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let signer = self.get_signer(&alias).await?;
+        keri_sdk::operations::add_watcher(&mut id, &signer, &location)
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+
+        let mut existing = self.load_watcher_locations(&alias)?;
+        let new_val = serde_json::to_value(&location)
+            .map_err(|e| KeriError::Internal(e.to_string()))?;
+        if !existing.iter().any(|v| v == &new_val) {
+            existing.push(new_val);
+            self.save_watcher_locations_json(&alias, &existing)?;
+        }
+        Ok(())
+    }
+
     /// Head (sn, SAID) of the locally-stored KEL for `aid`, looked up
     /// through `via_alias`'s redb. `None` when no KEL is stored yet
     /// (e.g. the AID was never resolved by this alias's watcher).
@@ -881,6 +932,10 @@ impl KeriMobileSdk {
         self.db_path.join(alias).join("witnesses.json")
     }
 
+    fn watchers_path(&self, alias: &str) -> PathBuf {
+        self.db_path.join(alias).join("watchers.json")
+    }
+
     fn save_witness_locations(
         &self,
         alias: &str,
@@ -904,6 +959,43 @@ impl KeriMobileSdk {
         alias: &str,
     ) -> Result<Vec<serde_json::Value>, KeriError> {
         let path = self.witnesses_path(alias);
+        match std::fs::read(&path) {
+            Ok(bytes) if !bytes.is_empty() => Ok(serde_json::from_slice(&bytes)?),
+            _ => Ok(Vec::new()),
+        }
+    }
+
+    fn save_watcher_locations(
+        &self,
+        alias: &str,
+        watchers: &[keri_core::oobi::LocationScheme],
+    ) -> Result<(), KeriError> {
+        let json_values: Vec<serde_json::Value> = watchers
+            .iter()
+            .map(|w| serde_json::to_value(w).unwrap_or(serde_json::Value::Null))
+            .filter(|v| !v.is_null())
+            .collect();
+        self.save_watcher_locations_json(alias, &json_values)
+    }
+
+    fn save_watcher_locations_json(
+        &self,
+        alias: &str,
+        values: &[serde_json::Value],
+    ) -> Result<(), KeriError> {
+        let path = self.watchers_path(alias);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&path, serde_json::to_vec_pretty(values)?)?;
+        Ok(())
+    }
+
+    fn load_watcher_locations(
+        &self,
+        alias: &str,
+    ) -> Result<Vec<serde_json::Value>, KeriError> {
+        let path = self.watchers_path(alias);
         match std::fs::read(&path) {
             Ok(bytes) if !bytes.is_empty() => Ok(serde_json::from_slice(&bytes)?),
             _ => Ok(Vec::new()),

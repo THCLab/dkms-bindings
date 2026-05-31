@@ -203,8 +203,26 @@ class KeriSdk private constructor(
     /** AID prefixes of the watchers configured for `alias`. */
     fun listWatchers(alias: String): List<String> = inner.listWatchers(alias)
 
+    /**
+     * LocationScheme JSON strings for the watchers configured for
+     * `alias`, in authorisation order. Each entry is a JSON object
+     * `{eid, scheme, url}` — same shape as [listWitnesses]. Empty for
+     * aliases that pre-date watcher persistence.
+     */
+    fun listWatcherLocations(alias: String): List<String> =
+        inner.listWatcherLocations(alias)
+
     /** Whether `alias` has at least one watcher. Auth gates on this. */
     fun hasWatcher(alias: String): Boolean = inner.hasWatcher(alias)
+
+    /**
+     * Authorise an additional watcher for `alias` post-creation.
+     * Resolves the OOBI at `watcherUrl`, signs the end-role reply, and
+     * appends the LocationScheme to the persisted list so subsequent
+     * [listWatcherLocations] calls reflect it.
+     */
+    suspend fun addWatcher(alias: String, watcherUrl: String) =
+        withContext(Dispatchers.IO) { inner.addWatcher(alias, watcherUrl) }
 
     /** (sn, said) of the latest KEL event known for `aid` under `viaAlias`. */
     fun kelHead(viaAlias: String, aid: String): FfiKelHead? =
