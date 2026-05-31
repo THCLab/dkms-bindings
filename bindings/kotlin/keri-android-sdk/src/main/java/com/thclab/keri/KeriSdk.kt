@@ -224,6 +224,16 @@ class KeriSdk private constructor(
     suspend fun addWatcher(alias: String, watcherUrl: String) =
         withContext(Dispatchers.IO) { inner.addWatcher(alias, watcherUrl) }
 
+    /**
+     * Drop a watcher from `alias`'s persisted list, identified by
+     * `watcherEid` (the EID field of its LocationScheme). Config-layer
+     * remove only — the device stops querying it and
+     * [listWatcherLocations] no longer includes it. Idempotent: a no-op
+     * if no entry with that EID is present.
+     */
+    fun removeWatcher(alias: String, watcherEid: String) =
+        inner.removeWatcher(alias, watcherEid)
+
     /** (sn, said) of the latest KEL event known for `aid` under `viaAlias`. */
     fun kelHead(viaAlias: String, aid: String): FfiKelHead? =
         inner.kelHead(viaAlias, aid)

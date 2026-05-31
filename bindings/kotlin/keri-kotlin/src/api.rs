@@ -763,6 +763,32 @@ impl KeriMobileSdk {
         Ok(())
     }
 
+    /// Remove a watcher from the persisted list for `alias`. Matches
+    /// the entry by `eid` (LocationScheme.eid field) and rewrites
+    /// `watchers.json` without it.
+    ///
+    /// Config-layer remove only: KERI's `end_role_add` is not cleanly
+    /// revocable from the controller side without a key rotation, so
+    /// the watcher's prior authorisation reply remains in the store.
+    /// In practice this is enough — the device stops querying the
+    /// watcher and `list_watcher_locations` no longer surfaces it, so
+    /// new OOBI assembly skips it. Mirrors the desktop daemon's
+    /// `delete_watcher_handler` semantics.
+    pub fn remove_watcher(
+        &self,
+        alias: String,
+        watcher_eid: String,
+    ) -> Result<(), KeriError> {
+        let existing = self.load_watcher_locations(&alias)?;
+        let filtered: Vec<serde_json::Value> = existing
+            .into_iter()
+            .filter(|v| {
+                v.get("eid").and_then(|e| e.as_str()) != Some(watcher_eid.as_str())
+            })
+            .collect();
+        self.save_watcher_locations_json(&alias, &filtered)
+    }
+
     /// Head (sn, SAID) of the locally-stored KEL for `aid`, looked up
     /// through `via_alias`'s redb. `None` when no KEL is stored yet
     /// (e.g. the AID was never resolved by this alias's watcher).
