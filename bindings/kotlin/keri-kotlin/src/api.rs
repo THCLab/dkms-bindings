@@ -271,9 +271,37 @@ impl KeriMobileSdk {
             witness_threshold: config.witness_threshold,
         };
 
-        keri_sdk::operations::rotate(&mut id, signer, rot_config)
+        keri_sdk::operations::rotate(&mut id, signer, rot_config.clone())
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
+
+        // Keep witnesses.json aligned with the new witness set so
+        // `list_witnesses` (and any OOBI assembly that hangs off it)
+        // reflects the rotation. Drop entries whose eid is in
+        // witness_to_remove, then append the resolved add list.
+        let removed_eids: std::collections::HashSet<String> = rot_config
+            .witness_to_remove
+            .iter()
+            .map(|p| p.to_str())
+            .collect();
+        let mut kept: Vec<serde_json::Value> = self
+            .load_witness_locations(&alias)?
+            .into_iter()
+            .filter(|v| {
+                v.get("eid")
+                    .and_then(|e| e.as_str())
+                    .map(|eid| !removed_eids.contains(eid))
+                    .unwrap_or(true)
+            })
+            .collect();
+        for ws in &rot_config.witness_to_add {
+            if let Ok(v) = serde_json::to_value(ws) {
+                if !kept.iter().any(|existing| existing == &v) {
+                    kept.push(v);
+                }
+            }
+        }
+        self.save_witness_locations_json(&alias, &kept)?;
 
         let previous_current =
             std::mem::replace(&mut state.current_label, state.next_label.clone());
@@ -967,16 +995,24 @@ impl KeriMobileSdk {
         alias: &str,
         witnesses: &[keri_core::oobi::LocationScheme],
     ) -> Result<(), KeriError> {
-        let path = self.witnesses_path(alias);
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
         let json_values: Vec<serde_json::Value> = witnesses
             .iter()
             .map(|w| serde_json::to_value(w).unwrap_or(serde_json::Value::Null))
             .filter(|v| !v.is_null())
             .collect();
-        std::fs::write(&path, serde_json::to_vec_pretty(&json_values)?)?;
+        self.save_witness_locations_json(alias, &json_values)
+    }
+
+    fn save_witness_locations_json(
+        &self,
+        alias: &str,
+        values: &[serde_json::Value],
+    ) -> Result<(), KeriError> {
+        let path = self.witnesses_path(alias);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&path, serde_json::to_vec_pretty(values)?)?;
         Ok(())
     }
 
