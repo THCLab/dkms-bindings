@@ -14,7 +14,11 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class BouncyCastleEd25519Backend(
     context: Context,
-    private val ttlMillis: Long = 10_000,
+    // Bumped from 10s to 5 min so interactive flows (message compose
+    // → send) reuse the unlocked seed instead of re-prompting while
+    // the user is still in the same task. The cache is per-process,
+    // so backgrounding the app still drops it.
+    private val ttlMillis: Long = 300_000,
 ) : KeystoreBackend {
 
     override val algorithm: String = "Ed25519"

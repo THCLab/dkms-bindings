@@ -222,6 +222,12 @@ class NativeP256Backend : KeystoreBackend {
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
         const val LABEL_PREFIX = "keri_p256_"
-        const val TIME_BOUND_SECONDS = 10
+        // After one successful biometric, KeyMint authorises the
+        // key for this many seconds. Bumped from 10s to 5 min so
+        // interactive flows (message compose → send, KERI rotation
+        // wizards) don't re-prompt while the user is still in the
+        // same task. The hardware enforces the bound; we cannot
+        // extend it further without re-prompting.
+        const val TIME_BOUND_SECONDS = 300
     }
 }
