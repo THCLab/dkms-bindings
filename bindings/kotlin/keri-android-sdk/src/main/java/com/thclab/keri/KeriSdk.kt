@@ -256,6 +256,24 @@ class KeriSdk private constructor(
         withContext(Dispatchers.IO) { inner.queryKelFor(viaAlias, targetAid) }
 
     /**
+     * Record an OOBI in `viaAlias`'s local controller. Accepts a
+     * LocationScheme JSON (`{eid, scheme, url}`) or an EndRole JSON
+     * (`{cid, eid, role}`). First step of the cyfron peer-onboarding
+     * chain: resolveOobi → sendOobiToWatcher → queryKelFor.
+     */
+    suspend fun resolveOobi(viaAlias: String, oobiJson: String) =
+        withContext(Dispatchers.IO) { inner.resolveOobi(viaAlias, oobiJson) }
+
+    /**
+     * Push an OOBI to `viaAlias`'s authorised watcher so the watcher
+     * can fetch / verify the referenced KEL on demand. Without this
+     * step `queryKelFor` returns `InvalidSignature` (the watcher
+     * can't validate a KEL it never fetched).
+     */
+    suspend fun sendOobiToWatcher(viaAlias: String, oobiJson: String) =
+        withContext(Dispatchers.IO) { inner.sendOobiToWatcher(viaAlias, oobiJson) }
+
+    /**
      * Sign `json` and return mesagkesto's expected wire form
      * `<JSON_payload><CESR_signatures>` concatenated. Payload is the
      * exact bytes the caller passed in — no `{"p":…}` envelope.

@@ -908,6 +908,76 @@ impl KeriMobileSdk {
         Ok(())
     }
 
+    /// Record an OOBI in `via_alias`'s local controller so the
+    /// controller knows where to find the referenced peer's
+    /// witnesses. This is the first half of the cyfron-style
+    /// peer-onboarding pair — call [`Self::send_oobi_to_watcher`]
+    /// next so a configured watcher can actually fetch the peer's
+    /// KEL on demand. Either step alone is insufficient: location
+    /// info without watcher delegation leaves the watcher unable
+    /// to authenticate later `query_kel_for` calls.
+    ///
+    /// `oobi_json` accepts either of two shapes:
+    ///
+    ///   * `{"eid": "...", "scheme": "https", "url": "..."}` — a
+    ///     LocationScheme, used for both witness OOBIs and watcher
+    ///     OOBIs.
+    ///   * `{"cid": "...", "eid": "...", "role": "witness"|"watcher"}` —
+    ///     an EndRole binding, used to associate an AID with its
+    ///     authorised end-role agent.
+    ///
+    /// Mirrors `cyfron_core::keri::KeriController::resolve_oobi_any`.
+    pub async fn resolve_oobi(
+        &self,
+        via_alias: String,
+        oobi_json: String,
+    ) -> Result<(), KeriError> {
+        use keri_controller::{EndRole, LocationScheme, Oobi};
+        let oobi = parse_oobi_json(&oobi_json)?;
+        let store = self.open_store()?;
+        let id = store
+            .load(&via_alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        id.resolve_oobi(&oobi)
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+        // Silence unused-import warnings: the parse helper covers
+        // both shapes; we still want the explicit `use` for readers
+        // who jump straight to this function.
+        let _: Option<LocationScheme> = None;
+        let _: Option<EndRole> = None;
+        let _: Option<Oobi> = None;
+        Ok(())
+    }
+
+    /// Push an OOBI to `via_alias`'s authorised watcher so the
+    /// watcher can fetch / verify the referenced KEL on demand.
+    /// [`Self::resolve_oobi`] alone only records location info in
+    /// the local controller — without this step the watcher has no
+    /// way to reach the peer's witnesses, and a subsequent
+    /// [`Self::query_kel_for`] returns `InvalidSignature` from the
+    /// watcher actor (it can't validate a KEL it never fetched).
+    ///
+    /// `oobi_json` accepts the same two shapes as
+    /// [`Self::resolve_oobi`]. Mirrors
+    /// `cyfron_core::keri::KeriController::send_oobi_to_watcher`.
+    pub async fn send_oobi_to_watcher(
+        &self,
+        via_alias: String,
+        oobi_json: String,
+    ) -> Result<(), KeriError> {
+        let oobi = parse_oobi_json(&oobi_json)?;
+        let store = self.open_store()?;
+        let id = store
+            .load(&via_alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let our_id = id.id().clone();
+        id.send_oobi_to_watcher(&our_id, &oobi)
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+        Ok(())
+    }
+
     /// Sign `json` and return the wire form mesagkesto expects:
     /// `<JSON_payload><CESR_signatures>` concatenated. Unlike
     /// [`Self::sign`], the payload is NOT wrapped in a `{"p":"…"}`
@@ -1135,6 +1205,31 @@ impl KeriMobileSdk {
         Ok(keri_sdk::keyprovider_adapter::KeriSigner::from(
             provider as Arc<dyn KeriKp>,
         ))
+    }
+}
+
+/// Parse an OOBI from JSON. Accepts either a LocationScheme
+/// (`{eid, scheme, url}`) or an EndRole (`{cid, eid, role}`).
+/// The shape is auto-detected by which keys are present so callers
+/// can hand us either canonical OOBI form without having to know
+/// the type up front. Mirrors the parsing inside
+/// `cyfron-serviced::handlers::contacts::bootstrap_peer_verification`.
+fn parse_oobi_json(s: &str) -> Result<keri_controller::Oobi, KeriError> {
+    use keri_controller::{EndRole, LocationScheme, Oobi};
+    let value: serde_json::Value = serde_json::from_str(s)
+        .map_err(|e| KeriError::Controller(format!("oobi_json not JSON: {e}")))?;
+    if value.get("cid").is_some() && value.get("role").is_some() {
+        let er: EndRole = serde_json::from_value(value)
+            .map_err(|e| KeriError::Controller(format!("oobi_json not EndRole: {e}")))?;
+        Ok(Oobi::EndRole(er))
+    } else if value.get("url").is_some() {
+        let ls: LocationScheme = serde_json::from_value(value)
+            .map_err(|e| KeriError::Controller(format!("oobi_json not LocationScheme: {e}")))?;
+        Ok(Oobi::Location(ls))
+    } else {
+        Err(KeriError::Controller(format!(
+            "oobi_json missing both 'url' (LocationScheme) and 'cid+role' (EndRole): {s}"
+        )))
     }
 }
 
