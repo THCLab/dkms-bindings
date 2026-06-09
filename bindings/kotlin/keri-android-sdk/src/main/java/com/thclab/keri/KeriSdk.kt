@@ -163,6 +163,17 @@ class KeriSdk private constructor(
         withContext(Dispatchers.IO) { inner.finalizeDelegation(alias, delegatorSealCesr) }
 
     /**
+     * Publish a finalised delegated AID's `dip` to its witnesses so a
+     * remote watcher can fetch the KEL. The out-of-band pairing flow
+     * completes the `dip` locally only; without this a third party
+     * resolving the AID through a watcher gets `KELNotFound`. Call
+     * after [finalizeDelegation]. Requires the AID to have been minted
+     * with witnesses and the delegator KEL to be present locally.
+     */
+    suspend fun publishDelegationToWitnesses(alias: String, delegatorAid: String) =
+        withContext(Dispatchers.IO) { inner.publishDelegationToWitnesses(alias, delegatorAid) }
+
+    /**
      * Atomic combo of [requestDelegation] + [importDelegatorKel] so
      * the redb on `<alias>/db` stays open under one Controller for
      * both phases. Use this in QR-pairing flows where the two

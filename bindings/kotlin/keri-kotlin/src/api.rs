@@ -721,6 +721,50 @@ impl KeriMobileSdk {
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
 
+    /// Publish a freshly-finalised delegated AID's `dip` to its
+    /// witnesses so a remote watcher can later fetch the KEL.
+    ///
+    /// The out-of-band pairing flow (`request_delegation` +
+    /// `finalize_delegation`) builds and completes the `dip` purely in
+    /// the local store — it never notifies witnesses. As a result a
+    /// third party resolving the delegated AID through a watcher gets
+    /// `KELNotFound`. Call this after [`finalize_delegation`] (the
+    /// delegator's anchoring `ixn` must already be on the shared
+    /// witnesses, which the primary publishes when it approves) to push
+    /// the device `dip` and pull back the witness receipts. Mirrors the
+    /// desktop daemon's `publish_delegation_to_witnesses` device leg.
+    ///
+    /// Requires witnesses to be configured on the delegated AID (mint
+    /// it with a non-empty `witness_urls`) and the delegator's KEL to
+    /// be present locally (`request_delegation_with_kel` /
+    /// `import_delegator_kel`).
+    pub async fn publish_delegation_to_witnesses(
+        &self,
+        alias: String,
+        delegator_aid: String,
+    ) -> Result<(), KeriError> {
+        let delegator: keri_controller::IdentifierPrefix = delegator_aid
+            .parse()
+            .map_err(|e| KeriError::Internal(format!("invalid delegator AID: {e}")))?;
+        let store = self.open_store()?;
+        let mut id = store
+            .load(&alias)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        let signer = self.get_signer(&alias).await?;
+        let delegated_prefix = id.id().clone();
+        id.notify_witnesses()
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+        keri_sdk::operations::complete_delegation(
+            &mut id,
+            &signer,
+            &delegated_prefix,
+            &delegator,
+        )
+        .await
+        .map_err(|e| KeriError::Controller(e.to_string()))
+    }
+
     /// LocationScheme JSON strings for the witnesses `alias` was
     /// configured against, in creation order. Each entry is a JSON
     /// object with `{eid, scheme, url}` — the exact shape OOBI
