@@ -569,18 +569,23 @@ impl KeriMobileSdk {
             algorithm: signer_algorithm(algo),
         };
 
-        // build_delegation_request opens its own Controller against
-        // this path. After it returns, that Controller drops and
-        // KeriStore::load can reopen the same redb on subsequent
-        // calls under the same alias.
+        // Mint through the KeriStore's *cached* controller for this
+        // alias rather than opening a fresh one. redb allows only one
+        // open Database per file per process, and load/finalize/sign all
+        // go through the cached controller; minting on a separate one
+        // collided with "Database already open. Cannot acquire lock".
         let alias_dir = self.db_path.join(&alias);
         std::fs::create_dir_all(&alias_dir)?;
-        let alias_db = alias_dir.join("db");
+
+        let store = self.open_store()?;
+        let controller = store
+            .controller_for(&alias)
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
 
         let signer: Arc<dyn KeriKp> = current_provider.clone();
         let (temp_id, delegated_prefix, dip_cesr) =
-            keri_sdk::operations::build_delegation_request(
-                alias_db,
+            keri_sdk::operations::build_delegation_request_with_controller(
+                &controller,
                 signer,
                 next_pk,
                 delegation_config,
@@ -588,7 +593,6 @@ impl KeriMobileSdk {
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
 
-        let store = self.open_store()?;
         store
             .save_id(&alias, temp_id.id())
             .map_err(|e| KeriError::Storage(e.to_string()))?;
@@ -677,12 +681,20 @@ impl KeriMobileSdk {
 
         let alias_dir = self.db_path.join(&alias);
         std::fs::create_dir_all(&alias_dir)?;
-        let alias_db = alias_dir.join("db");
+
+        // Mint through the KeriStore's cached controller (see
+        // request_delegation): one redb Database per alias, shared with
+        // load / finalize / sign, so the mint can't collide with a
+        // cached controller and leave the KEL unreachable.
+        let store = self.open_store()?;
+        let controller = store
+            .controller_for(&alias)
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
 
         let signer: Arc<dyn KeriKp> = current_provider.clone();
         let (temp_id, delegated_prefix, dip_cesr) =
-            keri_sdk::operations::build_delegation_request(
-                alias_db,
+            keri_sdk::operations::build_delegation_request_with_controller(
+                &controller,
                 signer,
                 next_pk,
                 delegation_config,
@@ -704,7 +716,6 @@ impl KeriMobileSdk {
         }
 
         // Flat-file alias persistence — no redb touch on the same path.
-        let store = self.open_store()?;
         store
             .save_id(&alias, temp_id.id())
             .map_err(|e| KeriError::Storage(e.to_string()))?;
