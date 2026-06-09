@@ -525,6 +525,14 @@ impl KeriMobileSdk {
         )
         .await?;
 
+        // Persist the resolved {eid, scheme, url} triples so
+        // `list_witnesses` / OOBI assembly can recover them, exactly
+        // as `create_identifier` does. Without this a delegated AID
+        // minted with witnesses still reports an empty witness set,
+        // its OOBI comes back empty, and mesagkesto register and
+        // remote watcher KEL lookups both fail.
+        self.save_witness_locations(&alias, &witnesses)?;
+
         let delegator: keri_controller::IdentifierPrefix = config
             .delegator_aid
             .parse()
@@ -622,6 +630,14 @@ impl KeriMobileSdk {
             config.witness_urls.iter().map(|u| resolve_location_scheme(u)),
         )
         .await?;
+
+        // Persist the resolved {eid, scheme, url} triples so
+        // `list_witnesses` / OOBI assembly can recover them, exactly
+        // as `create_identifier` does. Without this a delegated AID
+        // minted with witnesses still reports an empty witness set,
+        // its OOBI comes back empty, and mesagkesto register and
+        // remote watcher KEL lookups both fail.
+        self.save_witness_locations(&alias, &witnesses)?;
 
         let delegator: keri_controller::IdentifierPrefix = config
             .delegator_aid
