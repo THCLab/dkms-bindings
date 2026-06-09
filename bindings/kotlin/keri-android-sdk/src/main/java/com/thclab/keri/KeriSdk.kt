@@ -294,6 +294,13 @@ class KeriSdk private constructor(
 
     fun wipe() = inner.wipe()
 
+    /**
+     * Delete a single identifier (recursively forgets `<db>/<alias>`).
+     * Use to roll back a half-minted delegated AID when a device-join
+     * fails before completion so retries don't pile up orphans.
+     */
+    fun deleteIdentifier(alias: String) = inner.deleteIdentifier(alias)
+
     companion object {
         /**
          * Open (or create) a KERI store at [dbPath] and bind the host key

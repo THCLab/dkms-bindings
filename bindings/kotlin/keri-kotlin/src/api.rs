@@ -108,6 +108,29 @@ impl KeriMobileSdk {
         Ok(())
     }
 
+    /// Delete a single identifier: recursively remove `<db_path>/<alias>`,
+    /// which holds that alias's redb, key state, witness/watcher lists
+    /// and all store mappings (`list_aliases` is purely directory-based,
+    /// so this fully forgets the alias). The cached `KeriStore` is
+    /// dropped first to release any redb flock. The host keystore keys
+    /// (`<alias>_v1`/`_v2`) are left untouched — they are unreferenced
+    /// once the KEL is gone and harmless.
+    ///
+    /// Used to roll back a half-minted delegated AID when a device-join
+    /// fails after `request_delegation` but before completion, so a
+    /// retry doesn't accumulate orphaned identifiers.
+    pub fn delete_identifier(&self, alias: String) -> Result<(), KeriError> {
+        {
+            let mut guard = self.store.lock().unwrap();
+            *guard = None;
+        }
+        let alias_dir = self.db_path.join(&alias);
+        if alias_dir.exists() {
+            std::fs::remove_dir_all(&alias_dir)?;
+        }
+        Ok(())
+    }
+
     pub async fn create_identifier(
         &self,
         alias: String,
