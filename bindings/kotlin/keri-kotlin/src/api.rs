@@ -599,6 +599,16 @@ impl KeriMobileSdk {
         store
             .save_delegator(&alias, &delegator)
             .map_err(|e| KeriError::Storage(e.to_string()))?;
+        // Record the *delegated* AID prefix as well. `id` above is the
+        // throwaway precursor used to bootstrap the delegated inception;
+        // without `delegated_id` the alias can only be resolved to that
+        // precursor, so the joiner operates on the wrong AID and can
+        // neither publish nor serve its own delegated KEL (the desktop
+        // then sees `KELNotFound` for the device). Mirrors what the
+        // desktop's `build_delegation_request_oob` persists.
+        store
+            .save_delegated_prefix(&alias, &delegated_prefix)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
         self.save_key_state(
             &alias,
             &KeyState {
@@ -721,6 +731,16 @@ impl KeriMobileSdk {
             .map_err(|e| KeriError::Storage(e.to_string()))?;
         store
             .save_delegator(&alias, &delegator)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        // Record the *delegated* AID prefix as well. `id` above is the
+        // throwaway precursor used to bootstrap the delegated inception;
+        // without `delegated_id` the alias can only be resolved to that
+        // precursor, so the joiner operates on the wrong AID and can
+        // neither publish nor serve its own delegated KEL (the desktop
+        // then sees `KELNotFound` for the device). Mirrors what the
+        // desktop's `build_delegation_request_oob` persists.
+        store
+            .save_delegated_prefix(&alias, &delegated_prefix)
             .map_err(|e| KeriError::Storage(e.to_string()))?;
         self.save_key_state(
             &alias,
