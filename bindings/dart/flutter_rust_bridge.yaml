@@ -1,4 +1,0 @@
-rust_input: crate::api
-rust_root: .
-dart_output: keri/keri_platform_interface/lib/src/generated/
-c_output: keri/keri_ios/ios/Classes/bridge_generated.h
