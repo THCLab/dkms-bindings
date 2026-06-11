@@ -1559,11 +1559,12 @@ dependencies = [
 
 [[package]]
 name = "keri-sdk"
-version = "0.1.9"
+version = "0.2.0"
 dependencies = [
  "base64 0.13.1",
  "cesrox",
  "ed25519-dalek",
+ "indexmap",
  "k256",
  "keri-controller",
  "keri-core",
@@ -1571,12 +1572,17 @@ dependencies = [
  "log",
  "p256",
  "rand 0.8.6",
+ "redb",
+ "reqwest",
  "said",
+ "serde",
  "serde_cbor",
  "serde_json",
  "teliox",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
+ "url",
 ]
 
 [[package]]

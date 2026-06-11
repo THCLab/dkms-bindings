@@ -68,7 +68,7 @@ fn signer_algorithm(a: SignatureAlgo) -> keri_core::signer::SignerAlgorithm {
 pub struct KeriMobileSdk {
     db_path: PathBuf,
     key_factory: OnceLock<Arc<HostKeyProviderFactory>>,
-    store: Mutex<Option<Arc<keri_sdk::KeriStore>>>,
+    store: Mutex<Option<Arc<keri_sdk::advanced::KeriStore>>>,
 }
 
 #[uniffi::export(async_runtime = "tokio")]
@@ -170,7 +170,7 @@ impl KeriMobileSdk {
         // the EID, and only the resolution step has it.
         self.save_watcher_locations(&alias, &watchers)?;
 
-        let sdk_config = keri_sdk::types::IdentifierConfig {
+        let sdk_config = keri_sdk::advanced::types::IdentifierConfig {
             witnesses,
             witness_threshold: config.witness_threshold,
             watchers,
@@ -223,7 +223,7 @@ impl KeriMobileSdk {
         let id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;
         let signer = self.get_signer(&alias).await?;
 
-        let result = keri_sdk::signing::sign(&id, &signer, &data)
+        let result = keri_sdk::advanced::signing::sign(&id, &signer, &data)
             .map_err(|e| KeriError::Controller(e.to_string()))?;
         Ok(FfiSignedEnvelope {
             payload: result.payload,
@@ -238,7 +238,7 @@ impl KeriMobileSdk {
     ) -> Result<FfiVerifiedPayload, KeriError> {
         let store = self.open_store()?;
         let id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;
-        let result = keri_sdk::signing::verify(&id, &cesr)
+        let result = keri_sdk::advanced::signing::verify(&id, &cesr)
             .map_err(|e| KeriError::Controller(e.to_string()))?;
         Ok(FfiVerifiedPayload {
             payload: result.payload,
@@ -261,7 +261,7 @@ impl KeriMobileSdk {
             .await
             .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
         let algo = SignatureAlgo::from_keri(new_current_provider.public_key().algorithm);
-        let signer = keri_sdk::keyprovider_adapter::KeriSigner::from(
+        let signer = keri_sdk::advanced::keyprovider_adapter::KeriSigner::from(
             new_current_provider as Arc<dyn KeriKp>,
         );
 
@@ -287,14 +287,16 @@ impl KeriMobileSdk {
             .filter_map(|w| w.parse().ok())
             .collect();
 
-        let rot_config = keri_sdk::types::RotationConfig {
+        let rot_config = keri_sdk::advanced::types::RotationConfig {
             new_next_pk,
+            // Single provider-held next key — its pre-rotation threshold is 1.
+            new_next_threshold: 1,
             witness_to_add,
             witness_to_remove,
             witness_threshold: config.witness_threshold,
         };
 
-        keri_sdk::operations::rotate(&mut id, signer, rot_config.clone())
+        keri_sdk::advanced::operations::rotate(&mut id, signer, rot_config.clone())
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
 
@@ -383,7 +385,7 @@ impl KeriMobileSdk {
             .filter_map(|w| w.parse().ok())
             .collect();
 
-        let rot_config = keri_sdk::types::GroupRotationConfig {
+        let rot_config = keri_sdk::advanced::types::GroupRotationConfig {
             new_participants,
             new_signature_threshold: config.new_signature_threshold,
             new_next_threshold: config.new_next_threshold,
@@ -392,7 +394,7 @@ impl KeriMobileSdk {
             witness_threshold: config.witness_threshold,
         };
 
-        keri_sdk::operations::rotate_group(&mut id, &signer, &group_id, rot_config)
+        keri_sdk::advanced::operations::rotate_group(&mut id, &signer, &group_id, rot_config)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
@@ -402,7 +404,7 @@ impl KeriMobileSdk {
         let mut id = store.load(&alias).map_err(|e| KeriError::Storage(e.to_string()))?;
         let signer = self.get_signer(&alias).await?;
 
-        let reg_id = keri_sdk::operations::incept_registry(&mut id, signer)
+        let reg_id = keri_sdk::advanced::operations::incept_registry(&mut id, signer)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
         store
@@ -424,7 +426,7 @@ impl KeriMobileSdk {
             credential_said
                 .parse()
                 .map_err(|e| KeriError::Internal(format!("{e}")))?;
-        keri_sdk::operations::issue(&mut id, signer, said)
+        keri_sdk::advanced::operations::issue(&mut id, signer, said)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
@@ -442,7 +444,7 @@ impl KeriMobileSdk {
             credential_said
                 .parse()
                 .map_err(|e| KeriError::Internal(format!("{e}")))?;
-        keri_sdk::operations::revoke(&mut id, signer, &said)
+        keri_sdk::advanced::operations::revoke(&mut id, signer, &said)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
@@ -465,7 +467,7 @@ impl KeriMobileSdk {
                 .parse()
                 .map_err(|e| KeriError::Internal(format!("{e}")))?;
 
-        let status = keri_sdk::tel::check_credential_status(&id, &signer, &reg_id, &said)
+        let status = keri_sdk::advanced::tel::check_credential_status(&id, &signer, &reg_id, &said)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
         Ok(map_status(status))
@@ -482,7 +484,7 @@ impl KeriMobileSdk {
             credential_said
                 .parse()
                 .map_err(|e| KeriError::Internal(format!("{e}")))?;
-        let status = keri_sdk::tel::get_credential_status(&id, &said)
+        let status = keri_sdk::advanced::tel::get_credential_status(&id, &said)
             .map_err(|e| KeriError::Controller(e.to_string()))?;
         Ok(map_status(status))
     }
@@ -514,247 +516,34 @@ impl KeriMobileSdk {
     }
 
     /// Build a delegated-AID inception event ('dip') under `alias`
-    /// delegated by `config.delegator_aid`. Persists the alias →
-    /// delegated_prefix and alias → delegator mapping. Returns the
-    /// delegated AID and the dip CESR ready for out-of-band transport
-    /// to the delegator.
+    /// delegated by `config.delegator_aid`, and persist the alias →
+    /// delegated_prefix and alias → delegator mappings. Returns the delegated
+    /// AID and the dip CESR ready for out-of-band transport to the delegator.
     ///
     /// After the delegator returns the signed delegating `ixn`, call
-    /// `finalize_delegation` to attach the seal to the local KEL.
+    /// [`Self::finalize_delegation`] to attach the seal to the local KEL. When
+    /// the delegator's KEL is already in hand (the QR invite carries it),
+    /// prefer [`Self::request_delegation_with_kel`] to ingest it in one call.
     pub async fn request_delegation(
         &self,
         alias: String,
         config: FfiDelegationConfig,
     ) -> Result<FfiDelegationRequest, KeriError> {
-        let factory = self.factory()?;
-        let algo = config.algorithm;
-        let current_label = format!("{alias}_v1");
-        let next_label = format!("{alias}_v2");
-
-        let current_provider = factory
-            .create(&current_label, algo.to_keri())
-            .await
-            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
-        let next_provider = factory
-            .create(&next_label, algo.to_keri())
-            .await
-            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
-
-        let next_pk =
-            basic_prefix_for(algo, next_provider.public_key().bytes.clone(), false);
-
-        let witnesses = futures::future::try_join_all(
-            config.witness_urls.iter().map(|u| resolve_location_scheme(u)),
-        )
-        .await?;
-
-        // Persist the resolved {eid, scheme, url} triples so
-        // `list_witnesses` / OOBI assembly can recover them, exactly
-        // as `create_identifier` does. Without this a delegated AID
-        // minted with witnesses still reports an empty witness set,
-        // its OOBI comes back empty, and mesagkesto register and
-        // remote watcher KEL lookups both fail.
-        self.save_witness_locations(&alias, &witnesses)?;
-
-        let delegator: keri_controller::IdentifierPrefix = config
-            .delegator_aid
-            .parse()
-            .map_err(|e| KeriError::Internal(format!("invalid delegator AID: {e}")))?;
-
-        let delegation_config = keri_sdk::types::DelegationConfig {
-            delegator: delegator.clone(),
-            witnesses,
-            witness_threshold: config.witness_threshold,
-            watchers: vec![],
-            algorithm: signer_algorithm(algo),
-        };
-
-        // Mint through the KeriStore's *cached* controller for this
-        // alias rather than opening a fresh one. redb allows only one
-        // open Database per file per process, and load/finalize/sign all
-        // go through the cached controller; minting on a separate one
-        // collided with "Database already open. Cannot acquire lock".
-        let alias_dir = self.db_path.join(&alias);
-        std::fs::create_dir_all(&alias_dir)?;
-
-        let store = self.open_store()?;
-        let controller = store
-            .controller_for(&alias)
-            .map_err(|e| KeriError::Controller(e.to_string()))?;
-
-        let signer: Arc<dyn KeriKp> = current_provider.clone();
-        let (temp_id, delegated_prefix, dip_cesr) =
-            keri_sdk::operations::build_delegation_request_with_controller(
-                &controller,
-                signer,
-                next_pk,
-                delegation_config,
-            )
-            .await
-            .map_err(|e| KeriError::Controller(e.to_string()))?;
-
-        store
-            .save_id(&alias, temp_id.id())
-            .map_err(|e| KeriError::Storage(e.to_string()))?;
-        store
-            .save_delegator(&alias, &delegator)
-            .map_err(|e| KeriError::Storage(e.to_string()))?;
-        // Record the *delegated* AID prefix as well. `id` above is the
-        // throwaway precursor used to bootstrap the delegated inception;
-        // without `delegated_id` the alias can only be resolved to that
-        // precursor, so the joiner operates on the wrong AID and can
-        // neither publish nor serve its own delegated KEL (the desktop
-        // then sees `KELNotFound` for the device). Mirrors what the
-        // desktop's `build_delegation_request_oob` persists.
-        store
-            .save_delegated_prefix(&alias, &delegated_prefix)
-            .map_err(|e| KeriError::Storage(e.to_string()))?;
-        self.save_key_state(
-            &alias,
-            &KeyState {
-                current_label,
-                next_label,
-                version: 1,
-            },
-        )?;
-
-        Ok(FfiDelegationRequest {
-            delegated_aid: delegated_prefix.to_str(),
-            dip_cesr,
-        })
+        self.mint_delegation(&alias, config, "").await
     }
 
-    /// Atomic version of `request_delegation` + `import_delegator_kel`.
-    ///
-    /// In the mobile QR-pairing flow these two calls happen
-    /// back-to-back, and routing them through two separate FFI
-    /// invocations races on the redb lock: `request_delegation`'s
-    /// temporary Identifier owns the redb at `<alias>/db`, returns
-    /// across the FFI boundary, and the very next call
-    /// (`import_delegator_kel`) goes back through KeriStore::load
-    /// which constructs a fresh Controller for the same path —
-    /// before redb's in-process registry has registered the previous
-    /// Database as closed.
-    ///
-    /// This combined entry-point keeps a single live Identifier
-    /// across both operations: build the delegation request, save
-    /// the delegator KEL notices through the same `temp_id`, then
-    /// persist the alias mapping. One Controller, no reopen.
+    /// Atomic version of `request_delegation` + `import_delegator_kel`: mint
+    /// the delegated AID and ingest the delegator's KEL in a single call,
+    /// through one live controller. Use this in QR-pairing flows where
+    /// splitting the two across separate FFI calls would reopen `<alias>/db`
+    /// and race on redb's in-process lock registry.
     pub async fn request_delegation_with_kel(
         &self,
         alias: String,
         config: FfiDelegationConfig,
         delegator_kel_cesr: String,
     ) -> Result<FfiDelegationRequest, KeriError> {
-        let factory = self.factory()?;
-        let algo = config.algorithm;
-        let current_label = format!("{alias}_v1");
-        let next_label = format!("{alias}_v2");
-
-        let current_provider = factory
-            .create(&current_label, algo.to_keri())
-            .await
-            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
-        let next_provider = factory
-            .create(&next_label, algo.to_keri())
-            .await
-            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
-
-        let next_pk =
-            basic_prefix_for(algo, next_provider.public_key().bytes.clone(), false);
-
-        let witnesses = futures::future::try_join_all(
-            config.witness_urls.iter().map(|u| resolve_location_scheme(u)),
-        )
-        .await?;
-
-        // Persist the resolved {eid, scheme, url} triples so
-        // `list_witnesses` / OOBI assembly can recover them, exactly
-        // as `create_identifier` does. Without this a delegated AID
-        // minted with witnesses still reports an empty witness set,
-        // its OOBI comes back empty, and mesagkesto register and
-        // remote watcher KEL lookups both fail.
-        self.save_witness_locations(&alias, &witnesses)?;
-
-        let delegator: keri_controller::IdentifierPrefix = config
-            .delegator_aid
-            .parse()
-            .map_err(|e| KeriError::Internal(format!("invalid delegator AID: {e}")))?;
-
-        let delegation_config = keri_sdk::types::DelegationConfig {
-            delegator: delegator.clone(),
-            witnesses,
-            witness_threshold: config.witness_threshold,
-            watchers: vec![],
-            algorithm: signer_algorithm(algo),
-        };
-
-        let alias_dir = self.db_path.join(&alias);
-        std::fs::create_dir_all(&alias_dir)?;
-
-        // Mint through the KeriStore's cached controller (see
-        // request_delegation): one redb Database per alias, shared with
-        // load / finalize / sign, so the mint can't collide with a
-        // cached controller and leave the KEL unreachable.
-        let store = self.open_store()?;
-        let controller = store
-            .controller_for(&alias)
-            .map_err(|e| KeriError::Controller(e.to_string()))?;
-
-        let signer: Arc<dyn KeriKp> = current_provider.clone();
-        let (temp_id, delegated_prefix, dip_cesr) =
-            keri_sdk::operations::build_delegation_request_with_controller(
-                &controller,
-                signer,
-                next_pk,
-                delegation_config,
-            )
-            .await
-            .map_err(|e| KeriError::Controller(e.to_string()))?;
-
-        // Save the delegator KEL through the still-alive temp_id so
-        // the redb stays open under one controller for both phases.
-        if !delegator_kel_cesr.is_empty() {
-            use keri_core::actor::parse_notice_stream;
-            let notices = parse_notice_stream(delegator_kel_cesr.as_bytes())
-                .map_err(|e| KeriError::Internal(format!("parse delegator KEL: {e}")))?;
-            for notice in &notices {
-                temp_id
-                    .save_notice(notice)
-                    .map_err(|e| KeriError::Controller(e.to_string()))?;
-            }
-        }
-
-        // Flat-file alias persistence — no redb touch on the same path.
-        store
-            .save_id(&alias, temp_id.id())
-            .map_err(|e| KeriError::Storage(e.to_string()))?;
-        store
-            .save_delegator(&alias, &delegator)
-            .map_err(|e| KeriError::Storage(e.to_string()))?;
-        // Record the *delegated* AID prefix as well. `id` above is the
-        // throwaway precursor used to bootstrap the delegated inception;
-        // without `delegated_id` the alias can only be resolved to that
-        // precursor, so the joiner operates on the wrong AID and can
-        // neither publish nor serve its own delegated KEL (the desktop
-        // then sees `KELNotFound` for the device). Mirrors what the
-        // desktop's `build_delegation_request_oob` persists.
-        store
-            .save_delegated_prefix(&alias, &delegated_prefix)
-            .map_err(|e| KeriError::Storage(e.to_string()))?;
-        self.save_key_state(
-            &alias,
-            &KeyState {
-                current_label,
-                next_label,
-                version: 1,
-            },
-        )?;
-
-        Ok(FfiDelegationRequest {
-            delegated_aid: delegated_prefix.to_str(),
-            dip_cesr,
-        })
+        self.mint_delegation(&alias, config, &delegator_kel_cesr).await
     }
 
     /// Apply the delegator's signed `ixn` (CESR) to `alias`'s
@@ -770,7 +559,7 @@ impl KeriMobileSdk {
         let id = store
             .load(&alias)
             .map_err(|e| KeriError::Storage(e.to_string()))?;
-        keri_sdk::operations::finalize_delegation_with_seal(&id, &delegator_seal_cesr)
+        keri_sdk::advanced::operations::finalize_delegation_with_seal(&id, &delegator_seal_cesr)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
@@ -809,7 +598,7 @@ impl KeriMobileSdk {
         id.notify_witnesses()
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
-        keri_sdk::operations::complete_delegation(
+        keri_sdk::advanced::operations::complete_delegation(
             &mut id,
             &signer,
             &delegated_prefix,
@@ -891,7 +680,7 @@ impl KeriMobileSdk {
             .load(&alias)
             .map_err(|e| KeriError::Storage(e.to_string()))?;
         let signer = self.get_signer(&alias).await?;
-        keri_sdk::operations::add_watcher(&mut id, &signer, &location)
+        keri_sdk::advanced::operations::add_watcher(&mut id, &signer, &location)
             .await
             .map_err(|e| KeriError::Controller(e.to_string()))?;
 
@@ -972,7 +761,7 @@ impl KeriMobileSdk {
     ) -> Result<(), KeriError> {
         use keri_controller::SelfSigningPrefix;
         use keri_core::prefix::IdentifierPrefix;
-        use keri_sdk::operations::SigningBackend;
+        use keri_sdk::advanced::operations::SigningBackend;
         use std::str::FromStr;
 
         let store = self.open_store()?;
@@ -1014,7 +803,7 @@ impl KeriMobileSdk {
                 "no watcher returned a KEL for {target_aid}: {errs:?}"
             )));
         }
-        if id.inner().known_events.find_kel(&target).is_none() {
+        if id.get_kel(&target).is_none() {
             return Err(KeriError::Controller(format!(
                 "watcher accepted but no KEL stored for {target_aid}"
             )));
@@ -1111,7 +900,7 @@ impl KeriMobileSdk {
             .load(&alias)
             .map_err(|e| KeriError::Storage(e.to_string()))?;
         let signer = self.get_signer(&alias).await?;
-        keri_sdk::signing::sign_to_cesr(&id, &signer, &json)
+        keri_sdk::advanced::signing::sign_to_cesr(&id, &signer, &json)
             .map_err(|e| KeriError::Controller(e.to_string()))
     }
 
@@ -1147,13 +936,12 @@ impl KeriMobileSdk {
         let target = IdentifierPrefix::from_str(&aid).map_err(|e| {
             KeriError::Controller(format!("invalid aid {aid}: {e}"))
         })?;
-        id.inner()
-            .known_events
-            .find_kel(&target)
-            .map(|k| k.into_bytes())
+        id.get_kel_cesr(&target)
             .ok_or_else(|| {
                 KeriError::Storage(format!("no KEL stored for {aid} under alias {via_alias}"))
-            })
+            })?
+            .map(|cesr| cesr.into_bytes())
+            .map_err(|e| KeriError::Controller(e.to_string()))
     }
 
     pub fn show_kel(&self, alias: String) -> Result<String, KeriError> {
@@ -1180,9 +968,219 @@ impl KeriMobileSdk {
             notices.len(),
         ))
     }
+
+    // ───────────────────────────────────────────────────────────────────────
+    // High-level facade
+    //
+    // These delegate to the keriox-sdk `Keri` facade so Android callers get the
+    // same "list my identities / verify against anyone / import by URL or KEL /
+    // check a credential from its id alone" ergonomics as the Rust facade.
+    //
+    // The facade is built with `Keri::from_store`, which wraps the *same*
+    // cached `KeriStore` this SDK already holds and shares its controller cache
+    // — so the facade and this binding's `advanced::*` calls run side by side
+    // without the redb file-lock collision a second `Keri::open` would cause.
+    //
+    // Facade capabilities still implemented over `advanced::*` (the mobile /
+    // cyfron-specific surface the facade does not cover), and the remaining SDK
+    // gaps, are tracked in `FACADE_PARITY.md` next to this crate.
+    // ───────────────────────────────────────────────────────────────────────
+
+    /// Aliases of the identities this store controls — own identities only.
+    /// Imported contacts (kept under `.contacts/…`) and other bookkeeping
+    /// aliases are excluded. Delegates to `keri_sdk::Keri::identities`; use
+    /// [`Self::list_aliases`] for the unfiltered set.
+    pub fn list_identities(&self) -> Result<Vec<String>, KeriError> {
+        Ok(self.facade()?.identities()?)
+    }
+
+    /// Verify a signed CESR message against *every* identity and contact this
+    /// store knows, returning the payload and the proven signer — the caller
+    /// need not know who signed it up front. Delegates to
+    /// `keri_sdk::Keri::verify`: purely local, no network calls. Fails when the
+    /// signer's key history is not known locally (import it first with
+    /// [`Self::import_contact`]) or when the signature does not match. Use
+    /// [`Self::verify`] when the signing alias is already known.
+    pub fn verify_any(&self, cesr: Vec<u8>) -> Result<FfiVerifiedPayload, KeriError> {
+        let cesr = std::str::from_utf8(&cesr)
+            .map_err(|e| KeriError::Internal(format!("CESR is not UTF-8 text: {e}")))?;
+        let verified = self.facade()?.verify(cesr)?;
+        Ok(FfiVerifiedPayload {
+            payload: verified.payload,
+            signer_id: verified.signer.to_string(),
+        })
+    }
+
+    /// Import another party's identity so their signatures can be verified
+    /// ([`Self::verify_any`]). Delegates to `keri_sdk::Keri::import_contact`,
+    /// which accepts what the other side shared:
+    ///   * their **OOBI URL** (`…/oobi/<id>[/witness/<eid>]`) — the key
+    ///     history is fetched from the witness in the URL, or
+    ///   * their **key history** itself (the CESR string a peer exports) —
+    ///     fully offline; the same bytes the mobile QR-pairing flow carries.
+    ///
+    /// The contact is stored under `.contacts/<id>`. Importing again later
+    /// picks up any key rotations they made. Returns the imported id.
+    pub async fn import_contact(&self, source: String) -> Result<String, KeriError> {
+        Ok(self.facade()?.import_contact(&source).await?.to_string())
+    }
+
+    /// Check whether a credential is currently `Issued`, `Revoked`, or
+    /// `Unknown`, from its self-contained id (`"<registry>:<said>"`) alone —
+    /// the caller does not have to track which alias or registry it belongs
+    /// to. Delegates to `keri_sdk::Keri::credential_status`: a local pass over
+    /// every known identity and contact first (no network), then a best-effort
+    /// network refresh. Returns `Unknown` when no registry anywhere knows the
+    /// credential (for a foreign credential, usually the issuer has not been
+    /// imported yet — [`Self::import_contact`]).
+    ///
+    /// Note: the facade's network refresh signs queries with software seeds, so
+    /// for a provider-backed (keystore) identity it covers only registries
+    /// already synced locally. For an explicit, provider-signed network check
+    /// use [`Self::check_credential`].
+    pub async fn credential_status(
+        &self,
+        credential_id: String,
+    ) -> Result<FfiCredentialStatus, KeriError> {
+        let id: keri_sdk::CredentialId = credential_id
+            .parse()
+            .map_err(|e| KeriError::Internal(format!("invalid credential id: {e}")))?;
+        let status = self.facade()?.credential_status(&id).await?;
+        Ok(map_facade_status(status))
+    }
 }
 
 impl KeriMobileSdk {
+    /// Build the high-level `keri_sdk::Keri` facade around this SDK's cached
+    /// `KeriStore`. `Keri::from_store` shares the store's controller cache, so
+    /// the facade and the binding's `advanced::*` calls coexist without
+    /// opening the redb databases a second time (which would deadlock on
+    /// redb's exclusive file lock). Cheap to call per-operation — it only
+    /// clones the store `Arc` and wraps it.
+    fn facade(&self) -> Result<keri_sdk::Keri, KeriError> {
+        Ok(keri_sdk::Keri::from_store(self.open_store()?))
+    }
+
+    /// Shared body of [`Self::request_delegation`] and
+    /// [`Self::request_delegation_with_kel`].
+    ///
+    /// Mints a delegated-AID inception (`dip`) under `alias` delegated by
+    /// `config.delegator_aid`, optionally ingesting the delegator's KEL
+    /// (`delegator_kel_cesr`, empty to skip) through the same live identifier,
+    /// then persists the alias → id / delegator / delegated-prefix mappings and
+    /// the key state. Returns the delegated AID and the `dip` CESR for
+    /// out-of-band transport to the delegator.
+    ///
+    /// Everything runs through the store's single cached controller for
+    /// `alias` (`controller_for`): redb allows one open `Database` per file per
+    /// process, so the mint, the optional KEL ingest, and later
+    /// `load`/`finalize`/`sign` must all share one controller rather than
+    /// opening a second over `<alias>/db`.
+    async fn mint_delegation(
+        &self,
+        alias: &str,
+        config: FfiDelegationConfig,
+        delegator_kel_cesr: &str,
+    ) -> Result<FfiDelegationRequest, KeriError> {
+        let factory = self.factory()?;
+        let algo = config.algorithm;
+        let current_label = format!("{alias}_v1");
+        let next_label = format!("{alias}_v2");
+
+        let current_provider = factory
+            .create(&current_label, algo.to_keri())
+            .await
+            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
+        let next_provider = factory
+            .create(&next_label, algo.to_keri())
+            .await
+            .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
+        let next_pk = basic_prefix_for(algo, next_provider.public_key().bytes.clone(), false);
+
+        let witnesses = futures::future::try_join_all(
+            config.witness_urls.iter().map(|u| resolve_location_scheme(u)),
+        )
+        .await?;
+        // Persist the resolved {eid, scheme, url} triples so `list_witnesses` /
+        // OOBI assembly can recover them (as `create_identifier` does).
+        // Without this a delegated AID minted with witnesses reports an empty
+        // witness set, its OOBI comes back empty, and register / remote watcher
+        // KEL lookups both fail.
+        self.save_witness_locations(alias, &witnesses)?;
+
+        let delegator: keri_controller::IdentifierPrefix = config
+            .delegator_aid
+            .parse()
+            .map_err(|e| KeriError::Internal(format!("invalid delegator AID: {e}")))?;
+        let delegation_config = keri_sdk::advanced::types::DelegationConfig {
+            delegator: delegator.clone(),
+            witnesses,
+            witness_threshold: config.witness_threshold,
+            watchers: vec![],
+            algorithm: signer_algorithm(algo),
+        };
+
+        std::fs::create_dir_all(self.db_path.join(alias))?;
+        let store = self.open_store()?;
+        let controller = store
+            .controller_for(alias)
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+
+        let signer: Arc<dyn KeriKp> = current_provider.clone();
+        let (temp_id, delegated_prefix, dip_cesr) =
+            keri_sdk::advanced::operations::build_delegation_request_with_controller(
+                &controller,
+                signer,
+                next_pk,
+                delegation_config,
+            )
+            .await
+            .map_err(|e| KeriError::Controller(e.to_string()))?;
+
+        // Ingest the delegator's KEL (if supplied) through the same live
+        // identifier so its seal can be validated locally without a witness
+        // round-trip — the QR invite carries these bytes inline.
+        if !delegator_kel_cesr.is_empty() {
+            use keri_core::actor::parse_notice_stream;
+            let notices = parse_notice_stream(delegator_kel_cesr.as_bytes())
+                .map_err(|e| KeriError::Internal(format!("parse delegator KEL: {e}")))?;
+            for notice in &notices {
+                temp_id
+                    .save_notice(notice)
+                    .map_err(|e| KeriError::Controller(e.to_string()))?;
+            }
+        }
+
+        store
+            .save_id(alias, temp_id.id())
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        store
+            .save_delegator(alias, &delegator)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        // `temp_id.id()` is the throwaway precursor used to bootstrap the
+        // delegated inception; persist the *delegated* prefix too, or the alias
+        // resolves only to the precursor and the joiner operates on the wrong
+        // AID — it can then neither publish nor serve its own delegated KEL (the
+        // desktop sees `KELNotFound` for the device). Mirrors the desktop's
+        // `build_delegation_request_oob`.
+        store
+            .save_delegated_prefix(alias, &delegated_prefix)
+            .map_err(|e| KeriError::Storage(e.to_string()))?;
+        self.save_key_state(
+            alias,
+            &KeyState {
+                current_label,
+                next_label,
+                version: 1,
+            },
+        )?;
+
+        Ok(FfiDelegationRequest {
+            delegated_aid: delegated_prefix.to_str(),
+            dip_cesr,
+        })
+    }
+
     fn factory(&self) -> Result<Arc<HostKeyProviderFactory>, KeriError> {
         self.key_factory
             .get()
@@ -1190,13 +1188,13 @@ impl KeriMobileSdk {
             .ok_or(KeriError::KeyProviderUnregistered)
     }
 
-    fn open_store(&self) -> Result<Arc<keri_sdk::KeriStore>, KeriError> {
+    fn open_store(&self) -> Result<Arc<keri_sdk::advanced::KeriStore>, KeriError> {
         let mut guard = self.store.lock().unwrap();
         if let Some(s) = guard.as_ref() {
             return Ok(s.clone());
         }
         let s = Arc::new(
-            keri_sdk::KeriStore::open(self.db_path.clone())
+            keri_sdk::advanced::KeriStore::open(self.db_path.clone())
                 .map_err(|e| KeriError::Storage(e.to_string()))?,
         );
         *guard = Some(s.clone());
@@ -1306,7 +1304,7 @@ impl KeriMobileSdk {
     async fn get_signer(
         &self,
         alias: &str,
-    ) -> Result<keri_sdk::keyprovider_adapter::KeriSigner, KeriError> {
+    ) -> Result<keri_sdk::advanced::keyprovider_adapter::KeriSigner, KeriError> {
         let factory = self.factory()?;
         let label = self
             .load_key_state(alias)
@@ -1316,7 +1314,7 @@ impl KeriMobileSdk {
             .open(&label)
             .await
             .map_err(|e| KeriError::KeyProvider(e.to_string()))?;
-        Ok(keri_sdk::keyprovider_adapter::KeriSigner::from(
+        Ok(keri_sdk::advanced::keyprovider_adapter::KeriSigner::from(
             provider as Arc<dyn KeriKp>,
         ))
     }
@@ -1347,10 +1345,19 @@ fn parse_oobi_json(s: &str) -> Result<keri_controller::Oobi, KeriError> {
     }
 }
 
-fn map_status(s: keri_sdk::types::CredentialStatus) -> FfiCredentialStatus {
+/// Map the high-level facade's credential status onto the FFI enum.
+fn map_facade_status(s: keri_sdk::CredentialStatus) -> FfiCredentialStatus {
     match s {
-        keri_sdk::types::CredentialStatus::Issued => FfiCredentialStatus::Issued,
-        keri_sdk::types::CredentialStatus::Revoked => FfiCredentialStatus::Revoked,
-        keri_sdk::types::CredentialStatus::Unknown => FfiCredentialStatus::Unknown,
+        keri_sdk::CredentialStatus::Issued => FfiCredentialStatus::Issued,
+        keri_sdk::CredentialStatus::Revoked => FfiCredentialStatus::Revoked,
+        keri_sdk::CredentialStatus::Unknown => FfiCredentialStatus::Unknown,
+    }
+}
+
+fn map_status(s: keri_sdk::advanced::types::CredentialStatus) -> FfiCredentialStatus {
+    match s {
+        keri_sdk::advanced::types::CredentialStatus::Issued => FfiCredentialStatus::Issued,
+        keri_sdk::advanced::types::CredentialStatus::Revoked => FfiCredentialStatus::Revoked,
+        keri_sdk::advanced::types::CredentialStatus::Unknown => FfiCredentialStatus::Unknown,
     }
 }

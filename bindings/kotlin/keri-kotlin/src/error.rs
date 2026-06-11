@@ -26,6 +26,15 @@ impl From<anyhow::Error> for KeriError {
     }
 }
 
+/// Surface the high-level `keri_sdk::Keri` facade's errors. The facade carries
+/// richer context than the mid-level layer, so its `Display` text is preserved
+/// verbatim under the controller category.
+impl From<keri_sdk::Error> for KeriError {
+    fn from(e: keri_sdk::Error) -> Self {
+        KeriError::Controller(e.to_string())
+    }
+}
+
 impl From<std::io::Error> for KeriError {
     fn from(e: std::io::Error) -> Self {
         KeriError::Storage(e.to_string())

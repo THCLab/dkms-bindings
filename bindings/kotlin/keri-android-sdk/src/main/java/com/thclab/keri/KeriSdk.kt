@@ -121,6 +121,56 @@ class KeriSdk private constructor(
     fun getCredentialStatus(alias: String, credentialSaid: String): FfiCredentialStatus =
         inner.getCredentialStatus(alias, credentialSaid)
 
+    // ── High-level facade ───────────────────────────────────────────
+    //
+    // Mirror the keriox-sdk `Keri` facade so callers get the same
+    // "list my identities / verify against anyone / import by URL or KEL /
+    // check a credential from its id alone" ergonomics. See
+    // FACADE_PARITY.md in the keri-kotlin crate for what the facade covers
+    // that this binding does not yet expose.
+
+    /**
+     * Aliases of the identities this store controls — own identities only,
+     * excluding imported contacts and bookkeeping aliases. Use [listAliases]
+     * for the unfiltered set.
+     */
+    fun listIdentities(): List<String> = inner.listIdentities()
+
+    /**
+     * Verify a signed CESR message against every identity and contact this
+     * store knows, returning the payload and proven signer. Purely local —
+     * no network. Throws when the signer is unknown (import them first with
+     * [importContact]) or the signature does not match. Use [verify] when the
+     * signing alias is already known.
+     */
+    fun verifyAny(cesr: ByteArray): FfiVerifiedPayload = inner.verifyAny(cesr)
+
+    /**
+     * Import another party's identity so their signatures verify. [source] is
+     * either their OOBI URL (`…/oobi/<id>[/witness/<eid>]`, fetched from the
+     * witness) or their raw key-history CESR string (fully offline — the same
+     * bytes a QR invite carries). Returns the imported id; re-importing later
+     * picks up their key rotations.
+     */
+    suspend fun importContact(source: String): String =
+        withContext(Dispatchers.IO) { inner.importContact(source) }
+
+    /**
+     * Check a credential's status from its self-contained id
+     * (`"<registry>:<said>"`) alone — no need to know which alias or registry
+     * it belongs to. Local pass first, then a best-effort network refresh.
+     * Returns `Unknown` when no known registry knows it (for a foreign
+     * credential, usually the issuer has not been imported yet via
+     * [importContact]).
+     *
+     * The network refresh signs queries with software seeds, so for a
+     * keystore-backed identity it covers only registries already synced
+     * locally. For an explicit, provider-signed network check use
+     * [checkCredential].
+     */
+    suspend fun credentialStatus(credentialId: String): FfiCredentialStatus =
+        withContext(Dispatchers.IO) { inner.credentialStatus(credentialId) }
+
     /**
      * Joiner side of an out-of-band delegated-AID pairing.
      *
