@@ -6,7 +6,7 @@ use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
 pub mod error;
 pub mod utils;
-use keri_controller::{controller::Controller, BasicPrefix, LocationScheme};
+use keri_sdk::advanced::{BasicPrefix, Controller, LocationScheme};
 use utils::{configs, signature_config::Signature};
 mod identifier;
 mod inception_configuration;
@@ -41,7 +41,7 @@ impl JsController {
     pub fn new(config: Option<configs::Configs>) -> napi::Result<Self> {
         let optional_configs = config.map(|c| c.build().unwrap()).unwrap();
 
-        let c = Controller::new(optional_configs).map_err(Error::ControllerError)?;
+        let c = Controller::new_with_config(optional_configs).map_err(Error::SdkError)?;
         Ok(JsController { inner: c })
     }
 
@@ -52,13 +52,13 @@ impl JsController {
             .iter()
             .map(|k| k.parse())
             .collect::<Result<Vec<BasicPrefix>, _>>()
-            .map_err(|e| Error::KeyParsingError(e))?;
+            .map_err(|e| Error::KeyParsingError(e.to_string()))?;
         let next_keys = config
             .next_public_keys
             .iter()
             .map(|k| k.parse())
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| Error::KeyParsingError(e))?;
+            .collect::<Result<Vec<BasicPrefix>, _>>()
+            .map_err(|e| Error::KeyParsingError(e.to_string()))?;
         let witnesses = config
             .witnesses_location
             .iter()
@@ -76,7 +76,7 @@ impl JsController {
                 config.witness_threshold as u64,
             )
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
         Ok(icp.as_bytes().into())
     }
 
@@ -90,7 +90,7 @@ impl JsController {
         let incepted_identifier = self
             .inner
             .finalize_incept(&icp_event, &ssp)
-            .map_err(Error::ControllerError)?;
+            .map_err(Error::SdkError)?;
         Ok(JsIdentifier {
             inner: Arc::new(Mutex::new(incepted_identifier)),
         })

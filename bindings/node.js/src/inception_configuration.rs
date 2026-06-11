@@ -1,4 +1,4 @@
-use keri_controller::LocationScheme;
+use keri_sdk::advanced::LocationScheme;
 use napi_derive::napi;
 
 use crate::utils::key_config::JsPublicKey;

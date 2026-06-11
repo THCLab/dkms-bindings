@@ -14,25 +14,13 @@ crate-type = ["cdylib"]
 
 [dependencies]
 thiserror = "1.0"
-base64 = "0.13.0"
-napi = { version = "2.16.9", features = ["serde-json", "async"]}
-napi-derive = "2.16.11"
-simple_config_parser = "0.1.5"
-clap = "3.0.0-beta.4"
-tempfile = "3.1"
-serde_json = "1.0.81"
-said = "0.4.1"
-keri-core = { version = "=0.17.9", features = ["oobi", "mailbox"]}
-keri-controller = { version = "=0.17.9" }
-cesrox = "=0.1.7"
-teliox = "=0.17.9"
+napi = { version = "2.16", features = ["serde-json", "async"] }
+napi-derive = "2.16"
+serde_json = "1"
+keri-sdk = { path = "../../../keriox/keriox_sdk" }
 
-[target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
-mimalloc = {version = "0.1"}
-
-[build-dependencies]
-napi-build = "1"
-
-
-[dev-dependencies]
-ed25519-compact = "0.1"
+# keri-sdk pulls cesrox from a local checkout (it carries unreleased beta
+# changes the SDK depends on); mirror keriox's own patch so this binding
+# resolves the same source.
+[patch.crates-io]
+cesrox = { path = "../../../cesrox/cesr" }

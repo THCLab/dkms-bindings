@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use keri_controller::{config::ControllerConfig, LocationScheme};
+use keri_sdk::advanced::{ControllerConfig, LocationScheme};
 use napi_derive::napi;
 
 #[napi(constructor)]

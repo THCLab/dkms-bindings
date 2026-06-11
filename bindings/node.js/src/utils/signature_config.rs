@@ -1,6 +1,5 @@
-use cesrox::primitives::codes::self_signing::SelfSigning;
-use keri_controller::CesrPrimitive;
-use keri_controller::SelfSigningPrefix;
+use keri_sdk::advanced::raw::cesrox::primitives::codes::self_signing::SelfSigning;
+use keri_sdk::advanced::{CesrPrimitive, SelfSigningPrefix};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 
@@ -12,16 +11,6 @@ impl Into<SelfSigning> for SignatureType {
             SignatureType::Ed25519Sha512 => SelfSigning::Ed25519Sha512,
             SignatureType::ECDSAsecp256k1Sha256 => SelfSigning::ECDSAsecp256k1Sha256,
             SignatureType::Ed448 => SelfSigning::Ed448,
-        }
-    }
-}
-
-impl From<SelfSigning> for SignatureType {
-    fn from(sd: SelfSigning) -> Self {
-        match sd {
-            SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
-            SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
-            SelfSigning::Ed448 => SignatureType::Ed448,
         }
     }
 }
@@ -41,7 +30,7 @@ impl Signature {
         }
     }
 
-    pub fn to_prefix(&self) -> keri_controller::SelfSigningPrefix {
+    pub fn to_prefix(&self) -> SelfSigningPrefix {
         self.prefix.parse().unwrap()
     }
 }

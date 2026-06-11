@@ -8,20 +8,13 @@ use crate::{
     },
     Signature,
 };
-use keri_controller::{
-    error::ControllerError, identifier::Identifier, BasicPrefix, EndRole, IdentifierPrefix,
-    LocationScheme, Oobi, TelState,
-};
-use keri_core::{
-    actor::prelude::Message, event::sections::seal::EventSeal,
-    processor::validator::VerificationError,
+use keri_sdk::advanced::{
+    BasicPrefix, EndRole, EventSeal, HashFunction, HashFunctionCode, Identifier, IdentifierPrefix,
+    LocationScheme, Oobi, QueryResponse, Role, SelfAddressingIdentifier, TelQueryEvent, TelState,
+    VerificationIssue,
 };
 use napi::{bindgen_prelude::Buffer, tokio::sync::Mutex};
 use napi_derive::napi;
-use said::{
-    derivation::{HashFunction, HashFunctionCode},
-    SelfAddressingIdentifier,
-};
 
 #[napi]
 pub struct JsIdentifier {
@@ -33,12 +26,8 @@ impl JsIdentifier {
     #[napi]
     pub async fn get_kel(&self) -> napi::Result<String> {
         let inner = self.inner.lock().await;
-        let kel = inner.get_own_kel();
-        let kel_str = match kel {
-            Some(kel) => kel
-                .into_iter()
-                .map(|event| String::from_utf8(Message::Notice(event).to_cesr().unwrap()).unwrap())
-                .fold(String::new(), |a, b| a + &b + "\n"),
+        let kel_str = match inner.get_own_kel_cesr() {
+            Some(res) => res.map_err(Error::SdkError)?,
             None => "KEL not found".to_string(),
         };
         Ok(kel_str)
@@ -47,8 +36,10 @@ impl JsIdentifier {
     #[napi]
     pub async fn find_state(&self, about_id: String) -> napi::Result<String> {
         let inner = self.inner.lock().await;
-        let about_who: IdentifierPrefix = about_id.parse().map_err(Error::IdParsingError)?;
-        let state = inner.find_state(&about_who).map_err(Error::MechanicError)?;
+        let about_who: IdentifierPrefix = about_id
+            .parse::<IdentifierPrefix>()
+            .map_err(|e| Error::IdParsingError(e.to_string()))?;
+        let state = inner.find_state(&about_who).map_err(Error::SdkError)?;
         Ok(serde_json::to_string(&state).unwrap())
     }
 
@@ -61,21 +52,17 @@ impl JsIdentifier {
     #[napi]
     pub async fn notify_witness(&self) -> napi::Result<()> {
         let mut inner = self.inner.lock().await;
-        inner
-            .notify_witnesses()
-            .await
-            .map_err(Error::MechanicError)?;
+        inner.notify_witnesses().await.map_err(Error::SdkError)?;
         Ok(())
     }
 
     #[napi]
     pub async fn query_mailbox(&self) -> napi::Result<Vec<Buffer>> {
         let inner = self.inner.lock().await;
-        let id = inner.id();
-        let witnesses = inner.witnesses().collect::<Vec<_>>();
+        let witnesses = inner.witnesses();
         let kel = inner
-            .query_mailbox(id, &witnesses)
-            .map_err(Error::ControllerError)?;
+            .query_mailbox(inner.id(), &witnesses)
+            .map_err(Error::SdkError)?;
         let kel_str = kel
             .into_iter()
             .map(|event| {
@@ -106,7 +93,7 @@ impl JsIdentifier {
         inner
             .finalize_query_mailbox(qries_and_sigs)
             .await
-            .map_err(Error::ControllerError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -118,13 +105,13 @@ impl JsIdentifier {
             .iter()
             .map(|k| k.parse())
             .collect::<Result<Vec<BasicPrefix>, _>>()
-            .map_err(|e| Error::KeyParsingError(e))?;
+            .map_err(|e| Error::KeyParsingError(e.to_string()))?;
         let next_keys = config
             .next_public_keys
             .iter()
             .map(|k| k.parse())
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| Error::KeyParsingError(e))?;
+            .collect::<Result<Vec<BasicPrefix>, _>>()
+            .map_err(|e| Error::KeyParsingError(e.to_string()))?;
         let witnesses_to_add = config
             .witnesses_to_add
             .iter()
@@ -150,7 +137,7 @@ impl JsIdentifier {
                 config.witness_threshold as u64,
             )
             .await
-            .unwrap()
+            .map_err(Error::SdkError)?
             .as_bytes()
             .into())
     }
@@ -166,34 +153,14 @@ impl JsIdentifier {
         let ssp = signature.to_prefix();
         id.finalize_rotate(&rot_event, ssp)
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
         Ok(())
     }
-
-    // #[napi]
-    // pub fn anchor(&self, anchored_data: Vec<String>) -> napi::Result<Buffer> {
-    //     let sais = anchored_data
-    //         .iter()
-    //         .map(|d| d.parse::<SelfAddressingPrefix>().unwrap())
-    //         .collect::<Vec<_>>();
-    //     Ok(self.controller.anchor(&sais).unwrap().as_bytes().into())
-    // }
-
-    // #[napi]
-    // pub fn finalize_event(&self, event: Buffer, signatures: Vec<Signature>) -> napi::Result<()> {
-    //     let sigs = signatures
-    //         .into_iter()
-    //         .map(|s| s.to_prefix())
-    //         .collect::<Vec<_>>();
-    //     self.controller
-    //         .finalize_event(&event.to_vec(), sigs)
-    //         .map_err(|e| napi::Error::from_reason(e.to_string()))
-    // }
 
     #[napi]
     pub async fn incept_registry(&self) -> napi::Result<RegistryInceptionData> {
         let mut id = self.inner.lock().await;
-        let (registry_id, vcp) = id.incept_registry().map_err(Error::ControllerError)?;
+        let (registry_id, vcp) = id.incept_registry().map_err(Error::SdkError)?;
 
         Ok(RegistryInceptionData {
             ixn: vcp.encode().unwrap().into(),
@@ -210,7 +177,7 @@ impl JsIdentifier {
         let mut id = self.inner.lock().await;
         id.finalize_incept_registry(&event, signature.to_prefix())
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -219,7 +186,7 @@ impl JsIdentifier {
     pub async fn issue(&self, vc: Buffer) -> napi::Result<IssuanceData> {
         let said = HashFunction::from(HashFunctionCode::Blake3_256).derive(&vc);
         let id = self.inner.lock().await;
-        let (vc_hash, iss) = id.issue(said).map_err(Error::ControllerError)?;
+        let (vc_hash, iss) = id.issue(said).map_err(Error::SdkError)?;
 
         Ok(IssuanceData {
             ixn: iss.encode().unwrap().into(),
@@ -232,7 +199,7 @@ impl JsIdentifier {
         let mut id = self.inner.lock().await;
         id.finalize_issue(&event, signature.to_prefix())
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -241,8 +208,12 @@ impl JsIdentifier {
     pub async fn revoke(&self, vc_hash: String) -> napi::Result<Buffer> {
         let id = self.inner.lock().await;
         let ixn = id
-            .revoke(&vc_hash.parse().map_err(|e| Error::HashParsingError(e))?)
-            .map_err(Error::ControllerError)?;
+            .revoke(
+                &vc_hash
+                    .parse::<SelfAddressingIdentifier>()
+                    .map_err(|e| Error::HashParsingError(e.to_string()))?,
+            )
+            .map_err(Error::SdkError)?;
 
         Ok(ixn.into())
     }
@@ -252,7 +223,7 @@ impl JsIdentifier {
         let mut id = self.inner.lock().await;
         id.finalize_revoke(&event, signature.to_prefix())
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -260,7 +231,7 @@ impl JsIdentifier {
     #[napi]
     pub async fn notify_backers(&self) -> napi::Result<()> {
         let id = self.inner.lock().await;
-        id.notify_backers().await.map_err(Error::MechanicError)?;
+        id.notify_backers().await.map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -275,10 +246,10 @@ impl JsIdentifier {
 
         id.resolve_oobi(&Oobi::Location(oobi))
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
         Ok(id
             .add_watcher(watcher_id)
-            .map_err(Error::MechanicError)?
+            .map_err(Error::SdkError)?
             .as_bytes()
             .into())
     }
@@ -292,7 +263,7 @@ impl JsIdentifier {
         let id = self.inner.lock().await;
         id.finalize_add_watcher(&event, signature.to_prefix())
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -305,15 +276,19 @@ impl JsIdentifier {
         digest: String,
     ) -> napi::Result<Vec<Buffer>> {
         let id = self.inner.lock().await;
-        let about_id = about_id.parse().map_err(Error::IdParsingError)?;
+        let about_id = about_id
+            .parse::<IdentifierPrefix>()
+            .map_err(|e| Error::IdParsingError(e.to_string()))?;
         let seal = EventSeal::new(
             about_id,
             sn.into(),
-            digest.parse().map_err(Error::HashParsingError)?,
+            digest
+                .parse::<SelfAddressingIdentifier>()
+                .map_err(|e| Error::HashParsingError(e.to_string()))?,
         );
         Ok(id
             .query_watchers(&seal)
-            .map_err(Error::ControllerError)?
+            .map_err(Error::SdkError)?
             .into_iter()
             .map(|qry| {
                 Ok(Buffer::from(
@@ -341,21 +316,23 @@ impl JsIdentifier {
         let (res, _err) = inner.finalize_query(qries_and_sigs).await;
 
         Ok(match res {
-            keri_controller::identifier::query::QueryResponse::Updates => true,
-            keri_controller::identifier::query::QueryResponse::NoUpdates => false,
+            QueryResponse::Updates => true,
+            QueryResponse::NoUpdates => false,
         })
     }
 
     #[napi]
     pub async fn query_full_kel(&self, about_id: String) -> napi::Result<Vec<Buffer>> {
         let id = self.inner.lock().await;
-        let about_id = &about_id.parse().map_err(Error::IdParsingError)?;
-        let watchers = id.watchers().map_err(Error::ControllerError)?;
+        let about_id = &about_id
+            .parse::<IdentifierPrefix>()
+            .map_err(|e| Error::IdParsingError(e.to_string()))?;
+        let watchers = id.watchers().map_err(Error::SdkError)?;
         let mut qries = vec![];
         for watcher in watchers {
             let qry = id
                 .query_full_log(about_id, watcher)
-                .map_err(Error::ControllerError)?
+                .map_err(Error::SdkError)?
                 .encode()
                 .unwrap();
             qries.push(Buffer::from(qry));
@@ -366,8 +343,10 @@ impl JsIdentifier {
     #[napi]
     pub async fn vc_state(&self, digest: String) -> napi::Result<Option<VcState>> {
         let id = self.inner.lock().await;
-        let vc_hash: SelfAddressingIdentifier = digest.parse().map_err(Error::HashParsingError)?;
-        let out = id.find_vc_state(&vc_hash).map_err(Error::ControllerError)?;
+        let vc_hash: SelfAddressingIdentifier = digest
+            .parse::<SelfAddressingIdentifier>()
+            .map_err(|e| Error::HashParsingError(e.to_string()))?;
+        let out = id.find_vc_state(&vc_hash).map_err(Error::SdkError)?;
 
         Ok(out.map(|st| match st {
             TelState::Issued(_) => VcState::Issued,
@@ -383,7 +362,7 @@ impl JsIdentifier {
             serde_json::from_str(&oobi).map_err(|_e| Error::OobiParsingError(oobi.to_string()))?;
         id.send_oobi_to_watcher(id.id(), &oobi)
             .await
-            .map_err(Error::ControllerError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -391,11 +370,13 @@ impl JsIdentifier {
     #[napi]
     pub async fn query_tel(&self, registry_id: String, vc_id: String) -> napi::Result<Buffer> {
         let id = self.inner.lock().await;
-        let reg_id = registry_id.parse().map_err(Error::IdParsingError)?;
-        let vc_id = vc_id.parse().map_err(Error::IdParsingError)?;
-        let qry = id
-            .query_tel(reg_id, vc_id)
-            .map_err(Error::ControllerError)?;
+        let reg_id = registry_id
+            .parse::<IdentifierPrefix>()
+            .map_err(|e| Error::IdParsingError(e.to_string()))?;
+        let vc_id = vc_id
+            .parse::<IdentifierPrefix>()
+            .map_err(|e| Error::IdParsingError(e.to_string()))?;
+        let qry = id.query_tel(reg_id, vc_id).map_err(Error::SdkError)?;
 
         Ok(qry.encode().unwrap().into())
     }
@@ -407,11 +388,11 @@ impl JsIdentifier {
         signature: &Signature,
     ) -> napi::Result<()> {
         let id = self.inner.lock().await;
-        let qry: teliox::query::TelQueryEvent =
+        let qry: TelQueryEvent =
             serde_json::from_slice(&event).map_err(|_| Error::EventParsingError)?;
         id.finalize_query_tel(qry, signature.to_prefix())
             .await
-            .map_err(Error::MechanicError)?;
+            .map_err(Error::SdkError)?;
 
         Ok(())
     }
@@ -431,12 +412,12 @@ impl JsIdentifier {
                 .collect()
         };
 
-        let witnesses = locked_id.witnesses().collect::<Vec<_>>();
+        let witnesses = locked_id.witnesses();
         let locations = filter_locations(&witnesses);
         let witnesses_oobi = witnesses.iter().map(|cid| {
             Oobi::EndRole(EndRole {
                 eid: IdentifierPrefix::Basic(cid.clone()),
-                role: keri_core::oobi::Role::Witness,
+                role: Role::Witness,
                 cid: locked_id.id().clone(),
             })
         });
@@ -455,10 +436,11 @@ impl JsIdentifier {
         let registry_id = locked_id.registry_id().map(|registry_id| {
             locked_id
                 .witnesses()
+                .into_iter()
                 .map(|witness| {
                     Oobi::EndRole(EndRole {
                         cid: registry_id.clone(),
-                        role: keri_core::oobi::Role::Witness,
+                        role: Role::Witness,
                         eid: IdentifierPrefix::Basic(witness),
                     })
                 })
@@ -477,7 +459,11 @@ impl JsIdentifier {
     }
 
     #[napi]
-    pub async fn sign(&self, input: String, signatures: Vec<&Signature>) -> napi::Result<Option<String>> {
+    pub async fn sign(
+        &self,
+        input: String,
+        signatures: Vec<&Signature>,
+    ) -> napi::Result<Option<String>> {
         let locked_id = self.inner.lock().await;
         let stream = locked_id
             .sign_to_cesr(
@@ -486,7 +472,8 @@ impl JsIdentifier {
                     .into_iter()
                     .map(|s| s.to_prefix())
                     .collect::<Vec<_>>(),
-            ).map_err(Error::ControllerError)?;
+            )
+            .map_err(Error::SdkError)?;
 
         Ok(Some(stream))
     }
@@ -494,23 +481,24 @@ impl JsIdentifier {
     #[napi]
     pub async fn verify(&self, stream: String) -> napi::Result<bool> {
         let locked_id = self.inner.lock().await;
-        let verification_result = locked_id.verify_from_cesr(stream.as_bytes());
-        match verification_result {
-            Ok(_) => Ok(true),
-            Err(ControllerError::FaultySignature) => Ok(false),
-            Err(ControllerError::VerificationError(errors)) => {
-                if errors
+        match locked_id.verify_from_cesr_detailed(stream.as_bytes()) {
+            Ok(()) => Ok(true),
+            Err(issues) => {
+                if issues
                     .iter()
-                    .any(|(reason, _)| matches!(reason, VerificationError::VerificationFailure))
+                    .any(|issue| matches!(issue, VerificationIssue::SignatureInvalid))
                 {
                     Ok(false)
                 } else {
-                    Err(Error::ControllerError(
-                        keri_controller::error::ControllerError::VerificationError(errors),
+                    Err(Error::Unexpected(
+                        issues
+                            .iter()
+                            .map(|issue| issue.to_string())
+                            .collect::<Vec<_>>()
+                            .join("; "),
                     ))?
                 }
             }
-            Err(e) => Err(Error::ControllerError(e))?,
         }
     }
 }

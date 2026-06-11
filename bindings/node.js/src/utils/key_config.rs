@@ -1,6 +1,6 @@
-use cesrox::primitives::codes::basic::Basic;
-use keri_controller::CesrPrimitive;
-use keri_core::{keys::PublicKey, prefix::BasicPrefix};
+use keri_sdk::advanced::raw::cesrox::primitives::codes::basic::Basic;
+use keri_sdk::advanced::raw::keri_core::keys::PublicKey;
+use keri_sdk::advanced::{BasicPrefix, CesrPrimitive};
 use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 
@@ -14,21 +14,6 @@ impl Into<Basic> for KeyType {
             KeyType::Ed448 => Basic::Ed448Nontrans,
             KeyType::X25519 => Basic::X25519,
             KeyType::X448 => Basic::X448,
-        }
-    }
-}
-
-impl From<Basic> for KeyType {
-    fn from(kd: Basic) -> Self {
-        match kd {
-            Basic::ECDSAsecp256k1Nontrans => KeyType::ECDSAsecp256k1,
-            Basic::ECDSAsecp256k1 => KeyType::ECDSAsecp256k1,
-            Basic::Ed25519Nontrans => KeyType::Ed25519,
-            Basic::Ed25519 => KeyType::Ed25519,
-            Basic::Ed448Nontrans => KeyType::Ed448,
-            Basic::Ed448 => KeyType::Ed448,
-            Basic::X25519 => KeyType::X25519,
-            Basic::X448 => KeyType::X448,
         }
     }
 }
