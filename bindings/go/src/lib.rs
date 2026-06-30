@@ -1,5 +1,6 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
 mod error;
@@ -11,7 +12,7 @@ mod utils;
 use error::Error;
 use identifier::Identifier;
 use inception_configuration::InceptionConfiguration;
-use keri_controller::{controller::PostgresController, BasicPrefix, LocationScheme};
+use keri_sdk::advanced::{BasicPrefix, Controller, LocationScheme};
 use rotation_configuration::RotationConfiguration;
 use utils::{key::PublicKey, signature::Signature};
 
@@ -52,7 +53,7 @@ fn bytes_to_c_buffer(data: Vec<u8>) -> *mut u8 {
 
 // Opaque pointer types for Go
 pub struct CController {
-    inner: PostgresController,
+    inner: Controller,
 }
 
 pub struct CIdentifier {
@@ -68,9 +69,19 @@ pub struct CRotationConfig {
 }
 
 // Controller functions
+/// Creates a Postgres-backed controller.
+///
+/// `db_url` is the Postgres connection string (KEL/TEL event storage).
+/// `db_path` is a local filesystem directory that hosts the small redb file
+/// used for the mailbox query cache and watcher state.
+///
+/// `initial_oobis` is retained for API compatibility. The SDK controller is
+/// constructed from `db_path` + `db_url` only; witness locations are supplied
+/// per-inception via the inception configuration, so this argument is unused.
 #[no_mangle]
 pub extern "C" fn controller_new_postgres(
     db_url: *const c_char,
+    db_path: *const c_char,
     initial_oobis: *const c_char,
 ) -> *mut CController {
     unsafe {
@@ -79,20 +90,17 @@ pub extern "C" fn controller_new_postgres(
             Err(_) => return std::ptr::null_mut(),
         };
 
-        let initial_oobis_str = if initial_oobis.is_null() {
-            None
-        } else {
-            c_str_to_string(initial_oobis).ok()
+        let db_path_str = match c_str_to_string(db_path) {
+            Ok(s) => s,
+            Err(_) => return std::ptr::null_mut(),
         };
 
-        let mut config = keri_controller::config::ControllerConfig::default();
-        if let Some(oobis) = initial_oobis_str {
-            if let Ok(location) = serde_json::from_str::<LocationScheme>(&oobis) {
-                config.initial_oobis = vec![location];
-            }
-        }
+        let _ = initial_oobis;
 
-        match rt().block_on(PostgresController::new_postgres(&db_url_str, config)) {
+        match rt().block_on(Controller::new_postgres(
+            PathBuf::from(db_path_str),
+            &db_url_str,
+        )) {
             Ok(controller) => Box::into_raw(Box::new(CController { inner: controller })),
             Err(_) => std::ptr::null_mut(),
         }
@@ -544,7 +552,7 @@ pub extern "C" fn identifier_finalize_query_mailbox(
             Ok(v) => v,
             Err(_) => return false,
         };
-        let sigs: Vec<keri_controller::SelfSigningPrefix> = match sig_strs
+        let sigs: Vec<keri_sdk::advanced::SelfSigningPrefix> = match sig_strs
             .iter()
             .map(|s| s.parse().map_err(|_| ()))
             .collect::<Result<Vec<_>, _>>()
@@ -1167,7 +1175,7 @@ pub extern "C" fn identifier_finalize_add_watcher(
             Ok(s) => s,
             Err(_) => return false,
         };
-        let sig = match sig_str.parse::<keri_controller::SelfSigningPrefix>() {
+        let sig = match sig_str.parse::<keri_sdk::advanced::SelfSigningPrefix>() {
             Ok(s) => s,
             Err(_) => return false,
         };
@@ -1257,7 +1265,7 @@ pub extern "C" fn identifier_finalize_query_kel(
             Ok(v) => v,
             Err(_) => return false,
         };
-        let sigs: Vec<keri_controller::SelfSigningPrefix> = match sig_strs.iter()
+        let sigs: Vec<keri_sdk::advanced::SelfSigningPrefix> = match sig_strs.iter()
             .map(|s| s.parse().map_err(|_| ()))
             .collect::<Result<Vec<_>, _>>()
         {

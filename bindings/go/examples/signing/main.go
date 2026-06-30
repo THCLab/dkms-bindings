@@ -16,7 +16,13 @@ func main() {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
-	controller, err := dkms.NewController(dbURL, "")
+	dbPath, err := os.MkdirTemp("", "keri-local")
+	if err != nil {
+		log.Fatalf("MkdirTemp: %v", err)
+	}
+	defer os.RemoveAll(dbPath)
+
+	controller, err := dkms.NewController(dbURL, dbPath, "")
 	if err != nil {
 		log.Fatalf("NewController: %v", err)
 	}

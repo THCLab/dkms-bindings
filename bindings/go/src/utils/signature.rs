@@ -1,6 +1,6 @@
 use crate::error::Error;
 use cesrox::primitives::codes::self_signing::SelfSigning;
-use keri_controller::{CesrPrimitive, SelfSigningPrefix};
+use keri_sdk::advanced::{CesrPrimitive, SelfSigningPrefix};
 
 #[derive(Debug, Clone, Copy)]
 pub enum SignatureType {
@@ -36,6 +36,9 @@ impl From<SelfSigning> for SignatureType {
             SelfSigning::Ed25519Sha512 => SignatureType::Ed25519Sha512,
             SelfSigning::ECDSAsecp256k1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
             SelfSigning::Ed448 => SignatureType::Ed448,
+            // NIST P-256 ECDSA has no dedicated SignatureType; report it as the
+            // nearest ECDSA option (convenience reverse mapping only).
+            SelfSigning::ECDSA256r1Sha256 => SignatureType::ECDSAsecp256k1Sha256,
         }
     }
 }
@@ -56,7 +59,9 @@ impl Signature {
 
     pub fn from_string(prefix: &str) -> Result<Self, Error> {
         // Validate that it's a valid prefix
-        let _: SelfSigningPrefix = prefix.parse().map_err(Error::SignatureParsingError)?;
+        let _: SelfSigningPrefix = prefix
+            .parse()
+            .map_err(|e| Error::SignatureParsingError(format!("{e}")))?;
         Ok(Self {
             prefix: prefix.to_string(),
         })

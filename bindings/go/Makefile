@@ -70,19 +70,19 @@ test: build-rust
 # e.g.: make examples DATABASE_URL=postgres://postgres:postgres@localhost/keri_go
 examples: build-rust
 	@echo "Running simple example..."
-	@cd examples/simple && DATABASE_URL=$(DATABASE_URL) $(GO) run main.go
+	@cd examples/simple && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 	@echo ""
 	@echo "Running signing example..."
-	@cd examples/signing && DATABASE_URL=$(DATABASE_URL) $(GO) run main.go
+	@cd examples/signing && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 	@echo ""
 	@echo "Running rotation example..."
-	@cd examples/rotation && DATABASE_URL=$(DATABASE_URL) $(GO) run main.go
+	@cd examples/rotation && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 	@echo ""
 	@echo "Running multisig example..."
-	@cd examples/multisig && DATABASE_URL=$(DATABASE_URL) $(GO) run main.go
+	@cd examples/multisig && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 	@echo ""
 	@echo "Running credentials example..."
-	@cd examples/credentials && DATABASE_URL=$(DATABASE_URL) $(GO) run main.go
+	@cd examples/credentials && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 
 # Run tests and examples
 test-all: test examples

@@ -11,7 +11,7 @@ typedef struct CInceptionConfig CInceptionConfig;
 typedef struct CRotationConfig CRotationConfig;
 
 // Controller functions
-CController* controller_new_postgres(const char* db_url, const char* initial_oobis);
+CController* controller_new_postgres(const char* db_url, const char* db_path, const char* initial_oobis);
 void controller_free(CController* controller);
 uint8_t* controller_incept(CController* controller, CInceptionConfig* config, size_t* out_len);
 CIdentifier* controller_finalize_inception(CController* controller, const uint8_t* icp_event, size_t icp_event_len, const char* signature);
@@ -125,11 +125,12 @@ type RotationConfig struct {
 	ptr *C.CRotationConfig
 }
 
-// NewController creates a new Controller instance backed by PostgreSQL.
-// dbURL is the postgres connection string, e.g. "postgres://user:pass@host/db".
-func NewController(dbURL string, initialOobis string) (*Controller, error) {
+func NewController(dbURL string, dbPath string, initialOobis string) (*Controller, error) {
 	cDbURL := C.CString(dbURL)
 	defer C.free(unsafe.Pointer(cDbURL))
+
+	cDbPath := C.CString(dbPath)
+	defer C.free(unsafe.Pointer(cDbPath))
 
 	var cOobis *C.char
 	if initialOobis != "" {
@@ -137,7 +138,7 @@ func NewController(dbURL string, initialOobis string) (*Controller, error) {
 		defer C.free(unsafe.Pointer(cOobis))
 	}
 
-	ptr := C.controller_new_postgres(cDbURL, cOobis)
+	ptr := C.controller_new_postgres(cDbURL, cDbPath, cOobis)
 	if ptr == nil {
 		return nil, errors.New("failed to create postgres controller")
 	}

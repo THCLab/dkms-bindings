@@ -1,7 +1,7 @@
 use crate::error::Error;
 use cesrox::primitives::codes::basic::Basic;
-use keri_controller::CesrPrimitive;
-use keri_core::{keys::PublicKey as KeriPublicKey, prefix::BasicPrefix};
+use keri_sdk::advanced::raw::keri_core::keys::PublicKey as KeriPublicKey;
+use keri_sdk::advanced::{BasicPrefix, CesrPrimitive};
 
 #[derive(Debug, Clone, Copy)]
 pub enum KeyType {
@@ -48,6 +48,10 @@ impl From<Basic> for KeyType {
             Basic::Ed448 => KeyType::Ed448,
             Basic::X25519 => KeyType::X25519,
             Basic::X448 => KeyType::X448,
+            // NIST P-256 has no dedicated KeyType; report it as the nearest
+            // ECDSA option. This reverse mapping is a convenience only — key
+            // creation uses the forward `Into<Basic>` direction.
+            Basic::ECDSA256r1Nontrans | Basic::ECDSA256r1 => KeyType::ECDSAsecp256k1,
         }
     }
 }
@@ -67,19 +71,7 @@ impl PublicKey {
         })
     }
 
-    pub fn from_string(prefix: &str) -> Result<Self, Error> {
-        // Validate that it's a valid prefix
-        let _: BasicPrefix = prefix.parse().map_err(Error::KeyParsingError)?;
-        Ok(Self {
-            prefix: prefix.to_string(),
-        })
-    }
-
     pub fn to_string(&self) -> String {
         self.prefix.clone()
-    }
-
-    pub fn to_prefix(&self) -> Result<BasicPrefix, Error> {
-        self.prefix.parse().map_err(Error::KeyParsingError)
     }
 }

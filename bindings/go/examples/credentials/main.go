@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -129,7 +128,13 @@ func main() {
 		watcherOobiJSON = defaultWatcherOobiJSON
 	}
 
-	issuerController, err := dkms.NewController(dbURL, witnessOobiJSON)
+	issuerDBPath, err := os.MkdirTemp("", "keri-issuer-local")
+	if err != nil {
+		log.Fatalf("MkdirTemp: %v", err)
+	}
+	defer os.RemoveAll(issuerDBPath)
+
+	issuerController, err := dkms.NewController(dbURL, issuerDBPath, witnessOobiJSON)
 	if err != nil {
 		log.Fatalf("issuer controller: %v", err)
 	}
@@ -163,7 +168,13 @@ func main() {
 
 	time.Sleep(2 * time.Second)
 
-	verifierController, err := dkms.NewController(dbURL, "")
+	verifierDBPath, err := os.MkdirTemp("", "keri-verifier-local")
+	if err != nil {
+		log.Fatalf("MkdirTemp: %v", err)
+	}
+	defer os.RemoveAll(verifierDBPath)
+
+	verifierController, err := dkms.NewController(dbURL, verifierDBPath, "")
 	if err != nil {
 		log.Fatalf("verifier controller: %v", err)
 	}

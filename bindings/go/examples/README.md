@@ -1,130 +1,75 @@
 # DKMS Go Bindings - Examples
 
-This directory contains practical examples demonstrating how to use the DKMS Go bindings for KERI-based decentralized key management.
+This directory contains practical examples demonstrating how to use the DKMS Go bindings for KERI based decentralized key management.
+
+All examples read the PostgreSQL connection string from the `DATABASE_URL`
+environment variable and are run with `go run .` from the example directory.
+See the [bindings README](../README.md) for prerequisites and for running the
+whole set at once with `make examples`.
+
+```bash
+cd <example>
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/keri_go" go run .
+```
 
 ## Available Examples
 
 ### 1. Simple Example (`simple/`)
 
-The most basic example showing how to:
+The most basic example, showing how to:
+
 - Create a KERI controller
 - Generate keys
 - Create an identifier (inception)
 - Sign and finalize the inception event
 
-**Run:**
-```bash
-cd simple
-go run main.go
-```
-
-**Use Case:** Getting started with DKMS, understanding the basic workflow.
-
----
+Use case: getting started with DKMS and understanding the basic workflow.
 
 ### 2. Signing Example (`signing/`)
 
-Comprehensive example demonstrating data signing and verification:
+Data signing and verification:
+
 - Create a signing identifier
 - Sign arbitrary data with cryptographic proof
 - Verify signed data authenticity
 - Detect tampering attempts
 - CESR-encoded signature format
 
-**Run:**
-```bash
-cd signing
-go run main.go
-```
-
-**Use Case:** Document signing, API authentication, data integrity verification, message authentication.
-
-**Key Features:**
-- ✓ Sign any data with your KERI identifier
-- ✓ Verify signatures cryptographically
-- ✓ Detect tampering and modifications
-- ✓ Self-describing CESR format
-- ✓ No certificate authorities needed
-
----
+Use case: document signing, API authentication, data integrity verification, and message authentication.
 
 ### 3. Rotation Example (`rotation/`)
 
-Complete key rotation demonstration showing KERI's pre-rotation scheme:
-- Create identifier with initial keys
-- Pre-commit to next key at inception
-- Perform key rotation
-- Maintain identifier continuity
-- Verify rotation completed successfully
+Key rotation using KERI's pre-rotation scheme:
 
-**Run:**
-```bash
-cd rotation
-go run main.go
-```
+- Create an identifier with initial keys
+- Pre-commit to the next key at inception
+- Perform a key rotation
+- Maintain identifier continuity across the rotation
 
-**Use Case:** Key lifecycle management, compromise recovery, cryptographic agility, compliance with rotation policies.
-
-**Key Concepts:**
-- **Pre-Rotation:** Next key is committed before rotation
-- **Key Continuity:** Identifier remains unchanged after rotation
-- **Security:** Prevents unauthorized rotation attacks
-- **Forward Security:** Attacker cannot forge rotation without pre-committed key
-
-**Advanced Scenarios:**
-- Multisig rotation (changing keys in multi-signature schemes)
-- Witness rotation (adding/removing witnesses)
-- Delegated rotation (rotating delegated identifier keys)
-- Emergency rotation (key recovery scenarios)
-
----
+Use case: key lifecycle management, compromise recovery, and compliance with rotation policies.
 
 ### 4. Multisig Example (`multisig/`)
 
 Multi-signature identifier management:
-- Create identifier requiring multiple signatures
+
+- Create an identifier requiring multiple signatures
 - Configure signature thresholds
-- Collect and aggregate signatures
-- Finalize events with multiple signers
+- Manage multiple current and next keys
 
-**Run:**
-```bash
-cd multisig
-go run main.go
-```
-
-**Use Case:** Organizational identifiers, joint accounts, DAO governance, multi-party authorization.
-
----
+Use case: organizational identifiers, joint accounts, and multi-party authorization.
 
 ### 5. Credentials Example (`credentials/`)
 
-Complete verifiable credentials lifecycle demonstration:
-- Create credential registry (TEL)
-- Issue verifiable credentials
-- Verify credential status
-- Revoke credentials
-- Query credential state
+The full verifiable credential lifecycle:
 
-**Run:**
-```bash
-cd credentials
-go run main.go
-```
+- Create a credential registry (TEL)
+- Issue an ACDC verifiable credential
+- Query credential status through a watcher
+- Revoke the credential
+- Observe the status change from issued to revoked
 
-**Use Case:** Educational credentials, identity documents, professional certifications, access control, digital licenses.
+Use case: educational credentials, identity documents, professional certifications, and access control.
 
-**Key Features:**
-- ✓ ACDC (Authentic Chained Data Container) format
-- ✓ TEL (Transaction Event Log) for credential lifecycle
-- ✓ Instant revocation capability
-- ✓ Decentralized credential issuance
-- ✓ Uses KERI identifiers (not DIDs)
-- ✓ Privacy-preserving verification
-
-**Credential Lifecycle:**
-- **Registry Creation:** Establish TEL infrastructure
-- **Issuance:** Issue credential and record in TEL
-- **Verification:** Check credential status and validity
-- **Revocation:** Revoke credential when needed
-- **Status Queries:** Query credential state at any time
+This example needs a witness and a watcher in addition to PostgreSQL. See the
+witness and watcher section in the [bindings README](../README.md) for how to
+start them and how the OOBIs are configured.
