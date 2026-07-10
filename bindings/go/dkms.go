@@ -43,6 +43,11 @@ int identifier_notify_witnesses(CIdentifier* identifier);
 char* identifier_sign(CIdentifier* identifier, const char* input, const char* signature);
 int identifier_verify(CIdentifier* identifier, const char* stream);
 
+// Anchoring functions
+uint8_t* identifier_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len, size_t* out_len);
+int identifier_finalize_anchor(CIdentifier* identifier, const uint8_t* event, size_t event_len, const char* signature);
+int identifier_verify_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len);
+
 // VC (Verifiable Credential) functions
 uint8_t* identifier_incept_registry(CIdentifier* identifier, char** out_registry_id, size_t* out_len);
 int identifier_finalize_incept_registry(CIdentifier* identifier, const uint8_t* event, size_t event_len, const char* signature);
@@ -438,6 +443,102 @@ func (id *Identifier) Verify(stream string) (bool, error) {
 		return false, nil
 	default:
 		return false, errors.New("verification error")
+	}
+}
+
+// Anchor creates an interaction event that anchors the digest of the payload
+// into the identifier's KEL. It returns the unsigned event bytes to be signed
+// and passed to FinalizeAnchor.
+//
+// Only the Blake3-256 digest of the payload is committed to the KEL, never the
+// payload itself. Verification is byte-exact, so anchor and later verify the
+// same canonical bytes (for example, the raw decoded key rather than its
+// base64 text).
+//
+// The event is built from the identifier's current KEL position, so each
+// Anchor must be finalized with FinalizeAnchor before the next Anchor call:
+// calling Anchor twice before finalizing produces two events with the same
+// sequence number, and the second FinalizeAnchor will fail. Anchor one payload
+// at a time (Anchor → sign → FinalizeAnchor), as the anchor example does.
+func (id *Identifier) Anchor(payload []byte) ([]byte, error) {
+	if id.ptr == nil {
+		return nil, errors.New("identifier is nil")
+	}
+	if len(payload) == 0 {
+		return nil, errors.New("payload is empty")
+	}
+
+	var outLen C.size_t
+	data := C.identifier_anchor(
+		id.ptr,
+		(*C.uint8_t)(unsafe.Pointer(&payload[0])),
+		C.size_t(len(payload)),
+		&outLen,
+	)
+	if data == nil {
+		return nil, errors.New("failed to create anchor event")
+	}
+	defer C.free_buffer(data, outLen)
+
+	return C.GoBytes(unsafe.Pointer(data), C.int(outLen)), nil
+}
+
+// FinalizeAnchor finalizes the anchor (interaction) event with the signature.
+func (id *Identifier) FinalizeAnchor(event []byte, signature string) error {
+	if id.ptr == nil {
+		return errors.New("identifier is nil")
+	}
+	if len(event) == 0 {
+		return errors.New("event is empty")
+	}
+
+	cSig := C.CString(signature)
+	defer C.free(unsafe.Pointer(cSig))
+
+	result := C.identifier_finalize_anchor(
+		id.ptr,
+		(*C.uint8_t)(unsafe.Pointer(&event[0])),
+		C.size_t(len(event)),
+		cSig,
+	)
+	if result == 0 {
+		return errors.New("failed to finalize anchor")
+	}
+
+	return nil
+}
+
+// VerifyAnchor reports whether the digest of the payload has been anchored in
+// the identifier's KEL. The payload must be byte-identical to the one passed to
+// Anchor.
+//
+// It inspects the accepted (witness-receipted) KEL. For an identifier with a
+// non-zero witness threshold, an anchor is only visible after FinalizeAnchor
+// followed by NotifyWitnesses and receipt collection (see Publish); before that
+// VerifyAnchor returns false because the event is still in escrow. A false
+// result thus means "not in the accepted KEL" — for a witnessed identifier that
+// can mean "not yet witnessed" rather than "never anchored". A non-nil error
+// (rather than false) indicates the KEL could not be read at all.
+func (id *Identifier) VerifyAnchor(payload []byte) (bool, error) {
+	if id.ptr == nil {
+		return false, errors.New("identifier is nil")
+	}
+	if len(payload) == 0 {
+		return false, errors.New("payload is empty")
+	}
+
+	result := C.identifier_verify_anchor(
+		id.ptr,
+		(*C.uint8_t)(unsafe.Pointer(&payload[0])),
+		C.size_t(len(payload)),
+	)
+	switch result {
+	case 1:
+		return true, nil
+	case 0:
+		return false, nil
+	default:
+		return false, errors.New("anchor verification error")
 	}
 }
 

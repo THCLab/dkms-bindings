@@ -29,10 +29,11 @@ make build
 
 ## Examples
 
-Five complete examples live under `examples/`:
+Six complete examples live under `examples/`:
 
 - `simple`: basic identifier creation, key generation, and KEL retrieval.
 - `signing`: data signing and verification with CESR-encoded signatures, including tamper detection.
+- `anchor`: anchoring the digest of external data (WireGuard public keys) into the KEL and verifying it later.
 - `rotation`: the pre-rotation key rotation workflow and key continuity.
 - `multisig`: a multi-signature identifier built from multiple current and next keys.
 - `credentials`: the full verifiable credential lifecycle, covering registry creation, issuance, status queries, and revocation.
@@ -42,7 +43,7 @@ Five complete examples live under `examples/`:
 - Go 1.16 or later with CGO enabled.
 - A Rust toolchain. The `make` targets build the native library before the examples run.
 - A running PostgreSQL instance. Every example stores its KEL and TEL events in Postgres and reads the connection string from the `DATABASE_URL` environment variable.
-- A witness and a watcher, required only by the `credentials` example. The other four use a witness threshold of zero and need only Postgres.
+- A witness and a watcher, required only by the `credentials` example. The other five use a witness threshold of zero and need only Postgres.
 
 The repository ships a `docker-compose.yml` that provides Postgres, a witness, and a watcher. Start Postgres with:
 
@@ -52,7 +53,7 @@ docker compose up -d postgres
 
 ### Running all examples
 
-The `examples` target builds the native library and then runs all five examples in sequence. The `cargo` command must be on your PATH, so source the Rust environment first:
+The `examples` target builds the native library and then runs all six examples in sequence. The `cargo` command must be on your PATH, so source the Rust environment first:
 
 ```bash
 source "$HOME/.cargo/env"
@@ -80,7 +81,9 @@ The witness and watcher must be compatible with the keriox version that `keri-sd
 
 #### Option A: docker-compose images
 
-The provided `docker-compose.yml` defines `witness` and `watcher` services. This is the simplest path, but it only works when the pinned image tags match the keriox version that `keri-sdk` builds against. If you get a `Missing attachment` error during inception, the images are too old and you must use Option B instead.
+The provided `docker-compose.yml` defines `witness` and `watcher` services pinned to published release images (`keriox-witness` / `keriox-watcher`). This only works when those image tags match the keriox version that `keri-sdk` builds against.
+
+> **When `keri-sdk` tracks the `development` branch (check `Cargo.toml` — it currently does), no published image matches that exact commit.** Inception then fails with `AttachmentError("Missing attachment")` and you must use **Option B** below. Option A applies only when `keri-sdk` is pinned to a released `rev`/tag that has a matching published image.
 
 When you run the witness and watcher from `docker-compose.yml`, they must advertise a URL the host can reach. Set the public URLs before starting them, otherwise their OOBIs point at the internal `witness` hostname, which is only resolvable inside Docker:
 
@@ -132,14 +135,14 @@ The keriox workspace needs three local adjustments before it builds in a standal
    cargo update -p time --precise 0.3.36
    ```
 
-Now build both binaries and revert the manifest edits:
+Now build both binaries and revert the manifest edits. Run these from the **root of your keriox checkout** (the directory you cloned above):
 
 ```bash
 cargo build --release --package witness --package watcher
 git checkout -- Cargo.toml components/witness/Cargo.toml components/watcher/Cargo.toml
 ```
 
-Run them as background processes. The seeds match the ones in `docker-compose.yml` and produce the identifiers the `credentials` example expects. Pick any writable directories for storage:
+Run them as background processes, again **from the root of your keriox checkout** — the commands use paths relative to it (`./target/release/...` and `components/...`) and will fail with `command not found` (exit 127) if run from anywhere else. The seeds match the ones in `docker-compose.yml` and produce the identifiers the `credentials` example expects. Pick any writable directories for storage:
 
 ```bash
 WORK=/tmp/keri-rt
@@ -164,11 +167,11 @@ Confirm the witness answers and advertises a localhost URL:
 curl -s http://localhost:3232/oobi/BJq7UABlttINuWJh1Xl2lkqZG4NTdUdqnbFJDa6ZyxCC
 ```
 
-Once both are running, run the examples as described above. To stop them later:
+Once both are running, switch back to the Go bindings directory (`bindings/go` in your dkms-bindings checkout) and run the examples as described above — `make examples` is always run from there, not from the keriox checkout. To stop the witness and watcher later:
 
 ```bash
-pkill -f 'target/release/witness'
-pkill -f 'target/release/watcher'
+pkill -x witness
+pkill -x watcher
 ```
 
 See [examples/README.md](./examples/README.md) for a description of each example.

@@ -75,6 +75,9 @@ examples: build-rust
 	@echo "Running signing example..."
 	@cd examples/signing && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 	@echo ""
+	@echo "Running anchor example..."
+	@cd examples/anchor && DATABASE_URL=$(DATABASE_URL) $(GO) run .
+	@echo ""
 	@echo "Running rotation example..."
 	@cd examples/rotation && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 	@echo ""

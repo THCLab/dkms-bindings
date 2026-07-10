@@ -37,7 +37,24 @@ Data signing and verification:
 
 Use case: document signing, API authentication, data integrity verification, and message authentication.
 
-### 3. Rotation Example (`rotation/`)
+### 3. Anchor Example (`anchor/`)
+
+Anchoring external data into the KEL and verifying it later:
+
+- Anchor the digest of a payload (the example uses WireGuard public keys) into the identifier's key event log via an interaction event
+- Sign and finalize the anchor event
+- Verify that a presented payload was anchored
+- Reject a payload that was never anchored
+
+Only the Blake3-256 digest of the payload is committed to the KEL, never the
+payload itself, so verification is byte-exact. Anchor and verify the same
+canonical bytes — the example anchors the raw decoded key rather than its
+base64 text.
+
+Use case: committing/timestamping external public keys or documents to a KERI
+identity, and later proving the identity attested to exactly those bytes.
+
+### 4. Rotation Example (`rotation/`)
 
 Key rotation using KERI's pre-rotation scheme:
 
@@ -48,7 +65,7 @@ Key rotation using KERI's pre-rotation scheme:
 
 Use case: key lifecycle management, compromise recovery, and compliance with rotation policies.
 
-### 4. Multisig Example (`multisig/`)
+### 5. Multisig Example (`multisig/`)
 
 Multi-signature identifier management:
 
@@ -58,7 +75,7 @@ Multi-signature identifier management:
 
 Use case: organizational identifiers, joint accounts, and multi-party authorization.
 
-### 5. Credentials Example (`credentials/`)
+### 6. Credentials Example (`credentials/`)
 
 The full verifiable credential lifecycle:
 

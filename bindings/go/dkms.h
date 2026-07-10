@@ -205,6 +205,41 @@ char* identifier_sign(CIdentifier* identifier, const char* input, const char* si
  */
 int identifier_verify(CIdentifier* identifier, const char* stream);
 
+// Anchoring functions
+
+/**
+ * Creates an interaction event anchoring the digest of the payload into the KEL.
+ *
+ * @param identifier Pointer to the identifier.
+ * @param payload Pointer to the payload bytes to anchor.
+ * @param payload_len Length of the payload.
+ * @param out_len Output parameter for the length of returned buffer.
+ * @return Pointer to the anchor event data or NULL on failure.
+ *         Caller must free with free_buffer().
+ */
+uint8_t* identifier_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len, size_t* out_len);
+
+/**
+ * Finalizes the anchor (interaction) event with a signature.
+ *
+ * @param identifier Pointer to the identifier.
+ * @param event Pointer to the anchor event data.
+ * @param event_len Length of the anchor event data.
+ * @param signature String representation of the signature.
+ * @return 1 on success, 0 on failure.
+ */
+int identifier_finalize_anchor(CIdentifier* identifier, const uint8_t* event, size_t event_len, const char* signature);
+
+/**
+ * Verifies that the digest of the payload has been anchored in the KEL.
+ *
+ * @param identifier Pointer to the identifier.
+ * @param payload Pointer to the payload bytes to check.
+ * @param payload_len Length of the payload.
+ * @return 1 if anchored, 0 if not, -1 on error.
+ */
+int identifier_verify_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len);
+
 // Verifiable Credential (VC) functions
 
 /**

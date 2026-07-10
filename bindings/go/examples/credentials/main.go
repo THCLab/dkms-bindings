@@ -85,13 +85,13 @@ func queryTELUntilChanged(id *dkms.Identifier, signer dkms.Signer, registryID, v
 	delay := 1 * time.Second
 	for i := 0; i < maxRetries; i++ {
 		if err := id.QueryTELAndFinalize(registryID, vcHash, signer); err != nil {
-			log.Fatalf("QueryTELAndFinalize: %v", err)
+			fmt.Printf("  [TEL retry %d/%d] query error: %v\n", i+1, maxRetries, err)
+		} else {
+			if st, _ := id.VcState(vcHash); st != cachedState {
+				return st
+			}
+			fmt.Printf("  [TEL retry %d/%d] waiting %s...\n", i+1, maxRetries, delay)
 		}
-		st, _ := id.VcState(vcHash)
-		if st != cachedState {
-			return st
-		}
-		fmt.Printf("  [retry %d/%d] waiting %s...\n", i+1, maxRetries, delay)
 		time.Sleep(delay)
 		if delay < 8*time.Second {
 			delay *= 2
@@ -99,6 +99,26 @@ func queryTELUntilChanged(id *dkms.Identifier, signer dkms.Signer, registryID, v
 	}
 	st, _ := id.VcState(vcHash)
 	return st
+}
+
+// queryKELUntilComplete makes a best-effort attempt to prime the watcher with
+// aboutID's KEL, retrying on a transient error.
+func queryKELUntilComplete(id *dkms.Identifier, signer dkms.Signer, aboutID string, maxRetries int) error {
+	delay := 1 * time.Second
+	var lastErr error
+	for i := 0; i < maxRetries; i++ {
+		_, err := id.QueryKELAndFinalize(aboutID, signer)
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		fmt.Printf("  [KEL query retry %d/%d] waiting %s...\n", i+1, maxRetries, delay)
+		time.Sleep(delay)
+		if delay < 8*time.Second {
+			delay *= 2
+		}
+	}
+	return lastErr
 }
 
 func stateName(s dkms.VcState) string {
@@ -211,13 +231,11 @@ func main() {
 		}
 	}
 
-	time.Sleep(1 * time.Second)
-
-	if _, err := verifier.QueryKELAndFinalize(issuerID, verifierSigner); err != nil {
-		log.Fatalf("QueryKELAndFinalize: %v", err)
+	if err := queryKELUntilComplete(verifier, verifierSigner, issuerID, 10); err != nil {
+		// Best-effort: the TEL query loop below also drives KEL sync, so a
+		// KEL-query failure here is a warning, not fatal.
+		log.Printf("warning: KEL query did not complete cleanly: %v", err)
 	}
-
-	time.Sleep(1 * time.Second)
 
 	state := queryTELUntilChanged(verifier, verifierSigner, registryID, vcHash, dkms.VcState(-1), 10)
 	if state != dkms.VcStateIssued {

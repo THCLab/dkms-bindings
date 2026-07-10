@@ -388,7 +388,7 @@ pub extern "C" fn identifier_get_id(identifier: *mut CIdentifier) -> *mut c_char
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let id_str = locked.inner.id().to_string();
         string_to_c_str(id_str)
     }
@@ -401,7 +401,7 @@ pub extern "C" fn identifier_get_kel(identifier: *mut CIdentifier) -> *mut c_cha
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match locked.get_kel() {
             Ok(kel_str) => string_to_c_str(kel_str),
             Err(_) => std::ptr::null_mut(),
@@ -422,7 +422,7 @@ pub extern "C" fn identifier_rotate(
     unsafe {
         let rt = rt();
 
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let cfg = &(*config).inner;
 
         let result = rt.block_on(async { locked.rotate(cfg).await.ok() });
@@ -443,48 +443,48 @@ pub extern "C" fn identifier_finalize_rotation(
     rot_event: *const u8,
     rot_event_len: usize,
     signature: *const c_char,
-) -> bool {
+) -> i32 {
     if identifier.is_null() || rot_event.is_null() || signature.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let event_slice = std::slice::from_raw_parts(rot_event, rot_event_len);
 
         let sig_str = match c_str_to_string(signature) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         let sig = match Signature::from_string(&sig_str) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         rt.block_on(async {
             locked
                 .finalize_rotation(event_slice, &sig.to_prefix())
                 .await
-                .is_ok()
+                .is_ok() as i32
         })
     }
 }
 
 #[no_mangle]
-pub extern "C" fn identifier_notify_witnesses(identifier: *mut CIdentifier) -> bool {
+pub extern "C" fn identifier_notify_witnesses(identifier: *mut CIdentifier) -> i32 {
     if identifier.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
-        rt.block_on(async { locked.notify_witnesses().await.is_ok() })
+        rt.block_on(async { locked.notify_witnesses().await.is_ok() }) as i32
     }
 }
 
@@ -497,7 +497,7 @@ pub extern "C" fn identifier_query_mailbox(identifier: *mut CIdentifier) -> *mut
         return std::ptr::null_mut();
     }
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match rt().block_on(locked.query_mailbox()) {
             Ok(events) => {
                 let encoded: Vec<String> = events
@@ -523,26 +523,26 @@ pub extern "C" fn identifier_finalize_query_mailbox(
     identifier: *mut CIdentifier,
     queries_b64_json: *const c_char,
     signatures_json: *const c_char,
-) -> bool {
+) -> i32 {
     if identifier.is_null() {
-        return false;
+        return 0;
     }
     unsafe {
         let queries_str = match c_str_to_string(queries_b64_json) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
         let sigs_str = match c_str_to_string(signatures_json) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
         let b64_queries: Vec<String> = match serde_json::from_str(&queries_str) {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
         let sig_strs: Vec<String> = match serde_json::from_str(&sigs_str) {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
         let queries: Vec<Vec<u8>> = match b64_queries
             .iter()
@@ -550,7 +550,7 @@ pub extern "C" fn identifier_finalize_query_mailbox(
             .collect::<Result<Vec<_>, _>>()
         {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
         let sigs: Vec<keri_sdk::advanced::SelfSigningPrefix> = match sig_strs
             .iter()
@@ -558,14 +558,14 @@ pub extern "C" fn identifier_finalize_query_mailbox(
             .collect::<Result<Vec<_>, _>>()
         {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match rt().block_on(locked.finalize_query_mailbox(queries, sigs)) {
-            Ok(_) => true,
+            Ok(_) => 1,
             Err(e) => {
                 eprintln!("[finalize_query_mailbox] error: {:?}", e);
-                false
+                0
             }
         }
     }
@@ -641,7 +641,7 @@ pub extern "C" fn identifier_sign(
     unsafe {
         let rt = rt();
 
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
         let input_str = match c_str_to_string(input) {
             Ok(s) => s,
@@ -676,7 +676,7 @@ pub extern "C" fn identifier_verify(identifier: *mut CIdentifier, stream: *const
     unsafe {
         let rt = rt();
 
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
         let stream_str = match c_str_to_string(stream) {
             Ok(s) => s,
@@ -686,6 +686,102 @@ pub extern "C" fn identifier_verify(identifier: *mut CIdentifier, stream: *const
         let result = rt.block_on(async { locked.verify(&stream_str).await });
 
         match result {
+            Ok(true) => 1,
+            Ok(false) => 0,
+            Err(_) => -1,
+        }
+    }
+}
+
+// Anchoring functions
+
+/// Generates an interaction (`ixn`) event anchoring the digest of `payload`
+/// into the identifier's KEL. Returns the unsigned event bytes; `out_len` is
+/// set to the byte count. Returns null on error. Caller must free with
+/// `free_buffer`.
+#[no_mangle]
+pub extern "C" fn identifier_anchor(
+    identifier: *mut CIdentifier,
+    payload: *const u8,
+    payload_len: usize,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if identifier.is_null() || payload.is_null() || out_len.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    unsafe {
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        let payload_slice = std::slice::from_raw_parts(payload, payload_len);
+
+        match locked.anchor(payload_slice) {
+            Ok(bytes) => {
+                *out_len = bytes.len();
+                bytes_to_c_buffer(bytes)
+            }
+            Err(_) => std::ptr::null_mut(),
+        }
+    }
+}
+
+/// Finalizes an anchor (interaction) event with the signature. Returns true on
+/// success.
+#[no_mangle]
+pub extern "C" fn identifier_finalize_anchor(
+    identifier: *mut CIdentifier,
+    event: *const u8,
+    event_len: usize,
+    signature: *const c_char,
+) -> i32 {
+    if identifier.is_null() || event.is_null() || signature.is_null() {
+        return 0;
+    }
+
+    unsafe {
+        let rt = rt();
+
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        let event_slice = std::slice::from_raw_parts(event, event_len);
+
+        let sig_str = match c_str_to_string(signature) {
+            Ok(s) => s,
+            Err(_) => return 0,
+        };
+
+        let sig = match Signature::from_string(&sig_str) {
+            Ok(s) => s,
+            Err(_) => return 0,
+        };
+
+        // Returns i32 (1 = success, 0 = failure) rather than a Rust `bool`,
+        // whose upper bits are undefined when read as the C `int` the Go side
+        // declares.
+        rt.block_on(async {
+            locked
+                .finalize_anchor(event_slice, sig.to_prefix())
+                .await
+                .is_ok() as i32
+        })
+    }
+}
+
+/// Verifies that the digest of `payload` has been anchored in the identifier's
+/// KEL. Returns 1 if anchored, 0 if not, -1 on error.
+#[no_mangle]
+pub extern "C" fn identifier_verify_anchor(
+    identifier: *mut CIdentifier,
+    payload: *const u8,
+    payload_len: usize,
+) -> i32 {
+    if identifier.is_null() || payload.is_null() {
+        return -1;
+    }
+
+    unsafe {
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        let payload_slice = std::slice::from_raw_parts(payload, payload_len);
+
+        match locked.verify_anchor(payload_slice) {
             Ok(true) => 1,
             Ok(false) => 0,
             Err(_) => -1,
@@ -708,7 +804,7 @@ pub extern "C" fn identifier_incept_registry(
     unsafe {
         let rt = rt();
 
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
         let result = rt.block_on(async { locked.incept_registry().await });
 
@@ -729,32 +825,32 @@ pub extern "C" fn identifier_finalize_incept_registry(
     event: *const u8,
     event_len: usize,
     signature: *const c_char,
-) -> bool {
+) -> i32 {
     if identifier.is_null() || event.is_null() || signature.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let event_slice = std::slice::from_raw_parts(event, event_len);
 
         let sig_str = match c_str_to_string(signature) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         let sig = match Signature::from_string(&sig_str) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         rt.block_on(async {
             locked
                 .finalize_incept_registry(event_slice, sig.to_prefix())
                 .await
-                .is_ok()
+                .is_ok() as i32
         })
     }
 }
@@ -772,7 +868,7 @@ pub extern "C" fn identifier_issue(
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let vc_slice = std::slice::from_raw_parts(vc, vc_len);
 
         match locked.issue(vc_slice) {
@@ -792,32 +888,32 @@ pub extern "C" fn identifier_finalize_issue(
     event: *const u8,
     event_len: usize,
     signature: *const c_char,
-) -> bool {
+) -> i32 {
     if identifier.is_null() || event.is_null() || signature.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let event_slice = std::slice::from_raw_parts(event, event_len);
 
         let sig_str = match c_str_to_string(signature) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         let sig = match Signature::from_string(&sig_str) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         rt.block_on(async {
             locked
                 .finalize_issue(event_slice, sig.to_prefix())
                 .await
-                .is_ok()
+                .is_ok() as i32
         })
     }
 }
@@ -833,7 +929,7 @@ pub extern "C" fn identifier_revoke(
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
         let vc_hash_str = match c_str_to_string(vc_hash) {
             Ok(s) => s,
@@ -856,48 +952,48 @@ pub extern "C" fn identifier_finalize_revoke(
     event: *const u8,
     event_len: usize,
     signature: *const c_char,
-) -> bool {
+) -> i32 {
     if identifier.is_null() || event.is_null() || signature.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let mut locked = (*identifier).inner.lock().unwrap();
+        let mut locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let event_slice = std::slice::from_raw_parts(event, event_len);
 
         let sig_str = match c_str_to_string(signature) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         let sig = match Signature::from_string(&sig_str) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         rt.block_on(async {
             locked
                 .finalize_revoke(event_slice, sig.to_prefix())
                 .await
-                .is_ok()
+                .is_ok() as i32
         })
     }
 }
 
 #[no_mangle]
-pub extern "C" fn identifier_notify_backers(identifier: *mut CIdentifier) -> bool {
+pub extern "C" fn identifier_notify_backers(identifier: *mut CIdentifier) -> i32 {
     if identifier.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
-        rt.block_on(async { locked.notify_backers().await.is_ok() })
+        rt.block_on(async { locked.notify_backers().await.is_ok() }) as i32
     }
 }
 
@@ -908,7 +1004,7 @@ pub extern "C" fn identifier_vc_state(identifier: *mut CIdentifier, digest: *con
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
         let digest_str = match c_str_to_string(digest) {
             Ok(s) => s,
@@ -939,7 +1035,7 @@ pub extern "C" fn identifier_query_tel(
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
 
         let registry_id_str = match c_str_to_string(registry_id) {
             Ok(s) => s,
@@ -967,32 +1063,32 @@ pub extern "C" fn identifier_finalize_query_tel(
     event: *const u8,
     event_len: usize,
     signature: *const c_char,
-) -> bool {
+) -> i32 {
     if identifier.is_null() || event.is_null() || signature.is_null() {
-        return false;
+        return 0;
     }
 
     unsafe {
         let rt = rt();
 
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         let event_slice = std::slice::from_raw_parts(event, event_len);
 
         let sig_str = match c_str_to_string(signature) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         let sig = match Signature::from_string(&sig_str) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
 
         rt.block_on(async {
             locked
                 .finalize_query_tel(event_slice, sig.to_prefix())
                 .await
-                .is_ok()
+                .is_ok() as i32
         })
     }
 }
@@ -1004,7 +1100,7 @@ pub extern "C" fn identifier_registry_id(identifier: *mut CIdentifier) -> *mut c
     }
 
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match locked.registry_id() {
             Some(id) => string_to_c_str(id),
             None => std::ptr::null_mut(),
@@ -1113,7 +1209,7 @@ pub extern "C" fn acdc_build(
 #[no_mangle]
 pub extern "C" fn identifier_oobi(identifier: *mut CIdentifier) -> *mut c_char {
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match locked.oobi() {
             Ok(oobis) => string_to_c_str(oobis.join("\n")),
             Err(_) => std::ptr::null_mut(),
@@ -1127,7 +1223,7 @@ pub extern "C" fn identifier_oobi(identifier: *mut CIdentifier) -> *mut c_char {
 #[no_mangle]
 pub extern "C" fn identifier_registry_id_oobi(identifier: *mut CIdentifier) -> *mut c_char {
     unsafe {
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match locked.registry_id_oobi() {
             Some(oobis) => string_to_c_str(oobis.join("\n")),
             None => std::ptr::null_mut(),
@@ -1149,7 +1245,7 @@ pub extern "C" fn identifier_add_watcher(
             Ok(s) => s,
             Err(_) => return std::ptr::null_mut(),
         };
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match rt().block_on(locked.add_watcher(&watcher_str)) {
             Ok(event) => {
                 *out_len = event.len();
@@ -1168,19 +1264,19 @@ pub extern "C" fn identifier_finalize_add_watcher(
     event: *const u8,
     event_len: usize,
     signature: *const c_char,
-) -> bool {
+) -> i32 {
     unsafe {
         let event_slice = std::slice::from_raw_parts(event, event_len);
         let sig_str = match c_str_to_string(signature) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
         let sig = match sig_str.parse::<keri_sdk::advanced::SelfSigningPrefix>() {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
-        let locked = (*identifier).inner.lock().unwrap();
-        rt().block_on(locked.finalize_add_watcher(event_slice, sig)).is_ok()
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        rt().block_on(locked.finalize_add_watcher(event_slice, sig)).is_ok() as i32
     }
 }
 
@@ -1190,14 +1286,14 @@ pub extern "C" fn identifier_finalize_add_watcher(
 pub extern "C" fn identifier_send_oobi_to_watcher(
     identifier: *mut CIdentifier,
     oobi: *const c_char,
-) -> bool {
+) -> i32 {
     unsafe {
         let oobi_str = match c_str_to_string(oobi) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return 0,
         };
-        let locked = (*identifier).inner.lock().unwrap();
-        rt().block_on(locked.send_oobi_to_watcher(&oobi_str)).is_ok()
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        rt().block_on(locked.send_oobi_to_watcher(&oobi_str)).is_ok() as i32
     }
 }
 
@@ -1214,7 +1310,7 @@ pub extern "C" fn identifier_query_full_kel(
             Ok(s) => s,
             Err(_) => return std::ptr::null_mut(),
         };
-        let locked = (*identifier).inner.lock().unwrap();
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
         match locked.query_full_kel(&about_str) {
             Ok(queries) => {
                 let encoded: Vec<String> = queries
@@ -1240,40 +1336,47 @@ pub extern "C" fn identifier_finalize_query_kel(
     identifier: *mut CIdentifier,
     queries_b64_json: *const c_char,
     signatures_json: *const c_char,
-) -> bool {
+) -> i32 {
     unsafe {
         let queries_str = match c_str_to_string(queries_b64_json) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return -1,
         };
         let sigs_str = match c_str_to_string(signatures_json) {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => return -1,
         };
         let b64_queries: Vec<String> = match serde_json::from_str(&queries_str) {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return -1,
         };
         let sig_strs: Vec<String> = match serde_json::from_str(&sigs_str) {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return -1,
         };
         let queries: Vec<Vec<u8>> = match b64_queries.iter()
             .map(|s| base64::decode(s).map_err(|_| ()))
             .collect::<Result<Vec<_>, _>>()
         {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return -1,
         };
         let sigs: Vec<keri_sdk::advanced::SelfSigningPrefix> = match sig_strs.iter()
             .map(|s| s.parse().map_err(|_| ()))
             .collect::<Result<Vec<_>, _>>()
         {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return -1,
         };
-        let locked = (*identifier).inner.lock().unwrap();
-        rt().block_on(locked.finalize_query_kel(queries, sigs))
-            .unwrap_or(false)
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        // Tri-state (matches the C `int` declaration): 1 = new updates,
+        // 0 = query completed with no new updates, -1 = error. Returning a
+        // Rust `bool` here would be read as a C `int` with undefined upper
+        // bits, which intermittently looks negative to the Go caller.
+        match rt().block_on(locked.finalize_query_kel(queries, sigs)) {
+            Ok(true) => 1,
+            Ok(false) => 0,
+            Err(_) => -1,
+        }
     }
 }

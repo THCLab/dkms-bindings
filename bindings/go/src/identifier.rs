@@ -3,6 +3,9 @@ use crate::rotation_configuration::RotationConfiguration;
 // All KERI/SAID types come from keri-sdk's re-exports so they unify with the
 // SDK's own said (0.5.x) — NOT this crate's direct `said` (0.4.x, used only by
 // acdc_build).
+use keri_sdk::advanced::raw::keri_core::event::event_data::EventData;
+use keri_sdk::advanced::raw::keri_core::event::sections::seal::{DigestSeal, Seal};
+use keri_sdk::advanced::raw::keri_core::event_message::signed_event_message::Notice;
 use keri_sdk::advanced::raw::keri_core::query::{mailbox::MailboxQuery, query_event::QueryEvent};
 use keri_sdk::advanced::{
     BasicPrefix, EndRole, HashFunction, HashFunctionCode, Identifier as SdkIdentifier,
@@ -359,6 +362,63 @@ impl Identifier {
                 }
             }
         }
+    }
+
+    /// generate an interaction (`ixn`) event that anchors the digest (SAID) of
+    /// `payload` into the KEL. Returns the unsigned event bytes to be signed.
+    ///
+    /// Only the Blake3-256 digest is committed to the KEL — never the payload
+    /// itself. Verification is byte-exact, so callers must anchor and later
+    /// verify the same canonical bytes.
+    pub fn anchor(&self, payload: &[u8]) -> Result<Vec<u8>, Error> {
+        let said = HashFunction::from(HashFunctionCode::Blake3_256).derive(payload);
+        let ixn = self.inner.anchor(&[said]).map_err(sdk_err)?;
+        Ok(ixn.into_bytes())
+    }
+
+    /// finalize an anchor (interaction) event (sign + save + queue for witness
+    /// notification).
+    pub async fn finalize_anchor(
+        &mut self,
+        event: &[u8],
+        signature: SelfSigningPrefix,
+    ) -> Result<(), Error> {
+        self.inner
+            .finalize_anchor(event, signature)
+            .await
+            .map_err(sdk_err)
+    }
+
+    /// report whether the digest (SAID) of `payload` has been anchored in one
+    /// of the identifier's interaction events.
+    ///
+    /// This inspects the identifier's *accepted* KEL — events that have
+    /// gathered the required witness receipts. For an identifier with a
+    /// non-zero witness threshold, an anchor becomes visible here only after
+    /// `finalize_anchor` **and** witness notification + receipt collection;
+    /// until then the `ixn` sits in partially-witnessed escrow. A `false`
+    /// result therefore means "not present in the accepted KEL", which for a
+    /// witnessed identifier can mean "not yet witnessed" rather than "never
+    /// anchored". An identifier with no accepted KEL at all returns an error
+    /// (not `false`), so the caller can distinguish "unknown" from "absent".
+    pub fn verify_anchor(&self, payload: &[u8]) -> Result<bool, Error> {
+        let said = HashFunction::from(HashFunctionCode::Blake3_256).derive(payload);
+        let target = Seal::Digest(DigestSeal::new(said));
+
+        let kel = self
+            .inner
+            .get_own_kel()
+            .ok_or_else(|| Error::Unexpected("identifier has no accepted KEL".to_string()))?;
+        for notice in kel {
+            if let Notice::Event(sem) = notice {
+                if let EventData::Ixn(ixn) = sem.event_message.data.get_event_data() {
+                    if ixn.data.iter().any(|seal| *seal == target) {
+                        return Ok(true);
+                    }
+                }
+            }
+        }
+        Ok(false)
     }
 }
 
