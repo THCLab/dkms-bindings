@@ -15,6 +15,7 @@ CController* controller_new_postgres(const char* db_url, const char* db_path, co
 void controller_free(CController* controller);
 uint8_t* controller_incept(CController* controller, CInceptionConfig* config, size_t* out_len);
 CIdentifier* controller_finalize_inception(CController* controller, const uint8_t* icp_event, size_t icp_event_len, const char* signature);
+CIdentifier* controller_load_identifier(CController* controller, const char* prefix, const char* registry_id);
 
 // InceptionConfiguration functions
 CInceptionConfig* inception_config_new();
@@ -197,6 +198,47 @@ func (c *Controller) FinalizeInception(icpEvent []byte, signature string) (*Iden
 	)
 	if ptr == nil {
 		return nil, errors.New("failed to finalize inception")
+	}
+
+	id := &Identifier{ptr: ptr}
+	runtime.SetFinalizer(id, (*Identifier).Free)
+	return id, nil
+}
+
+// LoadIdentifier reconstructs an Identifier handle for an AID that was already
+// incepted against this controller's KEL store in a previous process — for
+// example, resuming after a restart. No inception event is created or
+// replayed; this just re-opens the existing KEL for further use (rotation,
+// signing, anchoring, ...).
+//
+// prefix is the AID string (as returned by a previous Identifier.GetID).
+// registryID is the identifier's TEL registry AID (as returned by a previous
+// Identifier.GetRegistryID), or "" if the identifier never incepted a
+// registry — the controller does not derive it from the KEL, so callers that
+// use registries must persist and re-supply it themselves.
+//
+// This does not by itself confirm the AID has a KEL in this controller's
+// store; call GetKEL on the result to verify.
+func (c *Controller) LoadIdentifier(prefix string, registryID string) (*Identifier, error) {
+	if c.ptr == nil {
+		return nil, errors.New("controller is nil")
+	}
+	if prefix == "" {
+		return nil, errors.New("prefix is empty")
+	}
+
+	cPrefix := C.CString(prefix)
+	defer C.free(unsafe.Pointer(cPrefix))
+
+	var cRegistryID *C.char
+	if registryID != "" {
+		cRegistryID = C.CString(registryID)
+		defer C.free(unsafe.Pointer(cRegistryID))
+	}
+
+	ptr := C.controller_load_identifier(c.ptr, cPrefix, cRegistryID)
+	if ptr == nil {
+		return nil, errors.New("failed to load identifier")
 	}
 
 	id := &Identifier{ptr: ptr}

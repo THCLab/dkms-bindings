@@ -12,7 +12,7 @@ mod utils;
 use error::Error;
 use identifier::Identifier;
 use inception_configuration::InceptionConfiguration;
-use keri_sdk::advanced::{BasicPrefix, Controller, LocationScheme};
+use keri_sdk::advanced::{BasicPrefix, Controller, IdentifierPrefix, LocationScheme};
 use rotation_configuration::RotationConfiguration;
 use utils::{key::PublicKey, signature::Signature};
 
@@ -205,6 +205,62 @@ pub extern "C" fn controller_finalize_inception(
             })),
             Err(_) => std::ptr::null_mut(),
         }
+    }
+}
+
+/// Reconstructs an `Identifier` handle for an AID that was already incepted
+/// against this controller's KEL store (a previous process's `controller_incept`
+/// + `controller_finalize_inception`) — no inception event is created or
+/// replayed.
+///
+/// `prefix` is the AID string (as returned by `identifier_get_id`). `registry_id`
+/// is the identifier's TEL registry AID (as returned by `identifier_registry_id`)
+/// if one was incepted, or null/empty if not — the controller does not derive
+/// it from the KEL on its own, so callers that use `identifier_incept_registry`
+/// must persist and re-supply it themselves.
+///
+/// Returns null if the controller or prefix is null, or if the prefix/registry
+/// string fails to parse as a KERI identifier prefix. This does not fail if the
+/// AID is unknown to the controller's KEL store — callers should follow up with
+/// `identifier_get_kel` to confirm the loaded identifier has a KEL.
+#[no_mangle]
+pub extern "C" fn controller_load_identifier(
+    controller: *mut CController,
+    prefix: *const c_char,
+    registry_id: *const c_char,
+) -> *mut CIdentifier {
+    if controller.is_null() || prefix.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    unsafe {
+        let ctrl = &(*controller).inner;
+
+        let prefix_str = match c_str_to_string(prefix) {
+            Ok(s) => s,
+            Err(_) => return std::ptr::null_mut(),
+        };
+        let id: IdentifierPrefix = match prefix_str.parse() {
+            Ok(p) => p,
+            Err(_) => return std::ptr::null_mut(),
+        };
+
+        let registry = if registry_id.is_null() {
+            None
+        } else {
+            match c_str_to_string(registry_id) {
+                Ok(s) if !s.is_empty() => match s.parse::<IdentifierPrefix>() {
+                    Ok(p) => Some(p),
+                    Err(_) => return std::ptr::null_mut(),
+                },
+                _ => None,
+            }
+        };
+
+        let identifier = ctrl.load_identifier(id, registry);
+        Box::into_raw(Box::new(CIdentifier {
+            inner: Arc::new(std::sync::Mutex::new(Identifier { inner: identifier })),
+        }))
     }
 }
 

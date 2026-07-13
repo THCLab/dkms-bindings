@@ -65,6 +65,23 @@ uint8_t* controller_incept(CController* controller, CInceptionConfig* config, si
  */
 CIdentifier* controller_finalize_inception(CController* controller, const uint8_t* icp_event, size_t icp_event_len, const char* signature);
 
+/**
+ * Reconstructs an identifier handle for an AID already known to this
+ * controller's KEL store (from a previous controller_incept +
+ * controller_finalize_inception), without creating or replaying an
+ * inception event. Use this to resume an identifier after a restart.
+ *
+ * @param controller Pointer to the controller.
+ * @param prefix String representation of the AID (as returned by identifier_get_id).
+ * @param registry_id String representation of the identifier's TEL registry AID
+ *        (as returned by identifier_registry_id), or NULL if none.
+ * @return Pointer to the loaded identifier, or NULL if controller/prefix is
+ *         NULL or prefix/registry_id fail to parse. Does not itself confirm
+ *         the AID has a KEL in this controller's store; follow up with
+ *         identifier_get_kel to verify.
+ */
+CIdentifier* controller_load_identifier(CController* controller, const char* prefix, const char* registry_id);
+
 // InceptionConfiguration functions
 
 /**

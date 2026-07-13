@@ -86,6 +86,9 @@ examples: build-rust
 	@echo ""
 	@echo "Running credentials example..."
 	@cd examples/credentials && DATABASE_URL=$(DATABASE_URL) $(GO) run .
+	@echo ""
+	@echo "Running restart example..."
+	@cd examples/restart && DATABASE_URL=$(DATABASE_URL) $(GO) run .
 
 # Run tests and examples
 test-all: test examples

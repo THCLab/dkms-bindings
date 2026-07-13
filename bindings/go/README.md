@@ -29,7 +29,7 @@ make build
 
 ## Examples
 
-Six complete examples live under `examples/`:
+Seven complete examples live under `examples/`:
 
 - `simple`: basic identifier creation, key generation, and KEL retrieval.
 - `signing`: data signing and verification with CESR-encoded signatures, including tamper detection.
@@ -37,13 +37,14 @@ Six complete examples live under `examples/`:
 - `rotation`: the pre-rotation key rotation workflow and key continuity.
 - `multisig`: a multi-signature identifier built from multiple current and next keys.
 - `credentials`: the full verifiable credential lifecycle, covering registry creation, issuance, status queries, and revocation.
+- `restart`: resuming an identifier after a simulated process restart with `Controller.LoadIdentifier`, with no re-inception, followed by a rotation to prove the resumed handle is live.
 
 ### Prerequisites
 
 - Go 1.16 or later with CGO enabled.
 - A Rust toolchain. The `make` targets build the native library before the examples run.
 - A running PostgreSQL instance. Every example stores its KEL and TEL events in Postgres and reads the connection string from the `DATABASE_URL` environment variable.
-- A witness and a watcher, required only by the `credentials` example. The other five use a witness threshold of zero and need only Postgres.
+- A witness and a watcher, required only by the `credentials` example. The other six use a witness threshold of zero and need only Postgres.
 
 The repository ships a `docker-compose.yml` that provides Postgres, a witness, and a watcher. Start Postgres with:
 
@@ -175,6 +176,18 @@ pkill -x watcher
 ```
 
 See [examples/README.md](./examples/README.md) for a description of each example.
+
+## Resuming after a restart
+
+`Controller.FinalizeInception` is the only way to obtain a fresh `Identifier`
+handle, and that handle only ever lives in process memory — a restart loses
+it even though the underlying KEL is durably stored wherever the `Controller`
+points (Postgres). `Controller.LoadIdentifier(prefix, registryID)` closes that
+gap: given the AID string alone (and its TEL registry AID, if any — the
+controller does not derive it from the KEL on its own), it reopens the
+existing KEL under the same `Controller` and returns a handle usable for
+further operations, without creating or replaying an inception event. See the
+`restart` example.
 
 # Memory Management
 

@@ -90,3 +90,24 @@ Use case: educational credentials, identity documents, professional certificatio
 This example needs a witness and a watcher in addition to PostgreSQL. See the
 witness and watcher section in the [bindings README](../README.md) for how to
 start them and how the OOBIs are configured.
+
+### 7. Restart Example (`restart/`)
+
+Resuming an identifier after a simulated process restart, instead of
+incepting a new one:
+
+- Incept an identifier and record its AID and KEL
+- Free every in-memory handle (`Identifier`, `Controller`) to simulate the
+  process exiting
+- Create a new `Controller` against the same Postgres database and call
+  `Controller.LoadIdentifier` with just the AID string
+- Confirm the resumed identifier has the same AID and an unchanged KEL — no
+  new inception event was created
+- Perform a rotation on the resumed handle to prove it is live, not just
+  read-only
+
+Use case: any long-running service that incepts an identifier once and must
+recover the same identifier — not a new one — across process restarts or
+redeploys, using durable storage (Postgres) as the source of truth instead of
+keeping the `Identifier` handle in memory for the identifier's whole
+lifetime.
