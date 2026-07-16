@@ -1,0 +1,118 @@
+name: Go CI
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "bindings/go/**"
+      - "keriox_core/**"
+      - "components/**"
+      - "support/**"
+      - ".github/workflows/ci-go.yml"
+    tags:
+      - "go*"
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "bindings/go/**"
+      - ".github/workflows/ci-go.yml"
+
+jobs:
+  # Build the native library on each platform and upload as artifacts
+  build-libs:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            lib: libdkms_go.so
+          - os: macos-latest
+            lib: libdkms_go.dylib
+          - os: windows-latest
+            lib: dkms_go.dll
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "bindings/go -> target"
+
+      - name: Build Rust library
+        working-directory: ./bindings/go
+        run: cargo build --release
+
+      - name: Upload library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.lib }}
+          path: bindings/go/target/release/${{ matrix.lib }}
+
+  # Run Go tests on each platform using the just-built native libs
+  test:
+    needs: build-libs
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            lib: libdkms_go.so
+          - os: macos-latest
+            lib: libdkms_go.dylib
+          - os: windows-latest
+            lib: dkms_go.dll
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: ./bindings/go/go.sum
+
+      - name: Download native library
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.lib }}
+          path: bindings/go/
+
+      - name: Run tests
+        working-directory: ./bindings/go
+        run: go test -v .
+        env:
+          CGO_ENABLED: 1
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+
+  # Commit the pre-built native libs back into the repo so `go get` users get them.
+  # Runs only on pushes to master (not PRs), after tests pass on all platforms.
+  commit-libs:
+    needs: test
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Use a token that allows pushing back to the repo.
+          # Falls back to GITHUB_TOKEN which works unless branch protection requires PRs.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all native libraries
+        uses: actions/download-artifact@v4
+        with:
+          path: bindings/go/
+          merge-multiple: true
+
+      - name: Commit pre-built libraries
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f bindings/go/libdkms_go.so bindings/go/libdkms_go.dylib bindings/go/dkms_go.dll
+          git diff --staged --quiet && echo "No library changes" && exit 0
+          git commit -m "chore: update pre-built native libraries [skip ci]"
+          git push
