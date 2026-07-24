@@ -780,6 +780,47 @@ pub extern "C" fn identifier_anchor(
     }
 }
 
+/// Generates a single interaction (`ixn`) event anchoring the digests of
+/// multiple payloads into the identifier's KEL. `payloads` is an array of
+/// `count` buffers and `lens` their matching lengths. Returns the unsigned event
+/// bytes; `out_len` is set to the byte count. Returns null on error. Caller must
+/// free with `free_buffer`.
+#[no_mangle]
+pub extern "C" fn identifier_anchor_many(
+    identifier: *mut CIdentifier,
+    payloads: *const *const u8,
+    lens: *const usize,
+    count: usize,
+    out_len: *mut usize,
+) -> *mut u8 {
+    if identifier.is_null() || payloads.is_null() || lens.is_null() || out_len.is_null() || count == 0
+    {
+        return std::ptr::null_mut();
+    }
+
+    unsafe {
+        let locked = (*identifier).inner.lock().unwrap_or_else(|e| e.into_inner());
+        let payload_ptrs = std::slice::from_raw_parts(payloads, count);
+        let payload_lens = std::slice::from_raw_parts(lens, count);
+
+        let mut owned: Vec<Vec<u8>> = Vec::with_capacity(count);
+        for i in 0..count {
+            if payload_ptrs[i].is_null() {
+                return std::ptr::null_mut();
+            }
+            owned.push(std::slice::from_raw_parts(payload_ptrs[i], payload_lens[i]).to_vec());
+        }
+
+        match locked.anchor_many(&owned) {
+            Ok(bytes) => {
+                *out_len = bytes.len();
+                bytes_to_c_buffer(bytes)
+            }
+            Err(_) => std::ptr::null_mut(),
+        }
+    }
+}
+
 /// Finalizes an anchor (interaction) event with the signature. Returns true on
 /// success.
 #[no_mangle]
