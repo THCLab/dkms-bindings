@@ -237,6 +237,20 @@ int identifier_verify(CIdentifier* identifier, const char* stream);
 uint8_t* identifier_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len, size_t* out_len);
 
 /**
+ * Creates a single interaction event anchoring the digests of multiple payloads
+ * into the KEL.
+ *
+ * @param identifier Pointer to the identifier.
+ * @param payloads Array of pointers to the payload buffers to anchor.
+ * @param lens Array of payload lengths, one per payload (count entries).
+ * @param count Number of payloads.
+ * @param out_len Output parameter for the length of returned buffer.
+ * @return Pointer to the anchor event data or NULL on failure.
+ *         Caller must free with free_buffer().
+ */
+uint8_t* identifier_anchor_many(CIdentifier* identifier, const uint8_t* const* payloads, const size_t* lens, size_t count, size_t* out_len);
+
+/**
  * Finalizes the anchor (interaction) event with a signature.
  *
  * @param identifier Pointer to the identifier.

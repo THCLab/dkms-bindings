@@ -376,6 +376,19 @@ impl Identifier {
         Ok(ixn.into_bytes())
     }
 
+    /// generate a single interaction (`ixn`) event that anchors the digests
+    /// (SAIDs) of every payload into the KEL. Like `anchor`, only each payload's
+    /// Blake3-256 digest is committed — never the payload itself — and the
+    /// returned event bytes must be signed and passed to `finalize_anchor`.
+    pub fn anchor_many(&self, payloads: &[Vec<u8>]) -> Result<Vec<u8>, Error> {
+        let saids = payloads
+            .iter()
+            .map(|payload| HashFunction::from(HashFunctionCode::Blake3_256).derive(payload))
+            .collect::<Vec<_>>();
+        let ixn = self.inner.anchor(&saids).map_err(sdk_err)?;
+        Ok(ixn.into_bytes())
+    }
+
     /// finalize an anchor (interaction) event (sign + save + queue for witness
     /// notification).
     pub async fn finalize_anchor(

@@ -16,6 +16,13 @@ var peerKeysB64 = []string{
 	"TrMvSoP4jYQlY6RIzBgbssQqY3vxI2Pi+y71lOWWXX0=",
 }
 
+// A second set of keys anchored together in a single interaction event.
+var batchKeysB64 = []string{
+	"9k1sMrqZ2hV5oQxk3pF7bYlN0cRtWuGdHjKe8SvXaZI=",
+	"L2pNfV6wcE9rTy0bXsQmZ4hK7dRuGvJoAi3lSnPeYcU=",
+	"Bz5xQ1oL8vHnKmR3tYcW9fD0aJgSuElP7bXi2ZdNqMk=",
+}
+
 const unknownKeyB64 = "HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw="
 
 func main() {
@@ -101,6 +108,36 @@ func main() {
 		}
 		fmt.Printf("Anchored WireGuard key: %s\n", keyB64)
 	}
+
+	// anchor many example
+	batchKeys := make([][]byte, 0, len(batchKeysB64))
+	for _, keyB64 := range batchKeysB64 {
+		keyBytes, err := base64.StdEncoding.DecodeString(keyB64)
+		if err != nil {
+			log.Fatalf("decode batch key %q: %v", keyB64, err)
+		}
+		batchKeys = append(batchKeys, keyBytes)
+	}
+
+	batchEvent, err := identifier.AnchorMany(batchKeys)
+	if err != nil {
+		log.Fatalf("AnchorMany: %v", err)
+	}
+	batchSig, err := dkms.NewSignature(dkms.SignatureTypeEd25519Sha512, ed25519.Sign(currentPriv, batchEvent))
+	if err != nil {
+		log.Fatalf("NewSignature: %v", err)
+	}
+	if err := identifier.FinalizeAnchor(batchEvent, batchSig); err != nil {
+		log.Fatalf("FinalizeAnchor (batch): %v", err)
+	}
+	fmt.Printf("Anchored %d WireGuard keys in one event\n", len(batchKeys))
+
+	// each batched key is individually verifiable — should be true.
+	batched, err := identifier.VerifyAnchor(batchKeys[0])
+	if err != nil {
+		log.Fatalf("VerifyAnchor (batched): %v", err)
+	}
+	fmt.Printf("Batched key anchored: %v\n", batched)
 
 	// verify a key we anchored — should be true.
 	knownBytes, err := base64.StdEncoding.DecodeString(peerKeysB64[0])

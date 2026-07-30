@@ -46,6 +46,7 @@ int identifier_verify(CIdentifier* identifier, const char* stream);
 
 // Anchoring functions
 uint8_t* identifier_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len, size_t* out_len);
+uint8_t* identifier_anchor_many(CIdentifier* identifier, const uint8_t* const* payloads, const size_t* lens, size_t count, size_t* out_len);
 int identifier_finalize_anchor(CIdentifier* identifier, const uint8_t* event, size_t event_len, const char* signature);
 int identifier_verify_anchor(CIdentifier* identifier, const uint8_t* payload, size_t payload_len);
 
@@ -515,6 +516,68 @@ func (id *Identifier) Anchor(payload []byte) ([]byte, error) {
 		id.ptr,
 		(*C.uint8_t)(unsafe.Pointer(&payload[0])),
 		C.size_t(len(payload)),
+		&outLen,
+	)
+	if data == nil {
+		return nil, errors.New("failed to create anchor event")
+	}
+	defer C.free_buffer(data, outLen)
+
+	return C.GoBytes(unsafe.Pointer(data), C.int(outLen)), nil
+}
+
+// AnchorMany creates a single interaction event that anchors the Blake3-256
+// digest of every payload into the identifier's KEL, and returns the unsigned
+// event bytes to be signed and passed to FinalizeAnchor. It is the batching
+// counterpart to Anchor: all payloads are committed as one ixn event with one
+// sequence number. As with Anchor, the event is built from the current KEL
+// position, so each AnchorMany must be finalized before the next is built.
+//
+// Verification is byte-exact and per-payload: VerifyAnchor each of the same
+// canonical byte slices to confirm it was anchored.
+func (id *Identifier) AnchorMany(payloads [][]byte) ([]byte, error) {
+	if id.ptr == nil {
+		return nil, errors.New("identifier is nil")
+	}
+	if len(payloads) == 0 {
+		return nil, errors.New("no payloads")
+	}
+
+	count := len(payloads)
+	ptrSize := C.size_t(unsafe.Sizeof(uintptr(0)))
+	lenSize := C.size_t(unsafe.Sizeof(C.size_t(0)))
+
+	cPtrs := C.malloc(C.size_t(count) * ptrSize)
+	defer C.free(cPtrs)
+	cLens := C.malloc(C.size_t(count) * lenSize)
+	defer C.free(cLens)
+
+	ptrView := unsafe.Slice((**C.uint8_t)(cPtrs), count)
+	lenView := unsafe.Slice((*C.size_t)(cLens), count)
+
+	buffers := make([]unsafe.Pointer, 0, count)
+	defer func() {
+		for _, b := range buffers {
+			C.free(b)
+		}
+	}()
+
+	for i, payload := range payloads {
+		if len(payload) == 0 {
+			return nil, errors.New("payload is empty")
+		}
+		buf := C.CBytes(payload)
+		buffers = append(buffers, buf)
+		ptrView[i] = (*C.uint8_t)(buf)
+		lenView[i] = C.size_t(len(payload))
+	}
+
+	var outLen C.size_t
+	data := C.identifier_anchor_many(
+		id.ptr,
+		(**C.uint8_t)(cPtrs),
+		(*C.size_t)(cLens),
+		C.size_t(count),
 		&outLen,
 	)
 	if data == nil {
